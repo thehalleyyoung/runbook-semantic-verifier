@@ -51,19 +51,22 @@ Top-level fields:
 - `metadata.labels`: optional benchmark labels such as `expected_safe`,
   `expected_violation_properties`, and `expected_prose_rules`.
 
-The parser validates supported actions, required/unknown parameters, numeric
-bounds, condition kinds, duplicate step ids, duplicate replica ids, achievable
-`min_available` targets unless explicitly waived, acyclic dependencies, entity
-references, generated scale-replica id collisions, and deployment/service
-version consistency before checking. `frv validate` runs these parse/schema/entity
-checks without state-space exploration. Parse failures can be emitted as
-structured JSON diagnostics with `path`, `line`, `field`, `severity`, `message`,
-and `remediation` for editor and CI annotations. `frv schema` prints the JSON
-Schema for editor, registry, and CI integration; the canonical checked-in
-artifact lives at `docs/schema/runbook.schema.json`. See
-`docs/schema/examples.md` and `docs/schema/examples/complete_runbook.json` for
-a commented prose walkthrough plus a strict JSON fixture covering every
-supported top-level field:
+The parser validates supported actions using typed field descriptors shared by
+parser checks, JSON Schema generation, the action semantics reference, and
+formal exporter comments. It rejects missing/unknown parameters, type errors,
+numeric bounds, condition kinds, duplicate step ids, duplicate replica ids,
+unachievable `min_available` targets unless explicitly waived, acyclic
+dependencies, entity references, generated scale-replica id collisions, and
+deployment/service version inconsistency before checking. `frv validate` runs
+these parse/schema/entity checks without state-space exploration. Parse failures
+can be emitted as structured JSON diagnostics with `path`, `line`, `field`,
+`severity`, `message`, and `remediation` for editor and CI annotations. `frv
+schema` prints the JSON Schema for editor, registry, and CI integration; the
+canonical checked-in artifact lives at `docs/schema/runbook.schema.json`. See
+`docs/schema/examples.md`, `docs/schema/examples/complete_runbook.json`, and
+`docs/action_semantics.md` for a commented prose walkthrough, strict JSON
+fixture covering every supported top-level field, and generated action/condition
+semantics tables:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema

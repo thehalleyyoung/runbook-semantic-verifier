@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .actions import ACTION_SCHEMAS, CONDITION_SCHEMAS
+from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, OperationDescriptor
 from .model import Alert, Database, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState
 
 
@@ -249,7 +249,6 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
                 raise RunbookParseError(f"step {sid!r} is missing action", field=f"steps[{idx}].action")
             params = dict(_require_mapping(raw_step.get("params", {}), f"step {sid}.params"))
             _validate_action_schema(action, params, f"step {sid}")
-            _validate_action_values(action, params, f"step {sid}.params")
             requires = tuple(_condition(c, f"step {sid}.requires[{i}]") for i, c in enumerate(_require_list(raw_step.get("requires", []), f"step {sid}.requires")))
             effects = tuple(_condition(c, f"step {sid}.effects[{i}]") for i, c in enumerate(_require_list(raw_step.get("effects", []), f"step {sid}.effects")))
         except RunbookParseError as exc:
@@ -295,19 +294,18 @@ def _condition(raw: Any, where: str) -> dict[str, Any]:
     kind = str(condition.get("kind", ""))
     if not kind:
         raise RunbookParseError(f"{where} is missing condition kind", field=f"{where}.kind")
-    schema = CONDITION_SCHEMAS.get(kind)
-    if schema is None:
+    descriptor = CONDITION_DESCRIPTORS.get(kind)
+    if descriptor is None:
         raise RunbookParseError(f"{where} has unsupported condition kind {kind!r}", field=f"{where}.kind")
-    _validate_keys(condition, schema["required"] | {"kind"}, schema["optional"], where)
-    _validate_condition_values(kind, condition, where)
+    _validate_payload(descriptor, condition, where, extra_required={"kind"})
     return condition
 
 
 def _validate_action_schema(action: str, params: dict[str, Any], where: str) -> None:
-    schema = ACTION_SCHEMAS.get(action)
-    if schema is None:
+    descriptor = ACTION_DESCRIPTORS.get(action)
+    if descriptor is None:
         raise RunbookParseError(f"{where} has unsupported action {action!r}", field=f"{where}.action")
-    _validate_keys(params, schema["required"], schema["optional"], f"{where}.params")
+    _validate_payload(descriptor, params, f"{where}.params")
 
 
 def _validate_keys(mapping: dict[str, Any], required: set[str], optional: set[str], where: str) -> None:
@@ -319,26 +317,16 @@ def _validate_keys(mapping: dict[str, Any], required: set[str], optional: set[st
         raise RunbookParseError(f"{where} has unknown field(s): {', '.join(unknown)}", field=f"{where}.{unknown[0]}")
 
 
-def _validate_action_values(action: str, params: dict[str, Any], where: str) -> None:
-    if action == "suppress_alert":
-        _positive_int(params["expires_after_minutes"], f"{where}.expires_after_minutes")
-    if action == "scale_service":
-        _non_negative_int(params["replicas"], f"{where}.replicas")
-    if action == "wait":
-        _non_negative_int(params["minutes"], f"{where}.minutes")
-    if "services" in params:
-        _require_list(params["services"], f"{where}.services")
-
-
-def _validate_condition_values(kind: str, condition: dict[str, Any], where: str) -> None:
-    if kind == "service_available_at_least":
-        _non_negative_int(condition["count"], f"{where}.count")
-    elif kind == "alert_suppressed_for_at_most":
-        _non_negative_int(condition["minutes"], f"{where}.minutes")
-    elif kind == "queue_depth_at_most":
-        _non_negative_int(condition["depth"], f"{where}.depth")
-    elif kind == "queue_has_consumers":
-        _non_negative_int(condition["count"], f"{where}.count")
+def _validate_payload(descriptor: OperationDescriptor, mapping: dict[str, Any], where: str, extra_required: set[str] | None = None) -> None:
+    extra_required = extra_required or set()
+    _validate_keys(mapping, descriptor.required | extra_required, descriptor.optional, where)
+    for name, value in mapping.items():
+        if name in extra_required:
+            continue
+        field = descriptor.field_map[name]
+        error = field.validate(value)
+        if error:
+            raise RunbookParseError(f"{where}.{name} {error}", field=f"{where}.{name}")
 
 
 def _validate_dependency_graph(steps: list[Step]) -> None:

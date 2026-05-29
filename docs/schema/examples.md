@@ -13,6 +13,11 @@
 
 JSON does not permit comments, so keep automation fixtures strict and place explanatory comments in prose like this file.
 
+Action parameters and condition fields are defined in typed descriptors in the
+implementation. Those same descriptors drive parser validation, JSON Schema
+payloads, exporter comments, and the generated reference table in
+`docs/action_semantics.md`.
+
 Validate the example:
 
 ```bash

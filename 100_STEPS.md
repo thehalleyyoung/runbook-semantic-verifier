@@ -7,7 +7,7 @@
 - [x] Document the schema command and strengthened validation contract in the README and cover it with regression tests.
 - [x] Publish a checked-in canonical schema artifact under `docs/schema/runbook.schema.json` and verify it is generated from the implementation.
 - [x] Add schema examples showing every supported top-level field with comments in prose and strict JSON fixtures for automation.
-- [ ] Split action parameter validation into reusable typed field descriptors shared by parser, schema generation, docs, and exporters.
+- [x] Split action parameter validation into reusable typed field descriptors shared by parser, schema generation, docs, and exporters.
 - [x] Add semantic validation that every service `min_available` target is achievable by the declared replica set unless explicitly waived.
 - [x] Add validation for duplicate replica ids within each service and duplicate entities across generated scale operations.
 - [x] Add validation that deployment entries and service deployment fields agree or report a precise consistency warning.
@@ -15,7 +15,7 @@
 - [x] Add structured JSON diagnostics for parse errors with path, line, field, severity, and remediation text.
 - [ ] Extend Markdown source-line mapping to multiline step objects and nested precondition/effect diagnostics.
 - [ ] Add a schema compatibility policy documenting versioning, deprecations, and migration guarantees for industry users.
-- [ ] Introduce an explicit action semantics reference table generated from tests and implementation metadata.
+- [x] Introduce an explicit action semantics reference table generated from tests and implementation metadata.
 - [ ] Add first-class semantics for traffic shifting, load balancer draining, and weighted routing during regional failover.
 - [ ] Add first-class semantics for cache flush, cache warmup, and stale-read risk during incident response.
 - [ ] Add first-class semantics for object storage replication, bucket write freezes, and restore-from-snapshot operations.

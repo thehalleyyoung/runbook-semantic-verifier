@@ -3,46 +3,12 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
+from .descriptors import ACTION_SCHEMAS, CONDITION_SCHEMAS
 from .model import Alert, Database, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState
 
 
 class ActionError(ValueError):
     pass
-
-
-ACTION_SCHEMAS: dict[str, dict[str, set[str]]] = {
-    "restart_service": {"required": {"service"}, "optional": set()},
-    "drain_replica": {"required": {"service", "replica"}, "optional": set()},
-    "restore_replica": {"required": {"service", "replica"}, "optional": set()},
-    "drain_region": {"required": {"region"}, "optional": {"services"}},
-    "rollback_deployment": {"required": {"service"}, "optional": {"to"}},
-    "failover_database": {"required": {"database", "target_region"}, "optional": {"data_loss_risk"}},
-    "confirm_quorum": {"required": {"database"}, "optional": set()},
-    "suppress_alert": {"required": {"alert", "expires_after_minutes"}, "optional": set()},
-    "scale_service": {"required": {"service", "replicas"}, "optional": {"region"}},
-    "toggle_flag": {"required": {"flag", "enabled"}, "optional": set()},
-    "run_migration": {"required": {"database"}, "optional": {"in_progress", "compatible"}},
-    "finish_migration": {"required": {"database"}, "optional": set()},
-    "pause_queue": {"required": {"queue"}, "optional": set()},
-    "resume_queue": {"required": {"queue"}, "optional": set()},
-    "wait": {"required": {"minutes"}, "optional": set()},
-    "mark_region_health": {"required": {"region", "healthy"}, "optional": set()},
-}
-
-CONDITION_SCHEMAS: dict[str, dict[str, set[str]]] = {
-    "service_available_at_least": {"required": {"service", "count"}, "optional": set()},
-    "database_quorum_confirmed": {"required": {"database"}, "optional": set()},
-    "database_primary_region": {"required": {"database", "region"}, "optional": set()},
-    "region_healthy": {"required": {"region"}, "optional": set()},
-    "flag_enabled": {"required": {"flag", "enabled"}, "optional": set()},
-    "alert_active": {"required": {"alert", "active"}, "optional": set()},
-    "alert_suppressed_for_at_most": {"required": {"alert", "minutes"}, "optional": set()},
-    "queue_depth_at_most": {"required": {"queue", "depth"}, "optional": set()},
-    "queue_has_consumers": {"required": {"queue", "count"}, "optional": set()},
-    "queue_resumed": {"required": {"queue"}, "optional": set()},
-    "service_deployment_is": {"required": {"service", "deployment"}, "optional": set()},
-    "replica_not_drained": {"required": {"service", "replica"}, "optional": set()},
-}
 
 
 def _copy_state(state: SystemState, **updates: Any) -> SystemState:

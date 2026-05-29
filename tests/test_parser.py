@@ -65,6 +65,23 @@ class ParserValidationTests(unittest.TestCase):
                 "steps": [{"id": "x", "action": "wait", "params": {"minutes": -1}}],
             })
 
+    def test_rejects_descriptor_type_errors(self):
+        with self.assertRaisesRegex(RunbookParseError, "must be a string"):
+            parse_runbook({
+                "system": {"queues": {"jobs": {}}},
+                "steps": [{"id": "pause", "action": "pause_queue", "params": {"queue": 7}}],
+            })
+        with self.assertRaisesRegex(RunbookParseError, "must be a boolean"):
+            parse_runbook({
+                "system": {"feature_flags": {"brownout": {}}},
+                "steps": [{"id": "flag", "action": "toggle_flag", "params": {"flag": "brownout", "enabled": "yes"}}],
+            })
+        with self.assertRaisesRegex(RunbookParseError, "must contain only strings"):
+            parse_runbook({
+                "system": {"regions": {"a": {}}, "services": {"api": {"min_available": 0, "replicas": []}}},
+                "steps": [{"id": "drain", "action": "drain_region", "params": {"region": "a", "services": ["api", 1]}}],
+            })
+
     def test_source_path_is_attached_to_steps(self):
         runbook = load_runbook(ROOT / "examples" / "safe_runbook.json")
         self.assertTrue(runbook.steps[0].source_path.endswith("safe_runbook.json"))

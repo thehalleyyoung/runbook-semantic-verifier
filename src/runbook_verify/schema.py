@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from .actions import ACTION_SCHEMAS, CONDITION_SCHEMAS
+from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, FieldDescriptor, OperationDescriptor
 
 
 def build_json_schema() -> dict[str, Any]:
@@ -155,35 +155,35 @@ def _step_schema() -> dict[str, Any]:
         "required": ["id", "action", "params"],
         "properties": {
             "id": {"type": "string", "minLength": 1},
-            "action": {"type": "string", "enum": sorted(ACTION_SCHEMAS)},
+            "action": {"type": "string", "enum": sorted(ACTION_DESCRIPTORS)},
             "params": {"type": "object"},
             "after": {"type": "array", "items": {"type": "string"}},
             "requires": {"type": "array", "items": {"$ref": "#/$defs/condition"}},
             "effects": {"type": "array", "items": {"$ref": "#/$defs/condition"}},
         },
-        "allOf": [_tagged_object_schema("action", "params", name, schema) for name, schema in sorted(ACTION_SCHEMAS.items())],
+        "allOf": [_tagged_object_schema("action", "params", name, descriptor) for name, descriptor in sorted(ACTION_DESCRIPTORS.items())],
     }
 
 
 def _condition_schema() -> dict[str, Any]:
     return {
         "oneOf": [
-            _inline_tagged_object_schema("kind", name, schema)
-            for name, schema in sorted(CONDITION_SCHEMAS.items())
+            _inline_tagged_object_schema("kind", name, descriptor)
+            for name, descriptor in sorted(CONDITION_DESCRIPTORS.items())
         ]
     }
 
 
-def _tagged_object_schema(tag_field: str, payload_field: str, tag: str, schema: dict[str, set[str]]) -> dict[str, Any]:
+def _tagged_object_schema(tag_field: str, payload_field: str, tag: str, descriptor: OperationDescriptor) -> dict[str, Any]:
     return {
         "if": {"properties": {tag_field: {"const": tag}}, "required": [tag_field]},
-        "then": {"properties": {payload_field: _object_payload_schema(schema)}},
+        "then": {"properties": {payload_field: _object_payload_schema(descriptor)}},
     }
 
 
-def _inline_tagged_object_schema(tag_field: str, tag: str, schema: dict[str, set[str]]) -> dict[str, Any]:
-    required = sorted(schema["required"] | {tag_field})
-    properties = {key: _field_schema(key) for key in sorted(schema["required"] | schema["optional"])}
+def _inline_tagged_object_schema(tag_field: str, tag: str, descriptor: OperationDescriptor) -> dict[str, Any]:
+    required = sorted(descriptor.required | {tag_field})
+    properties = {field.name: _field_schema(field) for field in descriptor.fields}
     properties[tag_field] = {"const": tag}
     return {
         "type": "object",
@@ -193,16 +193,19 @@ def _inline_tagged_object_schema(tag_field: str, tag: str, schema: dict[str, set
     }
 
 
-def _object_payload_schema(schema: dict[str, set[str]]) -> dict[str, Any]:
+def _object_payload_schema(descriptor: OperationDescriptor) -> dict[str, Any]:
     return {
         "type": "object",
         "additionalProperties": False,
-        "required": sorted(schema["required"]),
-        "properties": {key: _field_schema(key) for key in sorted(schema["required"] | schema["optional"])},
+        "required": sorted(descriptor.required),
+        "properties": {field.name: _field_schema(field) for field in descriptor.fields},
     }
 
 
-def _field_schema(name: str) -> dict[str, Any]:
+def _field_schema(field: FieldDescriptor | str) -> dict[str, Any]:
+    if isinstance(field, FieldDescriptor):
+        return field.json_schema()
+    name = field
     integer_minimums = {
         "count": 0,
         "depth": 0,

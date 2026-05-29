@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from runbook_verify.exporter import export_tla
+from runbook_verify.descriptors import render_action_reference_markdown
 from runbook_verify.parser import load_runbook
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +34,7 @@ class CliAndExportTests(unittest.TestCase):
         text = export_tla(load_runbook(ROOT / "examples" / "safe_runbook.json"))
         self.assertIn("THEOREM Spec => []Safety", text)
         self.assertIn("scale-api-west", text)
+        self.assertIn("scale_service(service:string, replicas:integer>=0", text)
 
     def test_cli_export_alloy(self):
         proc = self._run("export", "examples/safe_runbook.json", "--format", "alloy")
@@ -51,6 +53,12 @@ class CliAndExportTests(unittest.TestCase):
         proc = self._run("schema")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertEqual(proc.stdout, (ROOT / "docs" / "schema" / "runbook.schema.json").read_text(encoding="utf-8"))
+
+    def test_action_reference_matches_descriptor_metadata(self):
+        self.assertEqual(
+            render_action_reference_markdown(),
+            (ROOT / "docs" / "action_semantics.md").read_text(encoding="utf-8"),
+        )
 
     def test_cli_validate_does_not_run_checker(self):
         proc = self._run("validate", "examples/unsafe_runbook.json")
