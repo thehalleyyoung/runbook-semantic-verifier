@@ -58,6 +58,16 @@ class CliAndExportTests(unittest.TestCase):
         self.assertIn("Valid runbook:", proc.stdout)
         self.assertNotIn("Violations", proc.stdout)
 
+    def test_cli_parse_error_json_diagnostics(self):
+        proc = self._run("validate", "tests/fixtures/invalid_json_syntax.json", "--diagnostics-format", "json")
+        self.assertEqual(proc.returncode, 2)
+        payload = json.loads(proc.stderr)
+        diagnostic = payload["diagnostics"][0]
+        self.assertEqual(diagnostic["severity"], "error")
+        self.assertEqual(diagnostic["line"], 4)
+        self.assertTrue(diagnostic["path"].endswith("invalid_json_syntax.json"))
+        self.assertIn("Fix the JSON syntax", diagnostic["remediation"])
+
 
 if __name__ == "__main__":
     unittest.main()

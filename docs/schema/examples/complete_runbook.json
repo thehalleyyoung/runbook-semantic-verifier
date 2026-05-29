@@ -1,0 +1,149 @@
+{
+  "name": "Complete documented DSL fixture",
+  "description": "A strict JSON fixture exercising every supported top-level runbook field.",
+  "metadata": {
+    "labels": {
+      "expected_safe": true,
+      "expected_violation_properties": [],
+      "expected_prose_rules": []
+    },
+    "owner": "sre-platform",
+    "source": "synthetic schema example"
+  },
+  "allow_reordering": true,
+  "max_depth": 4,
+  "safety": {
+    "max_alert_suppression_minutes": 30
+  },
+  "system": {
+    "clock_minute": 0,
+    "regions": {
+      "us-east": {
+        "healthy": true
+      },
+      "us-west": {
+        "healthy": true
+      }
+    },
+    "services": {
+      "api": {
+        "deployment": "v2",
+        "min_available": 1,
+        "replicas": [
+          {
+            "id": "api-east-0",
+            "region": "us-east",
+            "healthy": true,
+            "drained": false
+          },
+          {
+            "id": "api-west-0",
+            "region": "us-west",
+            "healthy": true,
+            "drained": false
+          }
+        ]
+      }
+    },
+    "databases": {
+      "orders": {
+        "primary_region": "us-east",
+        "healthy_regions": ["us-east", "us-west"],
+        "quorum_confirmed": false,
+        "migration_in_progress": false,
+        "migration_compatible": true
+      }
+    },
+    "queues": {
+      "orders-events": {
+        "depth": 0,
+        "consumers": 2,
+        "paused": false
+      }
+    },
+    "alerts": {
+      "api-error-rate": {
+        "active": true,
+        "suppressed_until_minute": null
+      }
+    },
+    "feature_flags": {
+      "brownout": {
+        "enabled": false
+      }
+    },
+    "deployments": {
+      "api": {
+        "service": "api",
+        "current": "v2",
+        "previous": "v1"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "confirm-orders-quorum",
+      "action": "confirm_quorum",
+      "params": {
+        "database": "orders"
+      },
+      "requires": [
+        {
+          "kind": "region_healthy",
+          "region": "us-west"
+        }
+      ],
+      "effects": [
+        {
+          "kind": "database_quorum_confirmed",
+          "database": "orders"
+        }
+      ]
+    },
+    {
+      "id": "failover-orders-west",
+      "action": "failover_database",
+      "params": {
+        "database": "orders",
+        "target_region": "us-west",
+        "data_loss_risk": false
+      },
+      "after": ["confirm-orders-quorum"],
+      "requires": [
+        {
+          "kind": "database_quorum_confirmed",
+          "database": "orders"
+        }
+      ],
+      "effects": [
+        {
+          "kind": "database_primary_region",
+          "database": "orders",
+          "region": "us-west"
+        }
+      ]
+    },
+    {
+      "id": "wait-for-dns",
+      "action": "wait",
+      "params": {
+        "minutes": 5
+      },
+      "after": ["failover-orders-west"]
+    },
+    {
+      "id": "resume-orders-events",
+      "action": "resume_queue",
+      "params": {
+        "queue": "orders-events"
+      },
+      "after": ["wait-for-dns"],
+      "effects": [
+        {
+          "kind": "queue_resumed",
+          "queue": "orders-events"
+        }
+      ]
+    }
+  ]
+}

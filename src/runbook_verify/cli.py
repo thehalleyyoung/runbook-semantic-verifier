@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -18,15 +19,19 @@ def main(argv: list[str] | None = None) -> int:
     check_p = sub.add_parser("check", help="parse and verify a runbook")
     check_p.add_argument("runbook")
     check_p.add_argument("--expect-violations", action="store_true", help="exit 0 only when at least one violation is found")
+    check_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
     validate_p = sub.add_parser("validate", help="parse and validate a runbook without state-space exploration")
     validate_p.add_argument("runbook")
+    validate_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
     export_p = sub.add_parser("export", help="export a formal-ish model")
     export_p.add_argument("runbook")
     export_p.add_argument("--format", choices=["tla", "alloy"], default="tla")
+    export_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
     sub.add_parser("schema", help="print the JSON Schema for the runbook DSL")
     audit_p = sub.add_parser("audit", help="verify every runbook file in a directory tree")
     audit_p.add_argument("path")
     audit_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when at least one violation is found")
+    audit_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
     bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
     bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
     bench_p.add_argument("--format", choices=["json", "markdown"], default="json")
@@ -37,7 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "audit":
-        return _audit(args.path, args.expect_findings)
+        return _audit(args.path, args.expect_findings, args.diagnostics_format)
     if args.command == "benchmark":
         try:
             result = run_benchmark(args.path)
@@ -59,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         runbook = load_runbook(args.runbook)
     except RunbookParseError as exc:
-        print(f"parse error: {exc}", file=sys.stderr)
+        _print_parse_error(exc, args.diagnostics_format)
         return 2
 
     if args.command == "check":
@@ -87,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
-def _audit(path: str, expect_findings: bool) -> int:
+def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text") -> int:
     root = Path(path)
     if not root.exists():
         print(f"audit path does not exist: {root}", file=sys.stderr)
@@ -103,7 +108,7 @@ def _audit(path: str, expect_findings: bool) -> int:
             runbook = load_runbook(file)
         except RunbookParseError as exc:
             parse_errors += 1
-            print(f"{file}: parse error: {exc}", file=sys.stderr)
+            _print_parse_error(exc.with_context(path=str(file)), diagnostics_format, prefix=str(file))
             continue
         result = Checker(runbook).check()
         total_violations += len(result.violations)
@@ -116,6 +121,17 @@ def _audit(path: str, expect_findings: bool) -> int:
     if expect_findings:
         return 0 if total_violations else 1
     return 1 if total_violations else 0
+
+
+def _print_parse_error(exc: RunbookParseError, diagnostics_format: str = "text", prefix: str | None = None) -> None:
+    if diagnostics_format == "json":
+        print(json.dumps({"diagnostics": [exc.to_dict()]}, sort_keys=True), file=sys.stderr)
+        return
+    location = prefix or exc.diagnostic.path
+    if location:
+        print(f"{location}: parse error: {exc}", file=sys.stderr)
+    else:
+        print(f"parse error: {exc}", file=sys.stderr)
 
 
 def _runbook_files(root: Path) -> list[Path]:

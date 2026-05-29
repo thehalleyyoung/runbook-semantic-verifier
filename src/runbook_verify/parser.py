@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -9,8 +10,82 @@ from .actions import ACTION_SCHEMAS, CONDITION_SCHEMAS
 from .model import Alert, Database, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState
 
 
+@dataclass
+class RunbookDiagnostic:
+    message: str
+    path: str | None = None
+    line: int | None = None
+    field: str | None = None
+    severity: str = "error"
+    remediation: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 class RunbookParseError(ValueError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        path: str | None = None,
+        line: int | None = None,
+        field: str | None = None,
+        severity: str = "error",
+        remediation: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.diagnostic = RunbookDiagnostic(
+            message=message,
+            path=path,
+            line=line,
+            field=_normalize_field(field),
+            severity=severity,
+            remediation=remediation or _remediation_for(message),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.diagnostic.to_dict()
+
+    def with_context(self, *, path: str | None = None, line: int | None = None, field: str | None = None) -> "RunbookParseError":
+        if path is not None and self.diagnostic.path is None:
+            self.diagnostic.path = path
+        if line is not None and self.diagnostic.line is None:
+            self.diagnostic.line = line
+        if field is not None and self.diagnostic.field is None:
+            self.diagnostic.field = _normalize_field(field)
+        return self
+
+
+def _normalize_field(field: str | None) -> str | None:
+    if field is None:
+        return None
+    normalized = field.replace("service ", "system.services.")
+    normalized = normalized.replace("database ", "system.databases.")
+    normalized = normalized.replace("queue ", "system.queues.")
+    normalized = normalized.replace("alert ", "system.alerts.")
+    normalized = normalized.replace("flag ", "system.feature_flags.")
+    normalized = normalized.replace("step ", "steps.")
+    return normalized
+
+
+def _remediation_for(message: str) -> str:
+    lower = message.lower()
+    if "missing required field" in lower or "is missing" in lower:
+        return "Add the required DSL field at the reported location."
+    if "unknown field" in lower:
+        return "Remove the unsupported field or rename it to a field allowed by the DSL schema."
+    if "unsupported action" in lower or "unsupported condition" in lower:
+        return "Use one of the actions or condition kinds listed by `frv schema`."
+    if "unknown" in lower and "references" in lower:
+        return "Declare the referenced entity in system before using it in steps, preconditions, or effects."
+    if "non-negative integer" in lower or "positive integer" in lower:
+        return "Replace the value with an integer inside the documented bound."
+    if "dependency cycle" in lower:
+        return "Break the step `after` cycle so dependencies form an acyclic graph."
+    if "invalid json" in lower:
+        return "Fix the JSON syntax and rerun `frv validate`."
+    return "Fix the runbook DSL at the reported location and rerun `frv validate`."
 
 
 def load_document(path: str | Path) -> dict[str, Any]:
@@ -21,25 +96,25 @@ def load_document(path: str | Path) -> dict[str, Any]:
         try:
             doc = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise RunbookParseError(f"invalid JSON in {p}: {exc}") from exc
+            raise RunbookParseError(f"invalid JSON in {p}: {exc}", path=str(p), line=exc.lineno, field=None) from exc
         if isinstance(doc, dict):
             doc.setdefault("__source_lines", _json_step_source_lines(text, 1))
     elif suffix in {".yaml", ".yml"}:
         try:
             import yaml  # type: ignore[import-not-found]
         except ModuleNotFoundError as exc:
-            raise RunbookParseError("YAML input requires optional dependency PyYAML; use JSON or install formal-runbook-verification[yaml]") from exc
+            raise RunbookParseError("YAML input requires optional dependency PyYAML; use JSON or install formal-runbook-verification[yaml]", path=str(p)) from exc
         try:
             doc = yaml.safe_load(text)
         except Exception as exc:  # PyYAML exposes several parser exception classes.
-            raise RunbookParseError(f"invalid YAML in {p}: {exc}") from exc
+            raise RunbookParseError(f"invalid YAML in {p}: {exc}", path=str(p)) from exc
     else:
         if suffix == ".md":
             doc = _load_markdown_runbook(text, p)
         else:
-            raise RunbookParseError(f"unsupported runbook extension {p.suffix!r}; use .json, .yaml, .yml, or .md")
+            raise RunbookParseError(f"unsupported runbook extension {p.suffix!r}; use .json, .yaml, .yml, or .md", path=str(p))
     if not isinstance(doc, dict):
-        raise RunbookParseError("runbook document must be an object")
+        raise RunbookParseError("runbook document must be an object", path=str(p))
     return doc
 
 
@@ -47,35 +122,35 @@ def _load_markdown_runbook(text: str, path: Path) -> dict[str, Any]:
     matches = list(re.finditer(r"```(?:runbook-json|json)\s*\n(.*?)\n```", text, flags=re.DOTALL | re.IGNORECASE))
     blocks = [match.group(1) for match in matches]
     if not blocks:
-        raise RunbookParseError(f"Markdown runbook {path} must contain a fenced ```runbook-json block")
+        raise RunbookParseError(f"Markdown runbook {path} must contain a fenced ```runbook-json block", path=str(path))
     if len(blocks) > 1:
-        raise RunbookParseError(f"Markdown runbook {path} contains multiple runbook-json blocks; keep one executable model per file")
+        raise RunbookParseError(f"Markdown runbook {path} contains multiple runbook-json blocks; keep one executable model per file", path=str(path))
+    block_start_line = text[:matches[0].start(1)].count("\n") + 1
     try:
         doc = json.loads(blocks[0])
     except json.JSONDecodeError as exc:
-        raise RunbookParseError(f"invalid runbook-json block in {path}: {exc}") from exc
+        raise RunbookParseError(f"invalid runbook-json block in {path}: {exc}", path=str(path), line=block_start_line + exc.lineno - 1) from exc
     if not isinstance(doc, dict):
-        raise RunbookParseError(f"runbook-json block in {path} must be an object")
-    block_start_line = text[:matches[0].start(1)].count("\n") + 1
+        raise RunbookParseError(f"runbook-json block in {path} must be an object", path=str(path), line=block_start_line)
     doc.setdefault("__source_lines", _json_step_source_lines(blocks[0], block_start_line))
     return doc
 
 
 def _require_mapping(value: Any, name: str) -> dict[str, Any]:
     if not isinstance(value, dict):
-        raise RunbookParseError(f"{name} must be an object")
+        raise RunbookParseError(f"{name} must be an object", field=name)
     return value
 
 
 def _require_list(value: Any, name: str) -> list[Any]:
     if not isinstance(value, list):
-        raise RunbookParseError(f"{name} must be a list")
+        raise RunbookParseError(f"{name} must be a list", field=name)
     return value
 
 
 def _require_key(mapping: dict[str, Any], key: str, where: str) -> Any:
     if key not in mapping:
-        raise RunbookParseError(f"{where} is missing required field {key!r}")
+        raise RunbookParseError(f"{where} is missing required field {key!r}", field=f"{where}.{key}")
     return mapping[key]
 
 
@@ -92,17 +167,19 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             rep = _require_mapping(rep_any, f"service {name}.replicas[{idx}]")
             region = str(_require_key(rep, "region", f"service {name}.replicas[{idx}]"))
             if regions and region not in regions:
-                raise RunbookParseError(f"service {name}.replicas[{idx}] references unknown region {region!r}")
+                raise RunbookParseError(f"service {name}.replicas[{idx}] references unknown region {region!r}", field=f"system.services.{name}.replicas[{idx}].region")
             replicas.append(Replica(id=str(rep.get("id", f"{name}-{idx}")), region=region, healthy=bool(rep.get("healthy", True)), drained=bool(rep.get("drained", False))))
         replica_ids = [replica.id for replica in replicas]
         duplicate_replica_ids = sorted({rid for rid in replica_ids if replica_ids.count(rid) > 1})
         if duplicate_replica_ids:
-            raise RunbookParseError(f"service {name}.replicas contains duplicate replica id(s): {', '.join(duplicate_replica_ids)}")
+            raise RunbookParseError(f"service {name}.replicas contains duplicate replica id(s): {', '.join(duplicate_replica_ids)}", field=f"system.services.{name}.replicas")
         min_available = _non_negative_int(cfg.get("min_available", 1), f"service {name}.min_available")
         if min_available > len(replicas) and not bool(cfg.get("allow_unachievable_min_available", False)):
             raise RunbookParseError(
                 f"service {name}.min_available={min_available} is not achievable with {len(replicas)} declared replica(s); "
-                "add replicas or set allow_unachievable_min_available=true with a documented waiver"
+                "add replicas or set allow_unachievable_min_available=true with a documented waiver",
+                field=f"system.services.{name}.min_available",
+                remediation="Add enough replicas to meet min_available or set allow_unachievable_min_available=true with an explicit documented waiver.",
             )
         services[name] = Service(name=name, replicas=tuple(replicas), min_available=min_available, deployment=str(cfg.get("deployment", "current")))
 
@@ -112,11 +189,11 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
         cfg = _require_mapping(cfg_any, f"system.databases.{name}")
         primary_region = str(_require_key(cfg, "primary_region", f"database {name}"))
         if regions and primary_region not in regions:
-            raise RunbookParseError(f"database {name}.primary_region references unknown region {primary_region!r}")
+            raise RunbookParseError(f"database {name}.primary_region references unknown region {primary_region!r}", field=f"system.databases.{name}.primary_region")
         healthy_regions = frozenset(str(r) for r in _require_list(cfg.get("healthy_regions", []), f"database {name}.healthy_regions"))
         unknown_healthy = sorted(r for r in healthy_regions if regions and r not in regions)
         if unknown_healthy:
-            raise RunbookParseError(f"database {name}.healthy_regions references unknown region(s): {', '.join(unknown_healthy)}")
+            raise RunbookParseError(f"database {name}.healthy_regions references unknown region(s): {', '.join(unknown_healthy)}", field=f"system.databases.{name}.healthy_regions")
         databases[name] = Database(
             name=name,
             primary_region=primary_region,
@@ -132,17 +209,27 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
     deployments = {name: Deployment(service=str(_require_mapping(cfg, f"deployment {name}").get("service", name)), current=str(_require_mapping(cfg, f"deployment {name}").get("current", "current")), previous=_require_mapping(cfg, f"deployment {name}").get("previous")) for name, cfg in _require_mapping(raw.get("deployments", {}), "system.deployments").items()}
     for name, deployment in deployments.items():
         if deployment.service not in services:
-            raise RunbookParseError(f"deployment {name} references unknown service {deployment.service!r}")
+            raise RunbookParseError(f"deployment {name} references unknown service {deployment.service!r}", field=f"system.deployments.{name}.service")
         service = services[deployment.service]
         if deployment.current != service.deployment:
             raise RunbookParseError(
                 f"deployment {name}.current={deployment.current!r} does not match "
-                f"service {deployment.service}.deployment={service.deployment!r}"
+                f"service {deployment.service}.deployment={service.deployment!r}",
+                field=f"system.deployments.{name}.current",
+                remediation="Keep deployment.current synchronized with the referenced service.deployment value.",
             )
     return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
+    try:
+        return _parse_runbook(doc, source_path)
+    except RunbookParseError as exc:
+        exc.with_context(path=str(source_path) if source_path is not None else None)
+        raise
+
+
+def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
     system = parse_state(_require_mapping(doc.get("system", {}), "system"))
     source_lines = doc.get("__source_lines", {})
     if not isinstance(source_lines, dict):
@@ -153,16 +240,21 @@ def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) ->
         raw_step = _require_mapping(raw_step_any, f"steps[{idx}]")
         sid = str(raw_step.get("id", f"step-{idx}"))
         if sid in seen:
-            raise RunbookParseError(f"duplicate step id {sid!r}")
+            raise RunbookParseError(f"duplicate step id {sid!r}", field=f"steps[{idx}].id")
         seen.add(sid)
-        action = str(raw_step.get("action", ""))
-        if not action:
-            raise RunbookParseError(f"step {sid!r} is missing action")
-        params = dict(_require_mapping(raw_step.get("params", {}), f"step {sid}.params"))
-        _validate_action_schema(action, params, f"step {sid}")
-        _validate_action_values(action, params, f"step {sid}.params")
-        requires = tuple(_condition(c, f"step {sid}.requires[{i}]") for i, c in enumerate(_require_list(raw_step.get("requires", []), f"step {sid}.requires")))
-        effects = tuple(_condition(c, f"step {sid}.effects[{i}]") for i, c in enumerate(_require_list(raw_step.get("effects", []), f"step {sid}.effects")))
+        step_line = int(source_lines[sid]) if sid in source_lines else None
+        try:
+            action = str(raw_step.get("action", ""))
+            if not action:
+                raise RunbookParseError(f"step {sid!r} is missing action", field=f"steps[{idx}].action")
+            params = dict(_require_mapping(raw_step.get("params", {}), f"step {sid}.params"))
+            _validate_action_schema(action, params, f"step {sid}")
+            _validate_action_values(action, params, f"step {sid}.params")
+            requires = tuple(_condition(c, f"step {sid}.requires[{i}]") for i, c in enumerate(_require_list(raw_step.get("requires", []), f"step {sid}.requires")))
+            effects = tuple(_condition(c, f"step {sid}.effects[{i}]") for i, c in enumerate(_require_list(raw_step.get("effects", []), f"step {sid}.effects")))
+        except RunbookParseError as exc:
+            exc.with_context(line=step_line, field=f"steps[{idx}]")
+            raise
         steps.append(Step(
             id=sid,
             action=action,
@@ -171,11 +263,11 @@ def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) ->
             requires=requires,
             effects=effects,
             source_path=str(source_path) if source_path is not None else None,
-            source_line=int(source_lines[sid]) if sid in source_lines else None,
+            source_line=step_line,
         ))
     missing = sorted(dep for step in steps for dep in step.after if dep not in seen)
     if missing:
-        raise RunbookParseError(f"unknown dependency step id(s): {', '.join(missing)}")
+        raise RunbookParseError(f"unknown dependency step id(s): {', '.join(missing)}", field="steps.after")
     _validate_dependency_graph(steps)
     _validate_step_references(system, steps)
     _validate_generated_scale_replicas(system, steps)
@@ -202,10 +294,10 @@ def _condition(raw: Any, where: str) -> dict[str, Any]:
     condition = dict(_require_mapping(raw, where))
     kind = str(condition.get("kind", ""))
     if not kind:
-        raise RunbookParseError(f"{where} is missing condition kind")
+        raise RunbookParseError(f"{where} is missing condition kind", field=f"{where}.kind")
     schema = CONDITION_SCHEMAS.get(kind)
     if schema is None:
-        raise RunbookParseError(f"{where} has unsupported condition kind {kind!r}")
+        raise RunbookParseError(f"{where} has unsupported condition kind {kind!r}", field=f"{where}.kind")
     _validate_keys(condition, schema["required"] | {"kind"}, schema["optional"], where)
     _validate_condition_values(kind, condition, where)
     return condition
@@ -214,17 +306,17 @@ def _condition(raw: Any, where: str) -> dict[str, Any]:
 def _validate_action_schema(action: str, params: dict[str, Any], where: str) -> None:
     schema = ACTION_SCHEMAS.get(action)
     if schema is None:
-        raise RunbookParseError(f"{where} has unsupported action {action!r}")
+        raise RunbookParseError(f"{where} has unsupported action {action!r}", field=f"{where}.action")
     _validate_keys(params, schema["required"], schema["optional"], f"{where}.params")
 
 
 def _validate_keys(mapping: dict[str, Any], required: set[str], optional: set[str], where: str) -> None:
     missing = sorted(key for key in required if key not in mapping)
     if missing:
-        raise RunbookParseError(f"{where} missing required field(s): {', '.join(missing)}")
+        raise RunbookParseError(f"{where} missing required field(s): {', '.join(missing)}", field=f"{where}.{missing[0]}")
     unknown = sorted(set(mapping) - required - optional)
     if unknown:
-        raise RunbookParseError(f"{where} has unknown field(s): {', '.join(unknown)}")
+        raise RunbookParseError(f"{where} has unknown field(s): {', '.join(unknown)}", field=f"{where}.{unknown[0]}")
 
 
 def _validate_action_values(action: str, params: dict[str, Any], where: str) -> None:
@@ -259,7 +351,7 @@ def _validate_dependency_graph(steps: list[Step]) -> None:
             return
         if step_id in visiting:
             cycle = path[path.index(step_id):] + [step_id]
-            raise RunbookParseError(f"dependency cycle detected: {' -> '.join(cycle)}")
+            raise RunbookParseError(f"dependency cycle detected: {' -> '.join(cycle)}", field="steps.after")
         visiting.add(step_id)
         for dep in deps[step_id]:
             visit(dep, path + [dep])
@@ -272,13 +364,13 @@ def _validate_dependency_graph(steps: list[Step]) -> None:
 
 def _non_negative_int(value: Any, where: str) -> int:
     if type(value) is not int or value < 0:
-        raise RunbookParseError(f"{where} must be a non-negative integer")
+        raise RunbookParseError(f"{where} must be a non-negative integer", field=where)
     return value
 
 
 def _positive_int(value: Any, where: str) -> int:
     if type(value) is not int or value <= 0:
-        raise RunbookParseError(f"{where} must be a positive integer")
+        raise RunbookParseError(f"{where} must be a positive integer", field=where)
     return value
 
 
@@ -292,7 +384,7 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
     for step in steps:
         def require_entity(kind: str, name: str, values: dict[str, Any]) -> None:
             if name not in values:
-                raise RunbookParseError(f"step {step.id} references unknown {kind} {name!r}")
+                raise RunbookParseError(f"step {step.id} references unknown {kind} {name!r}", line=step.source_line, field=f"step {step.id}.params.{kind}")
 
         params = step.params
         if "service" in params:
@@ -310,7 +402,7 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
         if "replica" in params and "service" in params:
             svc = state.services[str(params["service"])]
             if str(params["replica"]) not in {replica.id for replica in svc.replicas}:
-                raise RunbookParseError(f"step {step.id} references unknown replica {params['replica']!r} for service {svc.name!r}")
+                raise RunbookParseError(f"step {step.id} references unknown replica {params['replica']!r} for service {svc.name!r}", line=step.source_line, field=f"step {step.id}.params.replica")
         if "services" in params:
             for svc_name in _require_list(params["services"], f"step {step.id}.params.services"):
                 require_entity("service", str(svc_name), state.services)
@@ -328,11 +420,11 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         ("flag", state.flags, "feature flag"),
     ):
         if key in condition and str(condition[key]) not in collection:
-            raise RunbookParseError(f"step {step_id} condition references unknown {label} {condition[key]!r}")
+            raise RunbookParseError(f"step {step_id} condition references unknown {label} {condition[key]!r}", field=f"step {step_id}.condition.{key}")
     if "replica" in condition and "service" in condition:
         svc = state.services[str(condition["service"])]
         if str(condition["replica"]) not in {replica.id for replica in svc.replicas}:
-            raise RunbookParseError(f"step {step_id} condition references unknown replica {condition['replica']!r} for service {svc.name!r}")
+            raise RunbookParseError(f"step {step_id} condition references unknown replica {condition['replica']!r} for service {svc.name!r}", field=f"step {step_id}.condition.replica")
 
 
 def _validate_generated_scale_replicas(state: SystemState, steps: list[Step]) -> None:
@@ -348,13 +440,17 @@ def _validate_generated_scale_replicas(state: SystemState, steps: list[Step]) ->
             replica_id = f"{service.name}-{index}"
             if replica_id in declared_ids:
                 raise RunbookParseError(
-                    f"step {step.id} would generate duplicate replica id {replica_id!r} for service {service.name!r}"
+                    f"step {step.id} would generate duplicate replica id {replica_id!r} for service {service.name!r}",
+                    line=step.source_line,
+                    field=f"step {step.id}.params.replicas",
                 )
             key = (service.name, replica_id)
             previous_step = generated_by.get(key)
             if previous_step is not None:
                 raise RunbookParseError(
-                    f"steps {previous_step} and {step.id} would both generate replica id {replica_id!r} for service {service.name!r}"
+                    f"steps {previous_step} and {step.id} would both generate replica id {replica_id!r} for service {service.name!r}",
+                    line=step.source_line,
+                    field=f"step {step.id}.params.replicas",
                 )
             generated_by[key] = step.id
 

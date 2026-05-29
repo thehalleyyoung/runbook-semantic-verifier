@@ -12,6 +12,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json 
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
+PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/complete_runbook.json
+PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
@@ -54,13 +56,20 @@ bounds, condition kinds, duplicate step ids, duplicate replica ids, achievable
 `min_available` targets unless explicitly waived, acyclic dependencies, entity
 references, generated scale-replica id collisions, and deployment/service
 version consistency before checking. `frv validate` runs these parse/schema/entity
-checks without state-space exploration. `frv schema` prints the JSON Schema for
-editor, registry, and CI integration; the canonical checked-in artifact lives at
-`docs/schema/runbook.schema.json`:
+checks without state-space exploration. Parse failures can be emitted as
+structured JSON diagnostics with `path`, `line`, `field`, `severity`, `message`,
+and `remediation` for editor and CI annotations. `frv schema` prints the JSON
+Schema for editor, registry, and CI integration; the canonical checked-in
+artifact lives at `docs/schema/runbook.schema.json`. See
+`docs/schema/examples.md` and `docs/schema/examples/complete_runbook.json` for
+a commented prose walkthrough plus a strict JSON fixture covering every
+supported top-level field:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
+PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/complete_runbook.json
+PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
 ```
 Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,

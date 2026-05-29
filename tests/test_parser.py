@@ -130,3 +130,21 @@ class ParserValidationTests(unittest.TestCase):
                 },
                 "steps": [],
             })
+
+    def test_parse_error_exposes_structured_diagnostic(self):
+        try:
+            load_runbook(ROOT / "tests" / "fixtures" / "invalid_unknown_alert.json")
+        except RunbookParseError as exc:
+            diagnostic = exc.to_dict()
+        else:
+            self.fail("invalid fixture unexpectedly parsed")
+        self.assertEqual(diagnostic["severity"], "error")
+        self.assertTrue(diagnostic["path"].endswith("invalid_unknown_alert.json"))
+        self.assertIsInstance(diagnostic["line"], int)
+        self.assertIn("alert", diagnostic["field"])
+        self.assertIn("Declare the referenced entity", diagnostic["remediation"])
+
+    def test_complete_schema_example_fixture_validates(self):
+        runbook = load_runbook(ROOT / "docs" / "schema" / "examples" / "complete_runbook.json")
+        self.assertEqual(runbook.name, "Complete documented DSL fixture")
+        self.assertEqual(len(runbook.steps), 4)

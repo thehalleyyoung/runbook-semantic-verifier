@@ -1,0 +1,15 @@
+{
+  "system": {
+    "alerts": {}
+  },
+  "steps": [
+    {
+      "id": "suppress-missing-alert",
+      "action": "suppress_alert",
+      "params": {
+        "alert": "missing",
+        "expires_after_minutes": 5
+      }
+    }
+  ]
+}
