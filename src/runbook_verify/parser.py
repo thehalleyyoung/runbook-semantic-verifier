@@ -94,7 +94,7 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             if regions and region not in regions:
                 raise RunbookParseError(f"service {name}.replicas[{idx}] references unknown region {region!r}")
             replicas.append(Replica(id=str(rep.get("id", f"{name}-{idx}")), region=region, healthy=bool(rep.get("healthy", True)), drained=bool(rep.get("drained", False))))
-        services[name] = Service(name=name, replicas=tuple(replicas), min_available=int(cfg.get("min_available", 1)), deployment=str(cfg.get("deployment", "current")))
+        services[name] = Service(name=name, replicas=tuple(replicas), min_available=_non_negative_int(cfg.get("min_available", 1), f"service {name}.min_available"), deployment=str(cfg.get("deployment", "current")))
         if services[name].min_available < 0:
             raise RunbookParseError(f"service {name}.min_available must be non-negative")
 
@@ -118,14 +118,14 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             migration_compatible=bool(cfg.get("migration_compatible", True)),
         )
 
-    queues = {name: Queue(name=name, depth=int(_require_mapping(cfg, f"queue {name}").get("depth", 0)), consumers=int(_require_mapping(cfg, f"queue {name}").get("consumers", 1)), paused=bool(_require_mapping(cfg, f"queue {name}").get("paused", False))) for name, cfg in _require_mapping(raw.get("queues", {}), "system.queues").items()}
-    alerts = {name: Alert(name=name, active=bool(_require_mapping(cfg, f"alert {name}").get("active", True)), suppressed_until_minute=_require_mapping(cfg, f"alert {name}").get("suppressed_until_minute")) for name, cfg in _require_mapping(raw.get("alerts", {}), "system.alerts").items()}
+    queues = {name: Queue(name=name, depth=_non_negative_int(_require_mapping(cfg, f"queue {name}").get("depth", 0), f"queue {name}.depth"), consumers=_non_negative_int(_require_mapping(cfg, f"queue {name}").get("consumers", 1), f"queue {name}.consumers"), paused=bool(_require_mapping(cfg, f"queue {name}").get("paused", False))) for name, cfg in _require_mapping(raw.get("queues", {}), "system.queues").items()}
+    alerts = {name: Alert(name=name, active=bool(_require_mapping(cfg, f"alert {name}").get("active", True)), suppressed_until_minute=_optional_non_negative_int(_require_mapping(cfg, f"alert {name}").get("suppressed_until_minute"), f"alert {name}.suppressed_until_minute")) for name, cfg in _require_mapping(raw.get("alerts", {}), "system.alerts").items()}
     flags = {name: FeatureFlag(name=name, enabled=bool(_require_mapping(cfg, f"flag {name}").get("enabled", False))) for name, cfg in _require_mapping(raw.get("feature_flags", {}), "system.feature_flags").items()}
     deployments = {name: Deployment(service=str(_require_mapping(cfg, f"deployment {name}").get("service", name)), current=str(_require_mapping(cfg, f"deployment {name}").get("current", "current")), previous=_require_mapping(cfg, f"deployment {name}").get("previous")) for name, cfg in _require_mapping(raw.get("deployments", {}), "system.deployments").items()}
     for name, deployment in deployments.items():
         if deployment.service not in services:
             raise RunbookParseError(f"deployment {name} references unknown service {deployment.service!r}")
-    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, clock_minute=int(raw.get("clock_minute", 0)))
+    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
@@ -146,6 +146,7 @@ def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) ->
             raise RunbookParseError(f"step {sid!r} is missing action")
         params = dict(_require_mapping(raw_step.get("params", {}), f"step {sid}.params"))
         _validate_action_schema(action, params, f"step {sid}")
+        _validate_action_values(action, params, f"step {sid}.params")
         requires = tuple(_condition(c, f"step {sid}.requires[{i}]") for i, c in enumerate(_require_list(raw_step.get("requires", []), f"step {sid}.requires")))
         effects = tuple(_condition(c, f"step {sid}.effects[{i}]") for i, c in enumerate(_require_list(raw_step.get("effects", []), f"step {sid}.effects")))
         steps.append(Step(
@@ -161,15 +162,20 @@ def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) ->
     missing = sorted(dep for step in steps for dep in step.after if dep not in seen)
     if missing:
         raise RunbookParseError(f"unknown dependency step id(s): {', '.join(missing)}")
+    _validate_dependency_graph(steps)
     _validate_step_references(system, steps)
+    max_depth = _non_negative_int(doc.get("max_depth", len(steps)), "max_depth")
+    safety = dict(_require_mapping(doc.get("safety", {}), "safety"))
+    if "max_alert_suppression_minutes" in safety:
+        safety["max_alert_suppression_minutes"] = _positive_int(safety["max_alert_suppression_minutes"], "safety.max_alert_suppression_minutes")
     return Runbook(
         name=str(doc.get("name", "unnamed runbook")),
         description=str(doc.get("description", "")),
         state=system,
         steps=tuple(steps),
-        max_depth=int(doc.get("max_depth", len(steps))),
+        max_depth=max_depth,
         allow_reordering=bool(doc.get("allow_reordering", True)),
-        safety=dict(_require_mapping(doc.get("safety", {}), "safety")),
+        safety=safety,
     )
 
 
@@ -186,6 +192,7 @@ def _condition(raw: Any, where: str) -> dict[str, Any]:
     if schema is None:
         raise RunbookParseError(f"{where} has unsupported condition kind {kind!r}")
     _validate_keys(condition, schema["required"] | {"kind"}, schema["optional"], where)
+    _validate_condition_values(kind, condition, where)
     return condition
 
 
@@ -203,6 +210,67 @@ def _validate_keys(mapping: dict[str, Any], required: set[str], optional: set[st
     unknown = sorted(set(mapping) - required - optional)
     if unknown:
         raise RunbookParseError(f"{where} has unknown field(s): {', '.join(unknown)}")
+
+
+def _validate_action_values(action: str, params: dict[str, Any], where: str) -> None:
+    if action == "suppress_alert":
+        _positive_int(params["expires_after_minutes"], f"{where}.expires_after_minutes")
+    if action == "scale_service":
+        _non_negative_int(params["replicas"], f"{where}.replicas")
+    if action == "wait":
+        _non_negative_int(params["minutes"], f"{where}.minutes")
+    if "services" in params:
+        _require_list(params["services"], f"{where}.services")
+
+
+def _validate_condition_values(kind: str, condition: dict[str, Any], where: str) -> None:
+    if kind == "service_available_at_least":
+        _non_negative_int(condition["count"], f"{where}.count")
+    elif kind == "alert_suppressed_for_at_most":
+        _non_negative_int(condition["minutes"], f"{where}.minutes")
+    elif kind == "queue_depth_at_most":
+        _non_negative_int(condition["depth"], f"{where}.depth")
+    elif kind == "queue_has_consumers":
+        _non_negative_int(condition["count"], f"{where}.count")
+
+
+def _validate_dependency_graph(steps: list[Step]) -> None:
+    deps = {step.id: set(step.after) for step in steps}
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(step_id: str, path: list[str]) -> None:
+        if step_id in visited:
+            return
+        if step_id in visiting:
+            cycle = path[path.index(step_id):] + [step_id]
+            raise RunbookParseError(f"dependency cycle detected: {' -> '.join(cycle)}")
+        visiting.add(step_id)
+        for dep in deps[step_id]:
+            visit(dep, path + [dep])
+        visiting.remove(step_id)
+        visited.add(step_id)
+
+    for step in steps:
+        visit(step.id, [step.id])
+
+
+def _non_negative_int(value: Any, where: str) -> int:
+    if type(value) is not int or value < 0:
+        raise RunbookParseError(f"{where} must be a non-negative integer")
+    return value
+
+
+def _positive_int(value: Any, where: str) -> int:
+    if type(value) is not int or value <= 0:
+        raise RunbookParseError(f"{where} must be a positive integer")
+    return value
+
+
+def _optional_non_negative_int(value: Any, where: str) -> int | None:
+    if value is None:
+        return None
+    return _non_negative_int(value, where)
 
 
 def _validate_step_references(state: SystemState, steps: list[Step]) -> None:

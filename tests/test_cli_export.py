@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import os
 import subprocess
 import sys
@@ -37,6 +38,14 @@ class CliAndExportTests(unittest.TestCase):
         proc = self._run("export", "examples/safe_runbook.json", "--format", "alloy")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("module runbook_verification", proc.stdout)
+
+    def test_cli_schema_exports_runbook_contract(self):
+        proc = self._run("schema")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        schema = json.loads(proc.stdout)
+        self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
+        self.assertIn("failover_database", schema["$defs"]["step"]["properties"]["action"]["enum"])
+        self.assertIn("condition", schema["$defs"])
 
 
 if __name__ == "__main__":

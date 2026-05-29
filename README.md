@@ -10,6 +10,7 @@ python3 -m unittest discover -s tests
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
+PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
@@ -47,8 +48,14 @@ Top-level fields:
 - `metadata.labels`: optional benchmark labels such as `expected_safe`,
   `expected_violation_properties`, and `expected_prose_rules`.
 
-The parser validates supported actions, required/unknown parameters, condition
-kinds, duplicate step ids, dependencies, and entity references before checking.
+The parser validates supported actions, required/unknown parameters, numeric
+bounds, condition kinds, duplicate step ids, acyclic dependencies, and entity
+references before checking. `frv schema` prints a JSON Schema for editor,
+registry, and CI integration:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli schema
+```
 Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,
 `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,

@@ -9,6 +9,7 @@ from .checker import Checker
 from .exporter import export_alloy, export_tla
 from .markdown_lint import lint_markdown_tree, render_lint_json, render_lint_markdown
 from .parser import RunbookParseError, load_runbook
+from .schema import render_json_schema
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -20,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
     export_p = sub.add_parser("export", help="export a formal-ish model")
     export_p.add_argument("runbook")
     export_p.add_argument("--format", choices=["tla", "alloy"], default="tla")
+    sub.add_parser("schema", help="print the JSON Schema for the runbook DSL")
     audit_p = sub.add_parser("audit", help="verify every runbook file in a directory tree")
     audit_p.add_argument("path")
     audit_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when at least one violation is found")
@@ -48,6 +50,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.expect_findings:
             return 0 if findings else 1
         return 1 if findings else 0
+    if args.command == "schema":
+        print(render_json_schema(), end="")
+        return 0
 
     try:
         runbook = load_runbook(args.runbook)

@@ -1,0 +1,102 @@
+# 100 steps toward an overpoweringly useful formal-runbook-verification-repo
+
+- [x] Create a repo-specific 100-step roadmap spanning verifier depth, research evidence, industry usability, and responsible adoption.
+- [x] Expose a machine-readable JSON Schema for the runbook DSL through `frv schema` so editors, registries, and CI systems can validate models before checking.
+- [x] Harden parser validation for numeric DSL bounds such as `max_depth`, wait durations, replica counts, queue depths, and alert suppression durations.
+- [x] Reject cyclic step dependency graphs at parse time so impossible runbooks fail fast with actionable errors.
+- [x] Document the schema command and strengthened validation contract in the README and cover it with regression tests.
+- [ ] Publish a checked-in canonical schema artifact under `docs/schema/runbook.schema.json` and verify it is generated from the implementation.
+- [ ] Add schema examples showing every supported top-level field with comments in prose and strict JSON fixtures for automation.
+- [ ] Split action parameter validation into reusable typed field descriptors shared by parser, schema generation, docs, and exporters.
+- [ ] Add semantic validation that every service `min_available` target is achievable by the declared replica set unless explicitly waived.
+- [ ] Add validation for duplicate replica ids within each service and duplicate entities across generated scale operations.
+- [ ] Add validation that deployment entries and service deployment fields agree or report a precise consistency warning.
+- [ ] Add a `frv validate` command that performs parse/schema/entity/dependency checks without running state-space exploration.
+- [ ] Add structured JSON diagnostics for parse errors with path, line, field, severity, and remediation text.
+- [ ] Extend Markdown source-line mapping to multiline step objects and nested precondition/effect diagnostics.
+- [ ] Add a schema compatibility policy documenting versioning, deprecations, and migration guarantees for industry users.
+- [ ] Introduce an explicit action semantics reference table generated from tests and implementation metadata.
+- [ ] Add first-class semantics for traffic shifting, load balancer draining, and weighted routing during regional failover.
+- [ ] Add first-class semantics for cache flush, cache warmup, and stale-read risk during incident response.
+- [ ] Add first-class semantics for object storage replication, bucket write freezes, and restore-from-snapshot operations.
+- [ ] Add first-class semantics for message replay, dead-letter queues, and consumer group rebalancing.
+- [ ] Add first-class semantics for rate limiting, brownout modes, and customer-facing feature degradation.
+- [ ] Add first-class semantics for secret rotation, credential revocation, and emergency access paths.
+- [ ] Add first-class semantics for DNS changes, TTL wait windows, and split-brain routing hazards.
+- [ ] Add first-class semantics for Kubernetes cordon, drain, pod disruption budgets, and rollout pause/resume.
+- [ ] Add action-level idempotency annotations and checker warnings for steps unsafe to retry.
+- [ ] Add action-level reversibility annotations and report runbooks with no safe rollback path.
+- [ ] Add parameterized invariants for blast radius, customer tier protection, and regional isolation.
+- [ ] Add temporal invariants such as “alerting restored within N minutes” and “queue backlog decreases before resume.”
+- [ ] Add invariant templates for RPO/RTO, data durability, quorum, and write availability.
+- [ ] Add invariant suppression waivers with owner, expiry, rationale, and benchmark visibility.
+- [ ] Add a custom invariant plugin interface that stays dependency-light and deterministic.
+- [ ] Add property coverage reports showing which services, databases, queues, alerts, and regions each invariant touches.
+- [ ] Add negative tests proving every built-in invariant can fail on a minimal counterexample.
+- [ ] Add explanation traces that include state deltas before and after each violating action.
+- [ ] Add trace minimization that removes irrelevant independent steps while preserving the violation.
+- [ ] Add partial-order reduction for independent actions to reduce equivalent reordering explosions.
+- [ ] Add dominance pruning for monotonic hazards such as already-drained replicas and already-paused queues.
+- [ ] Add configurable exploration strategies: breadth-first, depth-first, randomized bounded, and shortest-counterexample.
+- [ ] Add state-space budgets with clear inconclusive results instead of silent truncation.
+- [ ] Add liveness-oriented terminal-state checks for unfinished migrations, suppressed alerts, and paused queues.
+- [ ] Add concurrency groups to model steps that can run in parallel rather than only arbitrary reorderings.
+- [ ] Add fault-injection hooks that perturb region health, replica health, and queue depth during exploration.
+- [ ] Add a deterministic seed option for randomized exploration and benchmark reproducibility.
+- [ ] Add performance counters for queue length, deduplicated states, pruned states, and branching factor.
+- [ ] Add a compact binary-free snapshot format for explored counterexample states to aid debugging.
+- [ ] Expand prose lint rules for data deletion, manual SQL, backfills, credential handling, and customer notification gaps.
+- [ ] Make prose lint findings severity-aware with warning, error, and audit-only levels.
+- [ ] Add prose lint suppressions that require owner, expiry, and reason fields.
+- [ ] Add Markdown autofix suggestions for missing executable `runbook-json` blocks and missing preconditions.
+- [ ] Add a Markdown report section mapping prose warnings to exact DSL steps and unmodeled paragraphs.
+- [ ] Add tests showing prose lint ignores code blocks, quotations, and already-modeled hazards.
+- [ ] Add a benchmark corpus manifest with stable IDs, provenance, expected outcomes, and license notes.
+- [ ] Add synthetic benchmark generators for safe/unsafe variants across services, queues, databases, and regions.
+- [ ] Add benchmark trend reports comparing current results to checked-in baselines.
+- [ ] Add runtime regression thresholds for state count and wall-clock time on built-in suites.
+- [ ] Add per-property precision/recall-style evaluation against labeled synthetic mutants.
+- [ ] Add public-cloud-inspired datasets for Kubernetes, Postgres, Kafka, Redis, object storage, and CDN runbooks.
+- [ ] Add anonymization guidance for industry teams contributing private-derived runbook models.
+- [ ] Add a dataset contribution checklist covering provenance, license, redaction, and expected verifier behavior.
+- [ ] Add a responsible disclosure template for public-runbook findings discovered with this tool.
+- [ ] Add a `SECURITY.md` workflow explaining how to report real operational vulnerabilities without exposing secrets.
+- [ ] Add case-study methodology docs distinguishing exact public text, paraphrase, reconstruction, and synthetic modeling.
+- [ ] Add at least three more current public case studies with reproducible commit/source citations.
+- [ ] Add report generation that emits Markdown, JSON, and SARIF from the same check result.
+- [ ] Add SARIF output for parse, prose, and safety findings so GitHub code scanning can ingest results.
+- [ ] Add JUnit XML output for CI systems that gate on unsafe runbook changes.
+- [ ] Add a GitHub Actions workflow that runs tests, smoke checks, schema generation, benchmark, and Markdown lint.
+- [ ] Add a pre-commit-friendly command that validates only changed runbooks quickly.
+- [ ] Add a `frv audit --format json` option for machine-readable directory audits.
+- [ ] Add recursive audit filtering by glob, expected safety label, and case-study category.
+- [ ] Add CLI exit-code documentation for safe, unsafe, parse error, benchmark failure, and inconclusive states.
+- [ ] Add a rich terminal summary with counts by severity, property, source file, and remediation class.
+- [ ] Add example GitHub PR comments showing how verifier traces should be reviewed by operators.
+- [ ] Add formal TLA+ exports with concrete state variables for services, queues, databases, alerts, and dependencies.
+- [ ] Add Alloy exports with concrete signatures for entities and bounded assertions matching checker invariants.
+- [ ] Add Apalache/TLC invocation docs that clearly separate generated starter specs from proved models.
+- [ ] Add round-trip tests ensuring exporter action comments and property names stay synchronized with checker behavior.
+- [ ] Add a formal-methods limitations note for each exporter explaining abstraction gaps and trusted assumptions.
+- [ ] Add tutorials converting a prose-only runbook into executable DSL in small reviewable increments.
+- [ ] Add examples for safe rollback, unsafe rollback, safe queue pause, unsafe queue pause, and alert-suppression policy.
+- [ ] Add examples for multi-service dependency ordering and feature-flag controlled mitigation.
+- [ ] Add examples that intentionally hit each parser error class with expected diagnostics.
+- [ ] Add a glossary of operational and formal-methods terms for SRE and research readers.
+- [ ] Add architecture decision records for DSL shape, bounded checking, Markdown embedding, and exporter scope.
+- [ ] Add API documentation for Python library users embedding parser/checker/benchmark functionality.
+- [ ] Add package metadata classifiers, project URLs, and optional extras documentation for PyPI readiness.
+- [ ] Add a release checklist with tests, benchmark regeneration, schema compatibility, and changelog requirements.
+- [ ] Add a changelog summarizing verifier, DSL, dataset, and documentation changes by version.
+- [ ] Add mutation tests or table-driven adversarial tests for action semantics and invariant interactions.
+- [ ] Add fuzz tests for parser robustness using only standard-library or optional test dependencies.
+- [ ] Add golden-file tests for CLI Markdown/JSON reports and formal exports.
+- [ ] Add tests for audit behavior on directories containing mixed valid, invalid, safe, and unsafe runbooks.
+- [ ] Add tests for line-number diagnostics in JSON and Markdown embedded runbooks.
+- [ ] Add performance tests for large dependency DAGs, high replica counts, and broad independent step sets.
+- [ ] Add memory-use notes and safeguards for large state spaces in research experiments.
+- [ ] Add a paper-ready evaluation plan with research questions, datasets, metrics, threats to validity, and replication steps.
+- [ ] Add tables summarizing properties, action semantics, datasets, and empirical results for direct paper reuse.
+- [ ] Add an industry adoption guide covering CI rollout, runbook authoring conventions, and reviewer responsibilities.
+- [ ] Add governance docs for accepting new action semantics and safety properties without weakening soundness claims.
+- [ ] Add an issue template for proposing new operational hazards with minimal reproducer runbooks.

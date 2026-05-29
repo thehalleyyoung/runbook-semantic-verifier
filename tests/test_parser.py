@@ -24,6 +24,16 @@ class ParserTests(unittest.TestCase):
         with self.assertRaises(RunbookParseError):
             parse_runbook({"system": {}, "steps": [{"id": "x", "action": "toggle_flag", "after": ["missing"]}]})
 
+    def test_rejects_dependency_cycles(self):
+        with self.assertRaisesRegex(RunbookParseError, "dependency cycle"):
+            parse_runbook({
+                "system": {},
+                "steps": [
+                    {"id": "a", "action": "wait", "params": {"minutes": 1}, "after": ["b"]},
+                    {"id": "b", "action": "wait", "params": {"minutes": 1}, "after": ["a"]},
+                ],
+            })
+
 
 if __name__ == "__main__":
     unittest.main()
@@ -42,6 +52,18 @@ class ParserValidationTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(RunbookParseError, "unknown alert"):
             parse_runbook(doc)
+
+    def test_rejects_invalid_numeric_bounds(self):
+        with self.assertRaisesRegex(RunbookParseError, "positive integer"):
+            parse_runbook({
+                "system": {"alerts": {"a": {}}},
+                "steps": [{"id": "x", "action": "suppress_alert", "params": {"alert": "a", "expires_after_minutes": 0}}],
+            })
+        with self.assertRaisesRegex(RunbookParseError, "non-negative integer"):
+            parse_runbook({
+                "system": {},
+                "steps": [{"id": "x", "action": "wait", "params": {"minutes": -1}}],
+            })
 
     def test_source_path_is_attached_to_steps(self):
         runbook = load_runbook(ROOT / "examples" / "safe_runbook.json")
