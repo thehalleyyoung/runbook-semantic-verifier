@@ -1,6 +1,7 @@
 {
   "findings": [
     {
+      "id": "finding-001",
       "line": null,
       "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
@@ -16,6 +17,7 @@
       "type": "semantic"
     },
     {
+      "id": "finding-002",
       "line": null,
       "message": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
@@ -32,6 +34,7 @@
     },
     {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "id": "finding-003",
       "line": 20,
       "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
@@ -44,6 +47,7 @@
     },
     {
       "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
+      "id": "finding-004",
       "line": 18,
       "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
@@ -56,6 +60,7 @@
     },
     {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "id": "finding-005",
       "line": 20,
       "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",

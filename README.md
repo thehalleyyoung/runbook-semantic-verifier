@@ -16,6 +16,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/compl
 PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format markdown --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -107,6 +108,7 @@ src/runbook_verify/
   parser.py     JSON loader plus optional YAML support
   actions.py    operational semantics for runbook actions
   checker.py    bounded state-space explorer and safety checker
+  explanation.py finding ids plus rule/source/state-delta explanations
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
   exporter.py   TLA+/Alloy-like text exporters
   benchmark.py  benchmark harness and JSON/Markdown result renderers
@@ -140,8 +142,17 @@ limitation, and CI thresholds are tunable:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format json --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format json
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --fail-on error
 ```
+
+Audit JSON and Markdown reports include deterministic `finding-NNN` ids. `frv
+explain` recomputes the same ordered finding set for a file or directory and
+expands one id into the relevant small-step rule, shortest trace, declared
+causal dependencies, source line/excerpt, state delta before/after the failing
+step when executable, weakest-precondition hint, and bounded remediation
+examples. This is intended for review comments and incident-readiness drills,
+not for claiming unsound proof beyond the modeled DSL abstraction.
 
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, credential handling, customer-notification gaps, rollback ambiguity,
@@ -158,7 +169,9 @@ linter flags destructive `forget/remove/delete` and data-deletion operations
 that lack executable blast-radius/capacity or restore-path preconditions, and
 the derived executable model reports a queue fallback/backlog hazard. The
 combined audit report is checked in as `reports/current_impact_audit.md` and
-`reports/current_impact_audit.json`.
+`reports/current_impact_audit.json`; the first finding's explain report is
+checked in as `reports/current_impact_explain.md` and
+`reports/current_impact_explain.json`.
 
 ## Historical public case study
 

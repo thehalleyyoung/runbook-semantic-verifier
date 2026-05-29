@@ -1,0 +1,37 @@
+{
+  "action": "pause_queue",
+  "action_error": null,
+  "causal_dependencies": {
+    "declared_after": [],
+    "prior_trace_steps": []
+  },
+  "id": "finding-001",
+  "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
+  "remediation": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+  "remediation_examples": [
+    "Resume the queue after the maintenance step.",
+    "Drain backlog before pausing consumers."
+  ],
+  "rule": "no_paused_queue_with_backlog",
+  "semantic_obligation": "no_paused_queue_with_backlog",
+  "severity": "error",
+  "small_step_rule": "PostInvariant.QueueBacklogProgress",
+  "source": {
+    "excerpt": "\"id\": \"delete-stale-tenant-indexes\",",
+    "line": 77,
+    "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+  },
+  "state_delta": [
+    {
+      "after": "True",
+      "before": "False",
+      "field": "queues.tenant-index-fallback-scan.paused"
+    }
+  ],
+  "step": "delete-stale-tenant-indexes",
+  "trace": [
+    "delete-stale-tenant-indexes"
+  ],
+  "type": "semantic",
+  "weakest_precondition_hint": "A terminal paused queue is safe only when backlog is bounded or alternate consumers remain active."
+}

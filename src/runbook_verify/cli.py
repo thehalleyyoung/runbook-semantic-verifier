@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
+from .explanation import ExplainError, explain_finding, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .parser import RunbookParseError, load_runbook
@@ -38,6 +39,10 @@ def main(argv: list[str] | None = None) -> int:
     bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
     bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
     bench_p.add_argument("--format", choices=["json", "markdown"], default="json")
+    explain_p = sub.add_parser("explain", help="explain an audit/check finding with rule, trace, source, and remediation context")
+    explain_p.add_argument("path", help="runbook file or directory used to produce the finding")
+    explain_p.add_argument("finding_id", help="finding id such as finding-001 from `frv audit --format json`")
+    explain_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     lint_p = sub.add_parser("lint-markdown", help="lint Markdown runbook prose for dangerous unmodeled operations")
     lint_p.add_argument("path")
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -61,6 +66,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.expect_findings:
             return 0 if findings else 1
         return 1 if has_findings_at_or_above(findings, args.fail_on) else 0
+    if args.command == "explain":
+        try:
+            explanation = explain_finding(args.path, args.finding_id)
+        except ExplainError as exc:
+            print(f"explain error: {exc}", file=sys.stderr)
+            return 2
+        print(render_explanation_json(explanation) if args.format == "json" else render_explanation_markdown(explanation), end="")
+        return 0
     if args.command == "schema":
         print(render_json_schema(), end="")
         return 0
@@ -157,7 +170,7 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "message": violation.message,
                 "recommendation": violation.remediation,
             })
-    audit_findings = _rank_audit_findings(audit_findings)
+    audit_findings = _with_finding_ids(_rank_audit_findings(audit_findings))
     if output_format == "json":
         print(json.dumps({"summary": _audit_summary(runbook_summaries, audit_findings), "runbooks": runbook_summaries, "findings": audit_findings}, indent=2, sort_keys=True))
     elif output_format == "markdown":
@@ -212,6 +225,10 @@ def _rank_audit_findings(findings: list[dict[str, object]]) -> list[dict[str, ob
     return sorted(findings, key=lambda item: (-int(item["rank"]), str(item.get("path", "")), int(item.get("line") or 0), str(item.get("rule", ""))))
 
 
+def _with_finding_ids(findings: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [dict(finding, id=f"finding-{idx:03d}") for idx, finding in enumerate(findings, start=1)]
+
+
 def _audit_summary(runbooks: list[dict[str, object]], findings: list[dict[str, object]]) -> dict[str, object]:
     by_severity: dict[str, int] = {}
     by_rule: dict[str, int] = {}
@@ -247,12 +264,12 @@ def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findin
             lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | {item['violations']} |")
         lines.append("")
     if findings:
-        lines.extend(["| Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation |", "| ---: | --- | --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| ID | Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation |", "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |"])
         for finding in findings:
             location = f"{finding.get('path')}:{finding.get('line') or ''}"
             message = str(finding.get("message", "")).replace("|", "\\|")
             recommendation = str(finding.get("recommendation", "") or "").replace("|", "\\|")
-            lines.append(f"| {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} |")
+            lines.append(f"| `{finding['id']}` | {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} |")
     return "\n".join(lines) + "\n"
 
 
