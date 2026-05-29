@@ -19,6 +19,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format sarif --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format junit --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -114,6 +115,7 @@ src/runbook_verify/
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
   exporter.py   TLA+/Alloy-like text exporters
   benchmark.py  benchmark harness and JSON/Markdown result renderers
+  semantic_diff.py PR-oriented semantic diff and counterexample delta
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -200,6 +202,26 @@ Run it directly:
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 ```
+
+For pull-request review, `frv diff old new` compares two executable runbook
+models as programs rather than as text. It classifies changed step order,
+actions, preconditions, effects, state assumptions, and verification settings;
+then it reports introduced, resolved, and persisting counterexample traces plus
+proof-obligation deltas. By default it exits non-zero only for semantic
+regressions, so it can gate unsafe changes while allowing remediation diffs:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli diff \
+  case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md \
+  case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md \
+  --format markdown
+```
+
+The bounded remediation fixture is not original GitHub procedure text; it is a
+public-data-derived variant that moves the quorum/data-safety confirmation
+before the modeled failover. Checked-in reports live at
+`reports/github_oct21_semantic_diff.md` and
+`reports/github_oct21_semantic_diff.json`.
 
 ## Benchmark harness
 

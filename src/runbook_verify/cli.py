@@ -14,6 +14,7 @@ from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .parser import RunbookParseError, load_runbook
 from .schema import render_json_schema
+from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -44,6 +45,11 @@ def main(argv: list[str] | None = None) -> int:
     explain_p.add_argument("path", help="runbook file or directory used to produce the finding")
     explain_p.add_argument("finding_id", help="finding id such as finding-001 from `frv audit --format json`")
     explain_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    diff_p = sub.add_parser("diff", help="compare two runbooks as semantic programs for PR review")
+    diff_p.add_argument("old")
+    diff_p.add_argument("new")
+    diff_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    diff_p.add_argument("--fail-on", choices=["semantic-regression", "none"], default="semantic-regression")
     lint_p = sub.add_parser("lint-markdown", help="lint Markdown runbook prose for dangerous unmodeled operations")
     lint_p.add_argument("path")
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -75,6 +81,16 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(render_explanation_json(explanation) if args.format == "json" else render_explanation_markdown(explanation), end="")
         return 0
+    if args.command == "diff":
+        try:
+            result = diff_runbooks(args.old, args.new)
+        except RunbookParseError as exc:
+            _print_parse_error(exc, "text")
+            return 2
+        print(render_diff_json(result) if args.format == "json" else render_diff_markdown(result), end="")
+        if args.fail_on == "none":
+            return 0
+        return 0 if result.pass_ else 1
     if args.command == "schema":
         print(render_json_schema(), end="")
         return 0

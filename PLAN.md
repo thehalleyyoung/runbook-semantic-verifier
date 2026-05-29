@@ -40,7 +40,7 @@ Operational runbooks are programs over infrastructure state, even when they are 
 - `frv validate`: fast schema, parser, entity, dependency, and type checks for pre-commit use.
 - `frv check`: bounded verification with minimized counterexample traces and remediation hints.
 - `frv audit`: Markdown/wiki scan for dangerous operations prose, stale assumptions, missing executable blocks, and unsafe suppressions.
-- `frv diff old new`: semantic pull-request review for changed effects, assumptions, invariants, waivers, and reachable hazards.
+- `frv diff old new`: implemented semantic pull-request review for changed effects, assumptions, verification settings, proof-obligation deltas, and reachable counterexample deltas.
 - `frv explain FINDING`: show the rule, state delta, source lines, weakest-precondition hint, and suggested fix for one diagnostic.
 - `frv readiness`: service or repository incident-readiness report covering verification status, audit severity, stale preconditions, and uncovered critical paths.
 - `frv owner-scorecard`: team-facing scorecard for verified runbooks, open hazards, waiver debt, benchmark regressions, and freshness.

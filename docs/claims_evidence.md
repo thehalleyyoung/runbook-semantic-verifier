@@ -4,10 +4,11 @@
 
 This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
-fixture, and a current public-documentation case study. The historical fixture
-reconstructs the GitHub October 21, 2018 MySQL failover incident from public
-postmortem facts. The current case study analyzes short attributed excerpts from
-Grafana Tempo's public runbook and checks a derived executable safety model.
+fixture with a semantic remediation diff, and a current public-documentation
+case study. The historical fixture reconstructs the GitHub October 21, 2018
+MySQL failover incident from public postmortem facts. The current case study
+analyzes short attributed excerpts from Grafana Tempo's public runbook and
+checks a derived executable safety model.
 
 ## Bounded novelty claim
 
@@ -33,12 +34,17 @@ differently named system exists.
 - The benchmark records states explored, terminal traces explored, violations by
   property, prose findings by rule, expected labels when present, runtime, and
   pass/fail.
+- The semantic diff reports model-level changes, assumption weakenings,
+  proof-obligation deltas, and introduced/resolved/persisting counterexample
+  traces between two bounded executable runbook models.
 
 ## What is not proven
 
 - This is not a full temporal model checker for arbitrary distributed systems.
 - The historical fixture is reconstructed from public facts, not exact original
   runbook text.
+- The GitHub quorum-guard remediation fixture is a bounded counterfactual model
+  for verifier evaluation, not a claim about GitHub's internal procedures.
 - The abstractions do not prove what GitHub's private systems did internally.
 - Absence of violations means no modeled property failed within the configured
   bound; it is not proof of operational safety in production.
@@ -61,6 +67,9 @@ differently named system exists.
   `ef18cc176e44dea795543f50cb2341f5ea9e7827`
 - Source repository license text observed: AGPL-3.0.
 - Checked-in evidence:
+  - `case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md`
+  - `reports/github_oct21_semantic_diff.json`
+  - `reports/github_oct21_semantic_diff.md`
   - `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`
   - `reports/current_impact.json`
   - `reports/current_impact.md`
@@ -95,10 +104,13 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json -
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 ```
 
 Expected result: tests pass; benchmark `aggregate.pass` is `true`; the GitHub
 case-study runbook reports `precondition` and
 `quorum_before_data_loss_action` violations; the current-impact benchmark reports
 `destructive-delete-needs-targeting`, `no_queue_pause_without_drain_plan`, and
-`no_paused_queue_with_backlog`.
+`no_paused_queue_with_backlog`; the GitHub semantic diff reports zero introduced
+counterexamples and resolves the modeled `precondition` and
+`quorum_before_data_loss_action` traces.

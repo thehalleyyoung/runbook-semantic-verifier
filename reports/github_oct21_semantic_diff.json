@@ -1,0 +1,117 @@
+{
+  "changes": [
+    {
+      "classification": "safety_relevant",
+      "field": "steps",
+      "kind": "step_order_changed",
+      "new": [
+        "confirm-reconciled-topology",
+        "orchestrator-failover-to-west",
+        "lock-deployments",
+        "pause-webhooks",
+        "pause-pages-builds"
+      ],
+      "object": "runbook",
+      "old": [
+        "orchestrator-failover-to-west",
+        "lock-deployments",
+        "pause-webhooks",
+        "pause-pages-builds",
+        "confirm-reconciled-topology"
+      ]
+    }
+  ],
+  "introduced_counterexamples": [],
+  "new_name": "GitHub Oct21 2018 MySQL failover reconstruction with quorum guard",
+  "new_path": "case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md",
+  "new_safe": true,
+  "old_name": "GitHub Oct21 2018 MySQL failover reconstruction",
+  "old_path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+  "old_safe": false,
+  "pass": true,
+  "persisting_counterexamples": [],
+  "resolved_counterexamples": [
+    {
+      "message": "step orchestrator-failover-to-west requires {'kind': 'database_quorum_confirmed', 'database': 'mysql-metadata'}",
+      "property": "precondition",
+      "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+      "step": "orchestrator-failover-to-west",
+      "trace": [
+        "orchestrator-failover-to-west"
+      ]
+    },
+    {
+      "message": "database mysql-metadata failover has data-loss risk before quorum confirmation",
+      "property": "quorum_before_data_loss_action",
+      "remediation": "Confirm quorum or explicit data-loss approval before failover.",
+      "step": "orchestrator-failover-to-west",
+      "trace": [
+        "orchestrator-failover-to-west"
+      ]
+    }
+  ],
+  "semantic_obligation_deltas": {
+    "action_defined": {
+      "checked": {
+        "delta": 0,
+        "new": 5,
+        "old": 5
+      },
+      "failures": {
+        "delta": 0,
+        "new": 0,
+        "old": 0
+      }
+    },
+    "precondition": {
+      "checked": {
+        "delta": -1,
+        "new": 1,
+        "old": 2
+      },
+      "failures": {
+        "delta": -2,
+        "new": 0,
+        "old": 2
+      }
+    },
+    "promised_effect": {
+      "checked": {
+        "delta": 0,
+        "new": 0,
+        "old": 0
+      },
+      "failures": {
+        "delta": 0,
+        "new": 0,
+        "old": 0
+      }
+    },
+    "safety_postcondition": {
+      "checked": {
+        "delta": 0,
+        "new": 20,
+        "old": 20
+      },
+      "failures": {
+        "delta": 0,
+        "new": 0,
+        "old": 0
+      }
+    }
+  },
+  "summary": {
+    "assumption_changes": 0,
+    "assumption_weakenings": 0,
+    "changes": 1,
+    "effect_changes": 0,
+    "introduced_counterexamples": 0,
+    "invariant_changes": 0,
+    "new_states_explored": 6,
+    "old_states_explored": 6,
+    "persisting_counterexamples": 0,
+    "resolved_counterexamples": 2,
+    "safety_relevant_changes": 1,
+    "waiver_changes": 0
+  }
+}
