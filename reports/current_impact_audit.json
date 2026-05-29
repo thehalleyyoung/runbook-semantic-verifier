@@ -1,8 +1,31 @@
 {
   "findings": [
     {
+      "autofix_suggestions": [
+        {
+          "applicability": "manual",
+          "kind": "add-preconditions",
+          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+          "replacement": "[\n  {\n    \"count\": 1,\n    \"kind\": \"service_available_at_least\",\n    \"service\": \"TODO-service\"\n  }\n]",
+          "title": "Add missing semantic preconditions/effects"
+        }
+      ],
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
       "id": "finding-001",
-      "line": null,
+      "line": 21,
+      "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 3,
+      "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
+      "rule": "data-deletion-needs-restore-precondition",
+      "semantic_obligation": "restore_path_and_blast_radius_limited",
+      "severity": "error",
+      "type": "prose"
+    },
+    {
+      "hoare_triple": "{ duplicate_risk is false and replay guards preserve it } action_effect: unsafe replay may set duplicate_risk=true { duplicate_risk remains false }",
+      "id": "finding-002",
+      "line": 105,
       "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 3,
@@ -23,8 +46,31 @@
       "type": "semantic"
     },
     {
-      "id": "finding-002",
-      "line": null,
+      "hoare_triple": "{ replay has dedupe_key, idempotent=true, positive dedupe window, or count=0 } action_effect: replay_messages adds messages { replay does not introduce duplicate-processing risk }",
+      "id": "finding-003",
+      "line": 105,
+      "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 3,
+      "recommendation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
+      "rule": "no_replay_without_dedupe",
+      "semantic_obligation": "no_replay_without_dedupe",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
+      "severity": "error",
+      "small_step_rule": "ActionGuard.MessageReplayDeduplication",
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ],
+      "type": "semantic"
+    },
+    {
+      "hoare_triple": "{ duplicate_risk is false and replay guards preserve it } action_effect: unsafe replay may set duplicate_risk=true { duplicate_risk remains false }",
+      "id": "finding-004",
+      "line": 123,
       "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 3,
@@ -48,8 +94,9 @@
       "type": "semantic"
     },
     {
-      "id": "finding-003",
-      "line": null,
+      "hoare_triple": "{ depth=0 or target consumers>0 } action_effect: rebalance_consumers sets consumer count { backlog is not assigned zero consumers }",
+      "id": "finding-005",
+      "line": 123,
       "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 3,
@@ -72,29 +119,9 @@
       "type": "semantic"
     },
     {
-      "id": "finding-004",
-      "line": null,
-      "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
-      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "rank": 3,
-      "recommendation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
-      "rule": "no_replay_without_dedupe",
-      "semantic_obligation": "no_replay_without_dedupe",
-      "semantic_trace": [
-        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
-        "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
-      ],
-      "severity": "error",
-      "small_step_rule": "ActionGuard.MessageReplayDeduplication",
-      "step": "delete-stale-tenant-indexes-trigger-fallback",
-      "trace": [
-        "delete-stale-tenant-indexes-trigger-fallback"
-      ],
-      "type": "semantic"
-    },
-    {
-      "id": "finding-005",
-      "line": null,
+      "hoare_triple": "{ depth=0 or consumer_group_stable=true } action_effect: rebalance/replay may leave backlog { backlog is processed only by a stable consumer group }",
+      "id": "finding-006",
+      "line": 123,
       "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 3,
@@ -118,8 +145,9 @@
       "type": "semantic"
     },
     {
-      "id": "finding-006",
-      "line": null,
+      "hoare_triple": "{ depth=0 or consumers>0 } action_effect: replay/rebalance may change depth or consumers { backlog has at least one consumer }",
+      "id": "finding-007",
+      "line": 123,
       "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 3,
@@ -141,28 +169,6 @@
         "rebalance-fallback-consumers"
       ],
       "type": "semantic"
-    },
-    {
-      "autofix_suggestions": [
-        {
-          "applicability": "manual",
-          "kind": "add-preconditions",
-          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
-          "replacement": "[\n  {\n    \"count\": 1,\n    \"kind\": \"service_available_at_least\",\n    \"service\": \"TODO-service\"\n  }\n]",
-          "title": "Add missing semantic preconditions/effects"
-        }
-      ],
-      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
-      "id": "finding-007",
-      "line": 21,
-      "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
-      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "rank": 3,
-      "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
-      "rule": "data-deletion-needs-restore-precondition",
-      "semantic_obligation": "restore_path_and_blast_radius_limited",
-      "severity": "error",
-      "type": "prose"
     },
     {
       "autofix_suggestions": [
@@ -226,6 +232,7 @@
   "profile": null,
   "runbooks": [
     {
+      "annotation_warnings": 0,
       "name": "Grafana Tempo current public runbook derived safety model",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "safe": false,
@@ -241,7 +248,8 @@
       },
       "states_explored": 3,
       "terminal_traces": 1,
-      "violations": 6
+      "violations": 6,
+      "waivers_applied": 0
     }
   ],
   "summary": {

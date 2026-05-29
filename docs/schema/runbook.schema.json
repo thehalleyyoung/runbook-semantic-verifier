@@ -152,6 +152,38 @@
         {
           "additionalProperties": false,
           "properties": {
+            "credential": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "credential_active"
+            }
+          },
+          "required": [
+            "credential",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "credential": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "credential_revoked"
+            }
+          },
+          "required": [
+            "credential",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "database": {
               "type": "string"
             },
@@ -569,6 +601,72 @@
           "type": "object"
         }
       ]
+    },
+    "effect_annotations": {
+      "additionalProperties": false,
+      "properties": {
+        "blast_radius": {
+          "type": "string"
+        },
+        "effect_types": {
+          "items": {
+            "enum": [
+              "credential_revocation",
+              "customer_visible_degradation",
+              "deletion",
+              "irreversible_state_change",
+              "manual_sql",
+              "queue_replay",
+              "traffic_drain"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "expected_user_impact": {
+          "type": "string"
+        },
+        "idempotency": {
+          "enum": [
+            "idempotent",
+            "non_idempotent",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "retry_safety": {
+          "enum": [
+            "safe",
+            "unsafe",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "reversibility": {
+          "enum": [
+            "irreversible",
+            "reversible",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "reviewed_by": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "effect_types",
+        "idempotency",
+        "reversibility",
+        "retry_safety",
+        "blast_radius",
+        "expected_user_impact"
+      ],
+      "type": "object"
     },
     "step": {
       "additionalProperties": false,
@@ -1258,6 +1356,35 @@
           "if": {
             "properties": {
               "action": {
+                "const": "revoke_credential"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks a credential revoked so dependent actions must use rotated credentials before continuing. Denotation: Sets credentials[credential].revoked := true; ownership metadata and all non-credential state are framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "credential": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "rollback_deployment"
               }
             },
@@ -1280,6 +1407,35 @@
                 },
                 "required": [
                   "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rotate_credential"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Clears revoked/rotation-due state for a modeled credential after rotation. Denotation: Sets credentials[credential].revoked := false and rotation_due_minute := None after modeled rotation evidence.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "credential": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "credential"
                 ],
                 "type": "object"
               }
@@ -1586,7 +1742,9 @@
             "restore_replica",
             "resume_cache_writes",
             "resume_queue",
+            "revoke_credential",
             "rollback_deployment",
+            "rotate_credential",
             "run_migration",
             "scale_service",
             "shift_traffic",
@@ -1603,6 +1761,9 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "effect_annotations": {
+          "$ref": "#/$defs/effect_annotations"
         },
         "effects": {
           "items": {
@@ -1653,9 +1814,67 @@
           },
           "type": "object"
         },
+        "caches": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "capacity_entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "service": {
+                "type": "string"
+              },
+              "stale_read_risk": {
+                "type": "boolean"
+              },
+              "warm": {
+                "type": "boolean"
+              },
+              "warmup_entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "write_frozen": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "service"
+            ],
+            "type": "object"
+          },
+          "type": "object"
+        },
         "clock_minute": {
           "minimum": 0,
           "type": "integer"
+        },
+        "credentials": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "owner": {
+                "type": "string"
+              },
+              "revoked": {
+                "type": "boolean"
+              },
+              "rotation_due_minute": {
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
         },
         "databases": {
           "additionalProperties": {
@@ -1794,42 +2013,6 @@
             },
             "type": "object"
           },
-          "caches": {
-            "additionalProperties": {
-              "additionalProperties": false,
-              "properties": {
-                "capacity_entries": {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                "entries": {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                "service": {
-                  "type": "string"
-                },
-                "stale_read_risk": {
-                  "type": "boolean"
-                },
-                "warm": {
-                  "type": "boolean"
-                },
-                "warmup_entries": {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                "write_frozen": {
-                  "type": "boolean"
-                }
-              },
-              "required": [
-                "service"
-              ],
-              "type": "object"
-            },
-            "type": "object"
-          },
           "type": "object"
         },
         "regions": {
@@ -1919,6 +2102,48 @@
         }
       },
       "type": "object"
+    },
+    "waiver": {
+      "additionalProperties": false,
+      "properties": {
+        "benchmark_visibility": {
+          "enum": [
+            "blocking",
+            "hidden",
+            "visible"
+          ],
+          "type": "string"
+        },
+        "expiry": {
+          "format": "date",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "invariant": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "owner",
+        "expiry",
+        "scope",
+        "rationale",
+        "invariant",
+        "benchmark_visibility"
+      ],
+      "type": "object"
     }
   },
   "$id": "https://formal-runbook-verification.local/schema/runbook.schema.json",
@@ -1937,6 +2162,47 @@
     },
     "metadata": {
       "additionalProperties": true,
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "owners": {
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "service_owners": {
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "type": "object"
+        },
+        "waivers": {
+          "items": {
+            "$ref": "#/$defs/waiver"
+          },
+          "type": "array"
+        }
+      },
       "type": "object"
     },
     "name": {

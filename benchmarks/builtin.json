@@ -222,6 +222,36 @@
       ]
     },
     {
+      "path": "../examples/credential_rotation_runbook.json",
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored safe credential rotation regression fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": true,
+        "violation_properties": [],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic credential rotation fixture; contains no real secrets."
+      },
+      "validity_threats": [
+        "Small synthetic state space; exercises credential semantics rather than a production incident."
+      ],
+      "semantic_features": [
+        "credential_rotation",
+        "credential_revocation",
+        "effect_annotations"
+      ]
+    },
+    {
       "path": "../examples/real_world/kubernetes_region_failover.md",
       "provenance": {
         "kind": "real-world-style",
@@ -336,6 +366,7 @@
         "public_current_case",
         "markdown_prose_lint",
         "message_replay",
+        "effect_annotations",
         "dead_letter_queue",
         "dedupe_key",
         "consumer_group_rebalance",

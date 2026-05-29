@@ -2,10 +2,10 @@
   "aggregate": {
     "adoption_summary": {
       "oracle_review_labels": {
-        "false_positive": 11,
-        "true_hazard": 11,
-        "unsupported_claim": 11,
-        "useful_warning": 11
+        "false_positive": 12,
+        "true_hazard": 12,
+        "unsupported_claim": 12,
+        "useful_warning": 12
       },
       "remediation_actions": [
         "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
@@ -38,9 +38,9 @@
     },
     "pass": true,
     "performance_counters": {
-      "avg_branch_factor": 2.117021276595745,
-      "branch_factor_total": 199,
-      "branch_points": 94,
+      "avg_branch_factor": 2.09375,
+      "branch_factor_total": 201,
+      "branch_points": 96,
       "max_branch_factor": 5,
       "max_depth_reached": true,
       "minimized_counterexample_trace_length": 1,
@@ -49,14 +49,14 @@
         "safety_postcondition": 91
       },
       "proof_obligations_checked": {
-        "action_defined": 199,
+        "action_defined": 201,
         "precondition": 124,
-        "promised_effect": 18,
-        "safety_postcondition": 1326
+        "promised_effect": 20,
+        "safety_postcondition": 1328
       },
       "reductions_applied": 0,
       "semantic_rule_counts": {
-        "Action.Execute": 199,
+        "Action.Execute": 201,
         "ActionGuard.AlertSuppressionBound": 20,
         "ActionGuard.CacheFlushWriteFreeze": 2,
         "ActionGuard.CacheWarmupBeforeTraffic": 6,
@@ -71,7 +71,7 @@
         "ActionGuard.RollbackMigrationCompatibility": 16,
         "ActionPreserves.ServiceAvailability": 56,
         "Explore.BudgetReached": 4,
-        "Explore.Terminal": 9,
+        "Explore.Terminal": 10,
         "PostInvariant.ConsumerGroupStableForBacklog": 2,
         "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
         "PostInvariant.NoDuplicateReplayProcessing": 4,
@@ -80,13 +80,13 @@
         "PostInvariant.ServiceHasReplica": 36,
         "Schedule.DependencyReady": 184,
         "Schedule.OperatorChoice": 166,
-        "Schedule.SequenceNext": 15,
+        "Schedule.SequenceNext": 17,
         "StepEnabled.Requires": 1
       },
-      "states_explored": 107,
+      "states_explored": 110,
       "symbolic_splits": 0,
-      "terminal_traces": 13,
-      "transitions_explored": 199
+      "terminal_traces": 14,
+      "transitions_explored": 201
     },
     "prose_findings_by_rule": {
       "backfill-needs-queue-capacity": 1,
@@ -96,15 +96,15 @@
       "failover-needs-health-and-quorum": 3,
       "prose-suppression-applied": 1
     },
-    "runbooks": 11,
-    "runtime_seconds": 0.021649458998581395,
-    "states_explored": 107,
-    "traces_explored": 13,
+    "runbooks": 12,
+    "runtime_seconds": 0.01906416699057445,
+    "states_explored": 110,
+    "traces_explored": 14,
     "validity_threat_categories": {
       "abstraction_bias": 4,
-      "bounded_search_limits": 6,
+      "bounded_search_limits": 7,
       "public_data_incompleteness": 5,
-      "synthetic_mutant_bias": 6
+      "synthetic_mutant_bias": 7
     },
     "violations_by_property": {
       "bounded_alert_suppression": 20,
@@ -131,19 +131,19 @@
     "workflow_baselines": {
       "bounded_checking": {
         "fail": 8,
-        "pass": 3
+        "pass": 4
       },
       "combined_workflow": {
         "fail": 0,
-        "pass": 11
+        "pass": 12
       },
       "prose_linting": {
         "fail": 4,
-        "pass": 7
+        "pass": 8
       },
       "schema_only_validation": {
         "fail": 0,
-        "pass": 11
+        "pass": 12
       },
       "semantic_diffing": {
         "configured_pairs": 1,
@@ -152,7 +152,7 @@
       },
       "type_effect_checking": {
         "fail": 8,
-        "pass": 3
+        "pass": 4
       }
     }
   },
@@ -231,6 +231,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
       "performance_counters": {
+        "annotation_warnings": 24,
         "avg_branch_factor": 2.4,
         "branch_factor_total": 84,
         "branch_points": 35,
@@ -254,10 +255,11 @@
         "states_explored": 36,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 84
+        "transitions_explored": 84,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.003107791009824723,
+      "runtime_seconds": 0.0028255000070203096,
       "safe": true,
       "states_explored": 36,
       "traces_explored": 1,
@@ -382,6 +384,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
       "performance_counters": {
+        "annotation_warnings": 64,
         "avg_branch_factor": 2.5806451612903225,
         "branch_factor_total": 80,
         "branch_points": 31,
@@ -414,10 +417,11 @@
         "states_explored": 32,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 80
+        "transitions_explored": 80,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.003721916989888996,
+      "runtime_seconds": 0.003740917018149048,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -541,6 +545,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_safe.json",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
@@ -563,10 +568,11 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 2
+        "transitions_explored": 2,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0008593339880462736,
+      "runtime_seconds": 0.0007244169828481972,
       "safe": true,
       "states_explored": 3,
       "traces_explored": 1,
@@ -690,6 +696,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_unsafe.json",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
@@ -720,10 +727,11 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 2
+        "transitions_explored": 2,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0010122499952558428,
+      "runtime_seconds": 0.0007067080005072057,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -845,6 +853,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/cache_flush_safe.json",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 4,
         "branch_points": 4,
@@ -867,10 +876,11 @@
         "states_explored": 5,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 4
+        "transitions_explored": 4,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0008731249836273491,
+      "runtime_seconds": 0.0006395420059561729,
       "safe": true,
       "states_explored": 5,
       "traces_explored": 1,
@@ -992,6 +1002,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/cache_flush_unsafe.json",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.5,
         "branch_factor_total": 3,
         "branch_points": 2,
@@ -1022,10 +1033,11 @@
         "states_explored": 4,
         "symbolic_splits": 0,
         "terminal_traces": 2,
-        "transitions_explored": 3
+        "transitions_explored": 3,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0009170830016955733,
+      "runtime_seconds": 0.0006420410063583404,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,
@@ -1071,6 +1083,139 @@
             "precondition": 3,
             "safety_postcondition": 4
           }
+        }
+      }
+    },
+    {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "adoption_summary": {
+          "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+          "remediation_actions": [
+            "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+          ],
+          "risk_classes_detected": []
+        },
+        "expected_result": {
+          "prose_rules": [],
+          "safe": true,
+          "violation_properties": []
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "oracle_review": {
+          "allowed_labels": [
+            "true_hazard",
+            "useful_warning",
+            "false_positive",
+            "unsupported_claim"
+          ],
+          "notes": "No independent SRE oracle review is claimed for this fixture.",
+          "status": "not-reviewed"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored safe credential rotation regression fixture."
+        },
+        "reproduction": {
+          "budget": "standard-library Python; intended to run in seconds on a laptop",
+          "commands": [
+            "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+          ],
+          "expected_outputs": [
+            "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+          ]
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic credential rotation fixture; contains no real secrets.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "credential_rotation",
+          "credential_revocation",
+          "effect_annotations"
+        ],
+        "validity_threat_categories": [
+          "bounded_search_limits",
+          "synthetic_mutant_bias"
+        ],
+        "validity_threats": [
+          "Small synthetic state space; exercises credential semantics rather than a production incident."
+        ]
+      },
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [],
+        "expected_safe": true,
+        "expected_violation_properties": []
+      },
+      "name": "Credential rotation with reviewed revocation effect",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/credential_rotation_runbook.json",
+      "performance_counters": {
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 2,
+          "safety_postcondition": 2
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 2,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.0005264579958748072,
+      "safe": true,
+      "states_explored": 3,
+      "traces_explored": 1,
+      "violations_by_property": {},
+      "workflow_baselines": {
+        "bounded_checking": {
+          "counterexamples": 0,
+          "pass": true,
+          "violations_by_property": {}
+        },
+        "combined_workflow": {
+          "pass": true,
+          "uses": [
+            "schema_only_validation",
+            "prose_linting",
+            "bounded_checking",
+            "type_effect_checking",
+            "semantic_diffing_when_configured"
+          ]
+        },
+        "prose_linting": {
+          "finding_count": 0,
+          "findings_by_rule": {},
+          "pass": true
+        },
+        "schema_only_validation": {
+          "errors": [],
+          "pass": true
+        },
+        "type_effect_checking": {
+          "pass": true,
+          "proof_obligation_failures": {}
         }
       }
     },
@@ -1156,6 +1301,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/real_world/kubernetes_region_failover.md",
       "performance_counters": {
+        "annotation_warnings": 8,
         "avg_branch_factor": 1.7142857142857142,
         "branch_factor_total": 12,
         "branch_points": 7,
@@ -1186,12 +1332,13 @@
         "states_explored": 8,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 12
+        "transitions_explored": 12,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.002065707987640053,
+      "runtime_seconds": 0.0018319999799132347,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -1326,6 +1473,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 5,
         "branch_points": 5,
@@ -1352,12 +1500,13 @@
         "states_explored": 6,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 5
+        "transitions_explored": 5,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0019665420113597065,
+      "runtime_seconds": 0.0015175000007729977,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -1476,6 +1625,7 @@
           "public_current_case",
           "markdown_prose_lint",
           "message_replay",
+          "effect_annotations",
           "dead_letter_queue",
           "dedupe_key",
           "consumer_group_rebalance",
@@ -1513,6 +1663,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "performance_counters": {
+        "annotation_warnings": 0,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
@@ -1543,7 +1694,8 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 2
+        "transitions_explored": 2,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "backfill-needs-queue-capacity": 1,
@@ -1551,7 +1703,7 @@
         "destructive-delete-needs-targeting": 1,
         "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.0021234580199234188,
+      "runtime_seconds": 0.0020874590263701975,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -1698,6 +1850,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
@@ -1727,10 +1880,11 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 2
+        "transitions_explored": 2,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0018038330017589033,
+      "runtime_seconds": 0.001213666022522375,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -1875,6 +2029,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
       "performance_counters": {
+        "annotation_warnings": 1,
         "avg_branch_factor": 1.5,
         "branch_factor_total": 3,
         "branch_points": 2,
@@ -1905,12 +2060,13 @@
         "states_explored": 4,
         "symbolic_splits": 0,
         "terminal_traces": 2,
-        "transitions_explored": 3
+        "transitions_explored": 3,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "cache-flush-needs-warmup-capacity": 2
       },
-      "runtime_seconds": 0.0018478749843779951,
+      "runtime_seconds": 0.001370416983263567,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,

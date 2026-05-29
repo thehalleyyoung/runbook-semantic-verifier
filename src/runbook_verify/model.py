@@ -112,6 +112,25 @@ class DNSRecord:
 
 
 @dataclass(frozen=True)
+class Credential:
+    name: str
+    owner: str = "unassigned"
+    revoked: bool = False
+    rotation_due_minute: int | None = None
+
+
+@dataclass(frozen=True)
+class Waiver:
+    id: str
+    owner: str
+    expiry: str
+    scope: str
+    rationale: str
+    invariant: str
+    benchmark_visibility: str = "visible"
+
+
+@dataclass(frozen=True)
 class SystemState:
     regions: dict[str, Region]
     services: dict[str, Service]
@@ -123,6 +142,7 @@ class SystemState:
     deployments: dict[str, Deployment]
     traffic_routes: dict[str, TrafficRoute]
     dns_records: dict[str, DNSRecord]
+    credentials: dict[str, Credential]
     clock_minute: int = 0
 
     def fingerprint(self) -> tuple[Any, ...]:
@@ -173,7 +193,10 @@ class SystemState:
             tuple(sorted(record.health_check_converged_regions)),
             record.allow_split_brain,
         ) for n, record in self.dns_records.items()))
-        return (self.clock_minute, regions, services, databases, queues, caches, alerts, flags, deployments, traffic_routes, dns_records)
+        credentials = tuple(sorted((
+            n, credential.owner, credential.revoked, credential.rotation_due_minute
+        ) for n, credential in self.credentials.items()))
+        return (self.clock_minute, regions, services, databases, queues, caches, alerts, flags, deployments, traffic_routes, dns_records, credentials)
 
 
 @dataclass(frozen=True)
@@ -184,6 +207,7 @@ class Step:
     after: tuple[str, ...] = ()
     requires: tuple[dict[str, Any], ...] = ()
     effects: tuple[dict[str, Any], ...] = ()
+    effect_annotations: dict[str, Any] = field(default_factory=dict)
     source_path: str | None = None
     source_line: int | None = None
 
@@ -197,3 +221,5 @@ class Runbook:
     max_depth: int
     allow_reordering: bool = True
     safety: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
+    waivers: tuple[Waiver, ...] = ()

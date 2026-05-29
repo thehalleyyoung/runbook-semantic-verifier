@@ -11,6 +11,7 @@
       "active_waivers": 0,
       "as_of": "2026-05-29",
       "blocking_prose_findings": 1,
+      "effect_annotation_warnings": 0,
       "expired_waivers": 0,
       "missing_rollback_steps": 0,
       "open_hazards": 7,
@@ -187,12 +188,14 @@
   "parse_errors": [],
   "path": "case_studies/current/grafana_tempo",
   "semantics": {
+    "effect_annotation_warning": "advisory debt for high-risk executable actions missing reviewed effect metadata",
     "open_hazard": "parse error, failed Hoare-style/safety obligation, blocking prose finding, missing rollback, stale assumption, or expired waiver",
     "owner_assignment": "metadata.owners, metadata.owner, metadata.team, or metadata.service_owners; otherwise unassigned",
     "verified_runbook": "parsed executable model with no bounded semantic counterexamples",
     "waiver_debt": "metadata.waivers entries with active or expired expiry dates; expired waivers are blocking debt"
   },
   "summary": {
+    "effect_annotation_warnings": 0,
     "open_hazards": 7,
     "owners": 1,
     "parse_errors": 0,

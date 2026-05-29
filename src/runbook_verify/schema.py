@@ -19,7 +19,16 @@ def build_json_schema() -> dict[str, Any]:
         "properties": {
             "name": {"type": "string"},
             "description": {"type": "string"},
-            "metadata": {"type": "object", "additionalProperties": True},
+            "metadata": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "owner": {"type": "string"},
+                    "owners": {"type": "array", "items": {"oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": True}]}},
+                    "service_owners": {"type": "object", "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]}},
+                    "waivers": {"type": "array", "items": {"$ref": "#/$defs/waiver"}},
+                },
+            },
             "allow_reordering": {"type": "boolean"},
             "max_depth": {"type": "integer", "minimum": 0},
             "safety": {
@@ -39,6 +48,8 @@ def build_json_schema() -> dict[str, Any]:
             "system": _system_schema(),
             "step": _step_schema(),
             "condition": _condition_schema(),
+            "waiver": _waiver_schema(),
+            "effect_annotations": _effect_annotation_schema(),
         },
     }
 
@@ -117,21 +128,21 @@ def _system_schema() -> dict[str, Any]:
                         "consumer_group_stable": {"type": "boolean"},
                     },
                 },
-                "caches": {
+            },
+            "caches": {
+                "type": "object",
+                "additionalProperties": {
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "object",
-                        "additionalProperties": False,
-                        "required": ["service"],
-                        "properties": {
-                            "service": {"type": "string"},
-                            "warm": {"type": "boolean"},
-                            "entries": {"type": "integer", "minimum": 0},
-                            "warmup_entries": {"type": "integer", "minimum": 0},
-                            "capacity_entries": {"type": "integer", "minimum": 0},
-                            "stale_read_risk": {"type": "boolean"},
-                            "write_frozen": {"type": "boolean"},
-                        },
+                    "additionalProperties": False,
+                    "required": ["service"],
+                    "properties": {
+                        "service": {"type": "string"},
+                        "warm": {"type": "boolean"},
+                        "entries": {"type": "integer", "minimum": 0},
+                        "warmup_entries": {"type": "integer", "minimum": 0},
+                        "capacity_entries": {"type": "integer", "minimum": 0},
+                        "stale_read_risk": {"type": "boolean"},
+                        "write_frozen": {"type": "boolean"},
                     },
                 },
             },
@@ -199,6 +210,18 @@ def _system_schema() -> dict[str, Any]:
                     },
                 },
             },
+            "credentials": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "owner": {"type": "string"},
+                        "revoked": {"type": "boolean"},
+                        "rotation_due_minute": {"type": ["integer", "null"], "minimum": 0},
+                    },
+                },
+            },
         },
     }
 
@@ -215,8 +238,47 @@ def _step_schema() -> dict[str, Any]:
             "after": {"type": "array", "items": {"type": "string"}},
             "requires": {"type": "array", "items": {"$ref": "#/$defs/condition"}},
             "effects": {"type": "array", "items": {"$ref": "#/$defs/condition"}},
+            "effect_annotations": {"$ref": "#/$defs/effect_annotations"},
         },
         "allOf": [_tagged_object_schema("action", "params", name, descriptor) for name, descriptor in sorted(ACTION_DESCRIPTORS.items())],
+    }
+
+
+def _waiver_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["id", "owner", "expiry", "scope", "rationale", "invariant", "benchmark_visibility"],
+        "properties": {
+            "id": {"type": "string"},
+            "owner": {"type": "string"},
+            "expiry": {"type": "string", "format": "date"},
+            "scope": {"type": "string"},
+            "rationale": {"type": "string"},
+            "invariant": {"type": "string"},
+            "benchmark_visibility": {"type": "string", "enum": ["blocking", "hidden", "visible"]},
+        },
+    }
+
+
+def _effect_annotation_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["effect_types", "idempotency", "reversibility", "retry_safety", "blast_radius", "expected_user_impact"],
+        "properties": {
+            "effect_types": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "enum": ["credential_revocation", "customer_visible_degradation", "deletion", "irreversible_state_change", "manual_sql", "queue_replay", "traffic_drain"]},
+            },
+            "idempotency": {"type": "string", "enum": ["idempotent", "non_idempotent", "unknown"]},
+            "reversibility": {"type": "string", "enum": ["irreversible", "reversible", "unknown"]},
+            "retry_safety": {"type": "string", "enum": ["safe", "unsafe", "unknown"]},
+            "blast_radius": {"type": "string"},
+            "expected_user_impact": {"type": "string"},
+            "reviewed_by": {"type": "array", "items": {"type": "string"}},
+        },
     }
 
 

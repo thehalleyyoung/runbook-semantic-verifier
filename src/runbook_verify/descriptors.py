@@ -127,6 +127,8 @@ ACTION_DESCRIPTORS: dict[str, OperationDescriptor] = {
     "update_dns_record": OperationDescriptor("update_dns_record", (F("record"), F("target_region")), "Changes a DNS record target region and starts the modeled TTL propagation window."),
     "mark_dns_health_check": OperationDescriptor("mark_dns_health_check", (F("record"), F("region"), F("converged", "boolean")), "Records whether DNS health checks have converged for a record's regional endpoint."),
     "finalize_dns_record": OperationDescriptor("finalize_dns_record", (F("record"),), "Clears a DNS record's prior target after the TTL wait obligation has elapsed."),
+    "revoke_credential": OperationDescriptor("revoke_credential", (F("credential"),), "Marks a credential revoked so dependent actions must use rotated credentials before continuing."),
+    "rotate_credential": OperationDescriptor("rotate_credential", (F("credential"),), "Clears revoked/rotation-due state for a modeled credential after rotation."),
 }
 
 CONDITION_DESCRIPTORS: dict[str, OperationDescriptor] = {
@@ -159,6 +161,8 @@ CONDITION_DESCRIPTORS: dict[str, OperationDescriptor] = {
     "dns_ttl_elapsed": OperationDescriptor("dns_ttl_elapsed", (F("record"),), "Requires or asserts that the record's TTL propagation window has elapsed."),
     "dns_health_check_converged": OperationDescriptor("dns_health_check_converged", (F("record"), F("region")), "Requires or asserts health-check convergence before DNS cutover."),
     "dns_no_split_brain": OperationDescriptor("dns_no_split_brain", (F("record"),), "Requires or asserts no active DNS split-brain window for stateful records."),
+    "credential_active": OperationDescriptor("credential_active", (F("credential"),), "Requires or asserts a credential is not revoked."),
+    "credential_revoked": OperationDescriptor("credential_revoked", (F("credential"),), "Requires or asserts a credential has been revoked."),
 }
 
 ACTION_SCHEMAS = {name: {"required": desc.required, "optional": desc.optional} for name, desc in ACTION_DESCRIPTORS.items()}

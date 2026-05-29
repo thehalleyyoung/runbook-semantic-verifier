@@ -42,6 +42,7 @@ class _OwnerAccumulator:
     runbooks: list[_RunbookAssessment] = field(default_factory=list)
     prose_findings: list[MarkdownFinding] = field(default_factory=list)
     semantic_findings: list[tuple[_RunbookAssessment, Violation]] = field(default_factory=list)
+    annotation_warnings: list[tuple[_RunbookAssessment, Violation]] = field(default_factory=list)
     parse_errors: list[dict[str, Any]] = field(default_factory=list)
     missing_rollback: list[dict[str, Any]] = field(default_factory=list)
     stale_assumptions: list[dict[str, Any]] = field(default_factory=list)
@@ -104,6 +105,7 @@ def build_owner_scorecard(path: str | Path, options: OwnerScorecardOptions | Non
             acc = accumulators.setdefault(owner, _OwnerAccumulator(owner))
             acc.runbooks.append(assessment)
             acc.semantic_findings.extend((assessment, violation) for violation in assessment.result.violations)
+            acc.annotation_warnings.extend((assessment, warning) for warning in assessment.result.annotation_warnings)
             acc.prose_findings.extend(prose_by_path.get(assessment.path, []))
             rollback = _missing_rollback_record(assessment)
             if rollback is not None:
@@ -144,6 +146,7 @@ def build_owner_scorecard(path: str | Path, options: OwnerScorecardOptions | Non
             "owner_assignment": "metadata.owners, metadata.owner, metadata.team, or metadata.service_owners; otherwise unassigned",
             "verified_runbook": "parsed executable model with no bounded semantic counterexamples",
             "open_hazard": "parse error, failed Hoare-style/safety obligation, blocking prose finding, missing rollback, stale assumption, or expired waiver",
+            "effect_annotation_warning": "advisory debt for high-risk executable actions missing reviewed effect metadata",
             "waiver_debt": "metadata.waivers entries with active or expired expiry dates; expired waivers are blocking debt",
         },
     }
@@ -163,6 +166,7 @@ def render_owner_scorecard_markdown(report: dict[str, Any]) -> str:
         f"- Runbooks: {summary['runbooks']}",
         f"- Verified runbooks: {summary['verified_runbooks']}",
         f"- Open hazards: {summary['open_hazards']}",
+        f"- Effect annotation warnings: {summary['effect_annotation_warnings']}",
         f"- Stale assumptions: {summary['stale_assumptions']}",
         f"- Waiver debt: {summary['waiver_debt']}",
         "",
@@ -170,12 +174,12 @@ def render_owner_scorecard_markdown(report: dict[str, Any]) -> str:
         "",
     ]
     if report["owners"]:
-        lines.extend(["| Owner | Status | Score | Runbooks | Verified | Open hazards | Semantic CEX | Prose findings | Stale | Waiver debt | Services | Recent remediation |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |"])
+        lines.extend(["| Owner | Status | Score | Runbooks | Verified | Open hazards | Semantic CEX | Effect warnings | Prose findings | Stale | Waiver debt | Services | Recent remediation |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |"])
         for owner in report["owners"]:
             services = ", ".join(f"`{svc}`" for svc in owner["services"])
             remediation = str(owner.get("recent_remediation", "")).replace("|", "\\|")
             lines.append(
-                f"| `{owner['owner']}` | `{owner['status']}` | {owner['score']} | {owner['runbooks']} | {owner['verified_runbooks']} | {owner['open_hazards']} | {owner['semantic_counterexamples']} | {owner['prose_findings']} | {owner['stale_assumptions']} | {owner['waiver_debt']} | {services} | {remediation} |"
+                f"| `{owner['owner']}` | `{owner['status']}` | {owner['score']} | {owner['runbooks']} | {owner['verified_runbooks']} | {owner['open_hazards']} | {owner['semantic_counterexamples']} | {owner['effect_annotation_warnings']} | {owner['prose_findings']} | {owner['stale_assumptions']} | {owner['waiver_debt']} | {services} | {remediation} |"
             )
     else:
         lines.append("No owners matched the requested filter.")
@@ -373,9 +377,9 @@ def _owner_record(acc: _OwnerAccumulator, as_of: date) -> dict[str, Any]:
     checked, failures = _aggregate_obligations([assessment.result for assessment in acc.runbooks])
     verified = sum(1 for assessment in acc.runbooks if assessment.result.safe)
     open_hazards = len(acc.parse_errors) + len(acc.semantic_findings) + len(blocking_prose) + len(acc.missing_rollback) + len(acc.stale_assumptions) + len(expired_waivers)
-    advisory = len(acc.prose_findings) + len(active_waivers)
+    advisory = len(acc.prose_findings) + len(active_waivers) + len(acc.annotation_warnings)
     status = "not_ready" if open_hazards else "advisory" if advisory else "ready"
-    score = max(0, 100 - 25 * len(acc.parse_errors) - 20 * len(acc.semantic_findings) - 10 * len(blocking_prose) - 5 * len(acc.missing_rollback) - 5 * len(acc.stale_assumptions) - 10 * len(expired_waivers) - 2 * len(active_waivers))
+    score = max(0, 100 - 25 * len(acc.parse_errors) - 20 * len(acc.semantic_findings) - 10 * len(blocking_prose) - 5 * len(acc.missing_rollback) - 5 * len(acc.stale_assumptions) - 10 * len(expired_waivers) - 2 * len(active_waivers) - 2 * len(acc.annotation_warnings))
     remediation = sorted(acc.remediation_history, key=lambda item: item.get("date", ""), reverse=True)
     return {
         "owner": acc.owner,
@@ -387,6 +391,7 @@ def _owner_record(acc: _OwnerAccumulator, as_of: date) -> dict[str, Any]:
         "parse_errors": len(acc.parse_errors),
         "open_hazards": open_hazards,
         "semantic_counterexamples": len(acc.semantic_findings),
+        "effect_annotation_warnings": len(acc.annotation_warnings),
         "prose_findings": len(acc.prose_findings),
         "blocking_prose_findings": len(blocking_prose),
         "missing_rollback_steps": len(acc.missing_rollback),
@@ -421,6 +426,8 @@ def _top_hazards(acc: _OwnerAccumulator) -> list[dict[str, Any]]:
         hazards.append({"kind": "parse", "path": error["path"], "rule": "parse_error", "message": error["message"]})
     for assessment, violation in acc.semantic_findings:
         hazards.append({"kind": "semantic", "path": str(assessment.path), "property": violation.property, "small_step_rule": violation.small_step_rule, "message": violation.message, "trace": list(violation.trace), "semantic_trace": list(violation.semantic_trace)})
+    for assessment, warning in acc.annotation_warnings:
+        hazards.append({"kind": "effect_annotation", "path": str(assessment.path), "property": warning.property, "small_step_rule": warning.small_step_rule, "message": warning.message, "trace": list(warning.trace), "semantic_trace": list(warning.semantic_trace)})
     for finding in acc.prose_findings:
         hazards.append({"kind": "prose", "path": finding.path, "rule": finding.rule, "message": finding.message, "severity": finding.severity})
     for item in acc.missing_rollback:
@@ -446,6 +453,7 @@ def _summary(owners: list[dict[str, Any]], parse_errors: list[dict[str, Any]]) -
         "verified_runbooks": sum(int(owner["verified_runbooks"]) for owner in owners),
         "open_hazards": sum(int(owner["open_hazards"]) for owner in owners),
         "semantic_counterexamples": sum(int(owner["semantic_counterexamples"]) for owner in owners),
+        "effect_annotation_warnings": sum(int(owner["effect_annotation_warnings"]) for owner in owners),
         "prose_findings": sum(int(owner["prose_findings"]) for owner in owners),
         "stale_assumptions": sum(int(owner["stale_assumptions"]) for owner in owners),
         "waiver_debt": sum(int(owner["waiver_debt"]) for owner in owners),

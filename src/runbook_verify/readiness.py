@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -13,8 +13,8 @@ from .model import Runbook, Step
 from .parser import RunbookParseError, is_runbook_document, load_document, parse_runbook
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
-ROLLBACK_ACTIONS = {"restore_replica", "restore_load_balancer", "resume_queue", "rollback_deployment", "failover_traffic", "shift_traffic", "update_dns_record", "warm_cache", "resume_cache_writes"}
-HIGH_RISK_ACTIONS = {"drain_replica", "drain_region", "drain_load_balancer", "failover_database", "pause_queue", "run_migration", "update_dns_record", "flush_cache"}
+ROLLBACK_ACTIONS = {"restore_replica", "restore_load_balancer", "resume_queue", "rollback_deployment", "failover_traffic", "shift_traffic", "update_dns_record", "warm_cache", "resume_cache_writes", "rotate_credential"}
+HIGH_RISK_ACTIONS = {"drain_replica", "drain_region", "drain_load_balancer", "failover_database", "pause_queue", "run_migration", "update_dns_record", "flush_cache", "replay_messages", "revoke_credential"}
 
 
 @dataclass(frozen=True)
@@ -85,8 +85,10 @@ def build_readiness_report(path: str | Path, options: ReadinessOptions | None = 
     benchmark_expectations = [_benchmark_expectation_record(item, prose_findings) for item in checked if item.expected_labels is not None]
     benchmark_mismatches = [item for item in benchmark_expectations if not item["pass"]]
     coverage_findings = _coverage_findings(options, checked)
+    waivers = [_waiver_record(item, waiver, as_of) for item in checked for waiver in item.runbook.waivers]
+    expired_waivers = [waiver for waiver in waivers if waiver["expired"]]
     proof_obligations = _aggregate_obligations([item.result for item in checked])
-    summary = _summary(checked, parse_errors, semantic_findings, prose_findings, stale_preconditions, missing_rollback, coverage_findings, benchmark_mismatches)
+    summary = _summary(checked, parse_errors, semantic_findings, prose_findings, stale_preconditions, missing_rollback, coverage_findings, benchmark_mismatches, expired_waivers, waivers)
     return {
         "path": str(root),
         "filters": {"service": options.service, "region": options.region},
@@ -101,6 +103,8 @@ def build_readiness_report(path: str | Path, options: ReadinessOptions | None = 
         "stale_preconditions": stale_preconditions,
         "benchmark_expectations": benchmark_expectations,
         "coverage_findings": coverage_findings,
+        "waivers": waivers,
+        "expired_waivers": expired_waivers,
         "proof_obligations": proof_obligations,
         "modeled_entities": _modeled_entities(checked),
     }
@@ -127,6 +131,7 @@ def render_readiness_markdown(report: dict[str, Any]) -> str:
         f"- Missing rollback/restore coverage: {summary['missing_rollback_steps']}",
         f"- Stale preconditions: {summary['stale_preconditions']}",
         f"- Blocking stale preconditions: {summary['blocking_stale_preconditions']}",
+        f"- Waiver debt: {summary['waiver_debt']} (expired: {summary['expired_waivers']})",
         f"- Benchmark expectation mismatches: {summary['benchmark_expectation_mismatches']}",
         "",
         "## Runbooks",
@@ -167,6 +172,13 @@ def render_readiness_markdown(report: dict[str, Any]) -> str:
                 lines.append(f"- `{item['severity']}` `{item['kind']}` in `{item['path']}`: {item['message']} (obligation `{item['semantic_obligation']}`)")
     else:
         lines.append("No file exceeded the configured freshness window and no inventory-refinement precondition failed.")
+    lines.extend(["", "## Waiver debt", ""])
+    if report["waivers"]:
+        lines.extend(["| ID | Owner | Scope | Invariant | Expiry | Expired | Benchmark visibility | Path |", "| --- | --- | --- | --- | --- | --- | --- | --- |"])
+        for waiver in report["waivers"]:
+            lines.append(f"| `{waiver['id']}` | {waiver['owner']} | `{waiver['scope']}` | `{waiver['invariant']}` | {waiver['expiry']} | `{waiver['expired']}` | `{waiver['benchmark_visibility']}` | `{waiver['path']}` |")
+    else:
+        lines.append("No model waivers declared.")
     lines.extend(["", "## Proof obligations", "", "```json", json.dumps(report["proof_obligations"], indent=2, sort_keys=True), "```", ""])
     lines.extend(["## Benchmark expectations", ""])
     if report["benchmark_expectations"]:
@@ -559,12 +571,14 @@ def _summary(
     missing_rollback: list[dict[str, Any]],
     coverage_findings: list[dict[str, Any]],
     benchmark_mismatches: list[dict[str, Any]],
+    expired_waivers: list[dict[str, Any]],
+    waivers: list[dict[str, Any]],
 ) -> dict[str, Any]:
     blocking_prose = [finding for finding in prose_findings if SEVERITY_RANK[finding.severity] >= SEVERITY_RANK["error"]]
     warnings = [finding for finding in prose_findings if SEVERITY_RANK[finding.severity] == SEVERITY_RANK["warning"]]
     blocking_stale = [finding for finding in stale_preconditions if finding.get("severity") == "error"]
-    not_ready = bool(parse_errors or semantic_findings or blocking_prose or blocking_stale or coverage_findings or benchmark_mismatches)
-    advisory = bool(warnings or stale_preconditions or missing_rollback or prose_findings)
+    not_ready = bool(parse_errors or semantic_findings or blocking_prose or blocking_stale or coverage_findings or benchmark_mismatches or expired_waivers)
+    advisory = bool(warnings or stale_preconditions or missing_rollback or prose_findings or waivers)
     status = "not_ready" if not_ready else "advisory" if advisory else "ready"
     score = 100
     score -= 25 * len(parse_errors)
@@ -576,6 +590,8 @@ def _summary(
     score -= 5 * len(missing_rollback)
     score -= 25 * len(coverage_findings)
     score -= 15 * len(benchmark_mismatches)
+    score -= 10 * len(expired_waivers)
+    score -= 2 * (len(waivers) - len(expired_waivers))
     return {
         "status": status,
         "readiness_score": max(score, 0),
@@ -589,6 +605,9 @@ def _summary(
         "stale_preconditions": len(stale_preconditions),
         "blocking_stale_preconditions": len(blocking_stale),
         "coverage_findings": len(coverage_findings),
+        "waiver_debt": len(waivers),
+        "expired_waivers": len(expired_waivers),
+        "active_waivers": len(waivers) - len(expired_waivers),
         "benchmark_expectation_mismatches": len(benchmark_mismatches),
     }
 
@@ -606,6 +625,17 @@ def _runbook_record(item: _CheckedRunbook) -> dict[str, Any]:
         "regions": sorted(_regions(item.runbook)),
         "expected_labels": item.expected_labels,
     }
+
+
+def _waiver_record(item: _CheckedRunbook, waiver: Any, as_of: date) -> dict[str, Any]:
+    data = asdict(waiver)
+    expired = False
+    try:
+        expired = date.fromisoformat(str(data["expiry"])) < as_of
+    except ValueError:
+        expired = True
+    data.update({"path": str(item.path), "runbook": item.runbook.name, "expired": expired})
+    return data
 
 
 def _modeled_entities(checked: list[_CheckedRunbook]) -> dict[str, list[str]]:

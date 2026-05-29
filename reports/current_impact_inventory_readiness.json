@@ -21,6 +21,7 @@
     }
   ],
   "coverage_findings": [],
+  "expired_waivers": [],
   "filters": {
     "region": "prod",
     "service": "tempo-query"
@@ -166,7 +167,17 @@
     "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
     "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md"
   },
-  "missing_rollback_steps": [],
+  "missing_rollback_steps": [
+    {
+      "high_risk_steps": [
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Model a rollback, restore, resume, or compensating traffic action for high-risk incident steps.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "rollback_or_restore_readiness"
+    }
+  ],
   "modeled_entities": {
     "regions": [
       "prod"
@@ -253,10 +264,12 @@
     }
   ],
   "summary": {
+    "active_waivers": 0,
     "benchmark_expectation_mismatches": 0,
     "blocking_stale_preconditions": 1,
     "coverage_findings": 0,
-    "missing_rollback_steps": 0,
+    "expired_waivers": 0,
+    "missing_rollback_steps": 1,
     "parse_errors": 0,
     "readiness_score": 0,
     "runbooks_considered": 1,
@@ -265,7 +278,8 @@
     "stale_preconditions": 3,
     "status": "not_ready",
     "unsafe_runbooks": 1,
-    "unverified_prose_claims": 4
+    "unverified_prose_claims": 4,
+    "waiver_debt": 0
   },
   "unverified_prose_claims": [
     {
@@ -308,5 +322,6 @@
       "semantic_obligation": "limitation:ring-forget-targeting",
       "severity": "audit-only"
     }
-  ]
+  ],
+  "waivers": []
 }

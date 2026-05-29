@@ -7,6 +7,17 @@
       "expected_violation_properties": [],
       "expected_prose_rules": []
     },
+    "waivers": [
+      {
+        "id": "documented-effect-waiver-example",
+        "owner": "sre-platform",
+        "expiry": "2099-12-31",
+        "scope": "step:flush-api-cache",
+        "rationale": "Demonstrates schema for a visible waiver without suppressing a live benchmark finding.",
+        "invariant": "effect_annotation_required",
+        "benchmark_visibility": "visible"
+      }
+    ],
     "owner": "sre-platform",
     "source": "synthetic schema example"
   },
@@ -108,6 +119,13 @@
         "previous_region": null,
         "health_check_converged_regions": ["us-east", "us-west"],
         "allow_split_brain": true
+      }
+    },
+    "credentials": {
+      "api-key": {
+        "owner": "sre-platform",
+        "revoked": false,
+        "rotation_due_minute": 60
       }
     }
   },
@@ -225,7 +243,16 @@
           "kind": "cache_writes_frozen",
           "cache": "api-cache"
         }
-      ]
+      ],
+      "effect_annotations": {
+        "effect_types": ["deletion"],
+        "idempotency": "unknown",
+        "reversibility": "unknown",
+        "retry_safety": "unknown",
+        "blast_radius": "api cache entries",
+        "expected_user_impact": "possible cold-cache latency until warmup completes",
+        "reviewed_by": ["sre-platform"]
+      }
     },
     {
       "id": "warm-api-cache",

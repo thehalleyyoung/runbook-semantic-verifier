@@ -5,14 +5,15 @@
 - Runbooks: 1
 - Verified runbooks: 0
 - Open hazards: 7
+- Effect annotation warnings: 0
 - Stale assumptions: 0
 - Waiver debt: 0
 
 The scorecard groups executable runbooks by owner metadata and treats each runbook as a bounded operational program. Failed preconditions, safety postconditions, and prose-obligation gaps are counted as owner-visible remediation debt, not as live infrastructure proof.
 
-| Owner | Status | Score | Runbooks | Verified | Open hazards | Semantic CEX | Prose findings | Stale | Waiver debt | Services | Recent remediation |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| `grafana-tempo-public-fixture` | `not_ready` | 0 | 1 | 0 | 7 | 6 | 4 | 0 | 0 | `tempo-query` | 2026-05-29 open: Derived fixture recorded queue fallback replay, consumer-group stability, and destructive-deletion precondition findings from public documentation excerpts. |
+| Owner | Status | Score | Runbooks | Verified | Open hazards | Semantic CEX | Effect warnings | Prose findings | Stale | Waiver debt | Services | Recent remediation |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| `grafana-tempo-public-fixture` | `not_ready` | 0 | 1 | 0 | 7 | 6 | 0 | 4 | 0 | 0 | `tempo-query` | 2026-05-29 open: Derived fixture recorded queue fallback replay, consumer-group stability, and destructive-deletion precondition findings from public documentation excerpts. |
 
 ## Owner details
 

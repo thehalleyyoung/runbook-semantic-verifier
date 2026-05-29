@@ -23,9 +23,10 @@ findings. Readiness reports can also compare scoped runbooks against a configure
 JSON inventory of current service names, owner identifiers, alert identifiers,
 dependency names, and replica counts, reporting stale assumptions as
 `inventory_refinement_precondition` obligations.
-The DSL also models queue
-replay/DLQ/consumer-group semantics, DNS cutovers with TTL and health-check
-convergence obligations, and cache flush/warmup/cold-start/capacity semantics.
+The DSL also models queue replay/DLQ/consumer-group semantics, DNS cutovers with
+TTL and health-check convergence obligations, cache flush/warmup/cold-start/
+capacity semantics, credential rotation/revocation state, reviewed high-risk
+effect annotations, and auditable model waivers.
 Action descriptors now carry generated denotational state-transformer text, and
 semantic findings carry Hoare triples, weakest-precondition hints, source lines,
 causal dependencies, and state deltas in `frv check --format json`.
@@ -62,6 +63,9 @@ differently named system exists.
 - The parser rejects unsupported actions, unknown parameters, unknown condition
   kinds, duplicate step ids, missing dependencies, and references to unknown
   modeled entities before state-space exploration.
+- The parser also validates credential references, destructive-effect annotation
+  fields, and model waivers requiring owner, expiry, scope, invariant, rationale,
+  and benchmark visibility.
 - The Markdown linter deterministically flags selected dangerous prose patterns
   when the file lacks matching executable actions/preconditions/effects, and
   refuses to silently hide prose findings unless a suppression has owner,
@@ -130,15 +134,19 @@ differently named system exists.
   `--fail-on` values override profile defaults, and profiles do not suppress or
   rewrite findings.
 - The coverage report maps each current invariant/proof-obligation template to
-  modeled services, databases, queues, alerts, DNS records, credentials (none in the current
-  DSL), owners, regions, source steps, and Markdown sections; unverified prose
-  obligations are reported as coverage gaps, not as verified properties.
+  modeled services, databases, queues, alerts, DNS records, credentials, owners,
+  regions, source steps, and Markdown sections; unverified prose obligations are
+  reported as coverage gaps, not as verified properties.
 - Queue replay, DLQ draining, deduplication guards, and consumer-group
   rebalancing are checked as bounded small-step transitions with concrete
   duplicate-processing and backlog counterexamples.
 - Cache write freezes, destructive flushes, warmup thresholds, capacity limits,
   and stale-read risk are checked as bounded small-step transitions with
   concrete cold-start and over-capacity counterexamples.
+- Credential revocation and rotation update modeled credential activity. Missing
+  or inconsistent high-risk effect annotations are reported as advisory warnings
+  in `frv check`, audit, JSON, and benchmark performance counters unless an
+  active scoped waiver is recorded.
 - Inventory-refinement findings are configuration checks over provided inventory
   data, not live discovery. A mismatch means the artifact and configured
   inventory disagree; it does not prove the external service catalog is complete
@@ -244,6 +252,9 @@ differently named system exists.
   - `reports/redis_cache_flush_audit.md`
   - `reports/redis_cache_flush_coverage.json`
   - `reports/redis_cache_flush_coverage.md`
+  - `examples/credential_rotation_runbook.json`
+  - `reports/credential_rotation_check.json`
+  - `reports/credential_rotation_check.md`
   - `reports/builtin_benchmark.md`
   - `reports/builtin_benchmark_profile.md`
   - `reports/benchmark_reproduction_manifest.json`

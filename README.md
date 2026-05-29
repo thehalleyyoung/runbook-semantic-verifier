@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **60/100** items in the local roadmap are complete. The
+Current roadmap status: **65/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces,
@@ -14,7 +14,9 @@ runbook edits, named configuration profiles for production/advisory/docs-only/be
 inventory-refinement checks for stale service, owner, alert, dependency, and
 replica-count assumptions,
 queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
-cache flush/warmup/cold-start/capacity semantics, and checked-in
+cache flush/warmup/cold-start/capacity semantics, credential
+rotation/revocation semantics, high-risk effect annotations with auditable
+waivers, and checked-in
 historical/current public case-study evidence.
 Benchmark reports now also carry validity-threat categories, workflow-baseline
 comparisons, semantic-diff remediation pairs, oracle-review labels, reproducible
@@ -88,13 +90,15 @@ Executable examples use JSON so the repository runs with the Python standard lib
 
 Top-level fields:
 
-- `system`: regions, services/replicas, databases, queues, caches, alerts, feature flags, deployments, traffic routes, DNS records.
-- `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, and `effects`.
+- `system`: regions, services/replicas, databases, queues, caches, alerts, feature flags, deployments, traffic routes, DNS records, and credentials.
+- `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, `effects`, and high-risk `effect_annotations`.
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
 - `safety`: checker configuration such as maximum alert suppression duration.
 - `metadata.labels`: optional benchmark labels such as `expected_safe`,
   `expected_violation_properties`, and `expected_prose_rules`.
+- `metadata.waivers`: optional auditable waivers with owner, expiry, scope,
+  invariant, rationale, and benchmark visibility.
 
 The parser validates supported actions using typed field descriptors shared by
 parser checks, JSON Schema generation, the action semantics reference, and
@@ -133,7 +137,8 @@ Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `mark_region_health`, plus traffic actions `shift_traffic`,
 `failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`, and
 DNS actions `update_dns_record`, `mark_dns_health_check`, and
-`finalize_dns_record`.
+`finalize_dns_record`, plus credential actions `revoke_credential` and
+`rotate_credential`.
 
 ## Safety properties
 
@@ -160,6 +165,9 @@ The prototype checks pragmatic cloud-operations hazards:
 - no destructive shared-cache flush without write freeze, no resuming traffic or
   writes before modeled cache warmup reaches threshold, no warmup beyond modeled
   cache capacity, and no stale-read-risk state left after a flush;
+- credential revocation/rotation actions update modeled credential activity, and
+  high-risk actions warn when required destructive/idempotency/retry-safety
+  annotations are missing or inconsistent unless covered by an active waiver;
 - declared step preconditions and effects must hold.
 
 ## Architecture
@@ -388,8 +396,8 @@ prose suppression as
 owner-visible remediation debt.
 
 `frv coverage` maps each current invariant template to the services, databases,
-queues, caches, alerts, DNS records, credentials (currently no credential state in the
-DSL), owners, regions, and Markdown sections it covers:
+queues, caches, alerts, DNS records, modeled credentials, owners, regions, and
+Markdown sections it covers:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli coverage \
@@ -617,12 +625,13 @@ declare semantic-diff baselines; the built-in suite checks that the bounded
 GitHub Oct. 21 quorum-guard remediation introduces no counterexamples and
 resolves the expected database/quorum hazards.
 
-The built-in benchmark currently contains eleven runbooks: safe/unsafe
+The built-in benchmark currently contains twelve runbooks: safe/unsafe
 synthetic regressions, safe/unsafe queue replay mutants, safe/unsafe cache-flush
-mutants, one real-world-style Kubernetes failover fixture, the GitHub Oct. 21
-2018 reconstructed failover case, the Grafana Tempo current public
-runbook-derived replay case, a public DNS-failover-pattern reconstruction, and a
-public Redis runbook-template-derived cache-flush mutant.
+mutants, a credential-rotation regression with reviewed revocation effects, one
+real-world-style Kubernetes failover fixture, the GitHub Oct. 21 2018
+reconstructed failover case, the Grafana Tempo current public runbook-derived
+replay case, a public DNS-failover-pattern reconstruction, and a public Redis
+runbook-template-derived cache-flush mutant.
 
 ```json
 {

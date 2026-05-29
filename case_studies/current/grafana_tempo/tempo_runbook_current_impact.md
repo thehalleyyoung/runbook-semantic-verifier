@@ -108,7 +108,16 @@ not an undisclosed vulnerability claim about Grafana Tempo.
         "queue": "tenant-index-fallback-scan",
         "count": 18000
       },
-      "requires": []
+      "requires": [],
+      "effect_annotations": {
+        "effect_types": ["queue_replay"],
+        "idempotency": "unknown",
+        "reversibility": "unknown",
+        "retry_safety": "unknown",
+        "blast_radius": "tenant-index fallback scan backlog in this bounded public fixture",
+        "expected_user_impact": "potential duplicate work and query degradation unless dedupe and consumer stability preconditions are added",
+        "reviewed_by": ["grafana-tempo-public-fixture"]
+      }
     },
     {
       "id": "rebalance-fallback-consumers",

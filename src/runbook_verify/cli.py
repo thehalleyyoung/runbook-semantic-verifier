@@ -267,6 +267,13 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  remediation: {v.remediation}")
         else:
             print("No safety violations found within bound.")
+        if result.annotation_warnings:
+            print("Effect annotation warnings:")
+            for v in result.annotation_warnings:
+                location = f" source={v.source_path}:{v.source_line}" if v.source_path and v.source_line else ""
+                print(f"- [{v.property}] rule={v.small_step_rule}{location} trace={' -> '.join(v.trace)}: {v.message}")
+        if result.waivers_applied:
+            print(f"Waivers applied: {len(result.waivers_applied)}")
         if args.expect_violations:
             return 0 if result.violations else 1
         return 0 if result.safe else 1
@@ -325,6 +332,8 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
             "terminal_traces": result.traces_explored,
             "semantic_rule_counts": result.performance_counters()["semantic_rule_counts"],
             "violations": len(result.violations),
+            "annotation_warnings": len(result.annotation_warnings),
+            "waivers_applied": len(result.waivers_applied),
         })
         status = "UNSAFE" if result.violations else "SAFE"
         if output_format == "text":
@@ -347,6 +356,23 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "semantic_trace": list(violation.semantic_trace),
                 "message": violation.message,
                 "recommendation": violation.remediation,
+            })
+        for warning in result.annotation_warnings:
+            audit_findings.append({
+                "type": "semantic",
+                "severity": "warning",
+                "rank": SEVERITY_RANK["warning"],
+                "path": str(file),
+                "line": warning.source_line,
+                "rule": warning.property,
+                "semantic_obligation": warning.property,
+                "small_step_rule": warning.small_step_rule,
+                "hoare_triple": warning.hoare_triple,
+                "step": warning.step,
+                "trace": list(warning.trace),
+                "semantic_trace": list(warning.semantic_trace),
+                "message": warning.message,
+                "recommendation": warning.remediation,
             })
     audit_findings = _with_finding_ids(_rank_audit_findings(audit_findings))
     profile = get_profile(profile_name)
@@ -388,11 +414,14 @@ def _print_parse_error(exc: RunbookParseError, diagnostics_format: str = "text",
 
 def _render_check_json(runbook: object, result: object) -> str:
     explanations = [explain_violation(runbook, violation, f"finding-{idx:03d}") for idx, violation in enumerate(result.violations, start=1)]
+    warnings = [explain_violation(runbook, warning, f"warning-{idx:03d}") for idx, warning in enumerate(result.annotation_warnings, start=1)]
     payload = {
         "runbook": getattr(runbook, "name"),
         "safe": result.safe,
         "performance_counters": result.performance_counters(),
         "findings": explanations,
+        "annotation_warnings": warnings,
+        "waivers_applied": result.waivers_applied,
     }
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
@@ -460,9 +489,9 @@ def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findin
         "",
     ]
     if runbooks:
-        lines.extend(["| Runbook | Safe | States | Traces | Semantic rules | Violations |", "| --- | --- | ---: | ---: | --- | ---: |"])
+        lines.extend(["| Runbook | Safe | States | Traces | Semantic rules | Violations | Effect warnings | Waivers |", "| --- | --- | ---: | ---: | --- | ---: | ---: | ---: |"])
         for item in runbooks:
-            lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | `{json.dumps(item.get('semantic_rule_counts', {}), sort_keys=True)}` | {item['violations']} |")
+            lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | `{json.dumps(item.get('semantic_rule_counts', {}), sort_keys=True)}` | {item['violations']} | {item.get('annotation_warnings', 0)} | {item.get('waivers_applied', 0)} |")
         lines.append("")
     if findings:
         lines.extend(["| ID | Rank | Type | Severity | Rule | Small-step rule | Obligation | Location | Message | Recommendation | Autofix suggestions |", "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |"])

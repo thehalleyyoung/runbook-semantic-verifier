@@ -259,6 +259,56 @@ class CheckerExplanationTests(unittest.TestCase):
         self.assertIn("cache_warmup_within_capacity", props)
         self.assertIn("no_stale_reads_after_cache_flush", props)
 
+    def test_missing_high_risk_effect_annotation_warns_without_failing_safety(self):
+        runbook = parse_runbook({
+            "system": {"credentials": {"api-key": {"owner": "security"}}},
+            "steps": [{"id": "revoke", "action": "revoke_credential", "params": {"credential": "api-key"}}],
+        })
+        result = Checker(runbook).check()
+        self.assertTrue(result.safe, result.violations)
+        self.assertIn("effect_annotation_required", {warning.property for warning in result.annotation_warnings})
+        self.assertEqual(result.performance_counters()["annotation_warnings"], 1)
+
+    def test_active_waiver_records_suppressed_effect_annotation_warning(self):
+        runbook = parse_runbook({
+            "metadata": {"waivers": [{
+                "id": "w-effect",
+                "owner": "security",
+                "expiry": "2099-12-31",
+                "scope": "step:revoke",
+                "rationale": "Fixture exercises visible waiver reporting.",
+                "invariant": "effect_annotation_required",
+                "benchmark_visibility": "visible",
+            }]},
+            "system": {"credentials": {"api-key": {"owner": "security"}}},
+            "steps": [{"id": "revoke", "action": "revoke_credential", "params": {"credential": "api-key"}}],
+        })
+        result = Checker(runbook).check()
+        self.assertEqual(result.annotation_warnings, [])
+        self.assertEqual(len(result.waivers_applied), 1)
+        self.assertEqual(result.waivers_applied[0]["waiver"]["id"], "w-effect")
+
+    def test_credential_rotation_and_revocation_conditions(self):
+        runbook = parse_runbook({
+            "system": {"credentials": {"api-key": {"owner": "security", "revoked": False}}},
+            "steps": [
+                {"id": "revoke", "action": "revoke_credential", "params": {"credential": "api-key"},
+                 "effects": [{"kind": "credential_revoked", "credential": "api-key"}],
+                 "effect_annotations": {
+                     "effect_types": ["credential_revocation"],
+                     "idempotency": "idempotent",
+                     "reversibility": "irreversible",
+                     "retry_safety": "unknown",
+                     "blast_radius": "single API key",
+                     "expected_user_impact": "dependent clients must refresh credentials",
+                 }},
+                {"id": "rotate", "action": "rotate_credential", "after": ["revoke"], "params": {"credential": "api-key"},
+                 "effects": [{"kind": "credential_active", "credential": "api-key"}]},
+            ],
+        })
+        result = Checker(runbook).check()
+        self.assertTrue(result.safe, result.violations)
+
 
 if __name__ == "__main__":
     unittest.main()

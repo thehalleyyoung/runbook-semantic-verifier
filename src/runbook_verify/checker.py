@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, dataclass, field, replace
+from datetime import date
 from typing import Any
 
 from .actions import ActionError, apply_action, condition_holds
 from .contracts import hoare_triple_for
-from .model import Runbook, Step, SystemState
+from .model import Runbook, Step, SystemState, Waiver
 from .semantics import (
     ACTION_EXECUTE,
     ACTION_WAIT,
@@ -49,6 +50,8 @@ class CheckResult:
     proof_obligations_checked: dict[str, int] = field(default_factory=dict)
     proof_obligation_failures: dict[str, int] = field(default_factory=dict)
     semantic_rule_counts: dict[str, int] = field(default_factory=dict)
+    annotation_warnings: list[Violation] = field(default_factory=list)
+    waivers_applied: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def avg_branch_factor(self) -> float:
@@ -76,6 +79,8 @@ class CheckResult:
             "proof_obligations_checked": dict(sorted(self.proof_obligations_checked.items())),
             "proof_obligation_failures": dict(sorted(self.proof_obligation_failures.items())),
             "semantic_rule_counts": dict(sorted(self.semantic_rule_counts.items())),
+            "annotation_warnings": len(self.annotation_warnings),
+            "waivers_applied": len(self.waivers_applied),
         }
 
 
@@ -116,6 +121,13 @@ class Checker:
                 schedule_trace = semantic_trace + scheduling_rules(step, len(enabled), self.runbook.allow_reordering)
                 _record_labeled_rules(result, schedule_trace[len(semantic_trace):])
                 pre = self._pre_action_violations(state, step, trace, schedule_trace)
+                for warning in _effect_annotation_warnings(step, trace + (step.id,), schedule_trace):
+                    warning = self._with_step_context(warning)
+                    waiver = _matching_active_waiver(self.runbook.waivers, warning.property, step.id)
+                    if waiver is None:
+                        result.annotation_warnings.append(warning)
+                    else:
+                        result.waivers_applied.append({"waiver": asdict(waiver), "property": warning.property, "step": step.id})
                 _record_obligations(result, "precondition", len(step.requires), pre)
                 if pre:
                     pre = [self._with_step_context(violation) for violation in pre]
@@ -151,6 +163,7 @@ class Checker:
                     result.safe = False
                 queue.append((next_state, done | {step.id}, trace + (step.id,), next_semantic_trace))
         result.violations = _dedupe_violations(result.violations)
+        result.annotation_warnings = _dedupe_violations(result.annotation_warnings)
         return result
 
     def _enabled_steps(self, done: frozenset[str]) -> list[Step]:
@@ -343,7 +356,59 @@ def _unlabel_rule(rule: str) -> str:
 
 
 def _safety_obligation_count(state: SystemState) -> int:
-    return len(state.services) * 2 + len(state.queues) * 5 + len(state.caches) * 3 + len(state.traffic_routes) + len(state.dns_records) * 3
+    return len(state.services) * 2 + len(state.queues) * 5 + len(state.caches) * 3 + len(state.traffic_routes) + len(state.dns_records) * 3 + len(state.credentials)
+
+
+HIGH_RISK_EFFECT_TYPES_BY_ACTION = {
+    "replay_messages": "queue_replay",
+    "drain_dead_letter_queue": "deletion",
+    "drain_region": "traffic_drain",
+    "drain_replica": "traffic_drain",
+    "drain_load_balancer": "traffic_drain",
+    "failover_traffic": "customer_visible_degradation",
+    "shift_traffic": "customer_visible_degradation",
+    "failover_database": "irreversible_state_change",
+    "run_migration": "manual_sql",
+    "rollback_deployment": "customer_visible_degradation",
+    "flush_cache": "deletion",
+    "update_dns_record": "customer_visible_degradation",
+    "revoke_credential": "credential_revocation",
+}
+
+
+def _effect_annotation_warnings(step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
+    expected = HIGH_RISK_EFFECT_TYPES_BY_ACTION.get(step.action)
+    if expected is None:
+        return []
+    annotations = step.effect_annotations
+    if not annotations:
+        return [_violation("effect_annotation_required", f"step {step.id} action {step.action} must declare reviewed effect_annotations including {expected}", trace, step.id, _append_property_rule(semantic_trace, "effect_annotation_required", step.id))]
+    warnings: list[Violation] = []
+    effect_types = set(str(item) for item in annotations.get("effect_types", []))
+    if expected not in effect_types:
+        warnings.append(_violation("effect_annotation_required", f"step {step.id} effect_annotations.effect_types must include {expected} for action {step.action}", trace, step.id, _append_property_rule(semantic_trace, "effect_annotation_required", step.id)))
+    retry_safety = str(annotations.get("retry_safety", "unknown"))
+    idempotency = str(annotations.get("idempotency", "unknown"))
+    reversibility = str(annotations.get("reversibility", "unknown"))
+    if retry_safety == "safe" and (idempotency != "idempotent" or reversibility == "irreversible"):
+        warnings.append(_violation("unsafe_retry_annotation", f"step {step.id} marks retry_safety=safe but idempotency={idempotency} and reversibility={reversibility}", trace, step.id, _append_property_rule(semantic_trace, "unsafe_retry_annotation", step.id)))
+    return [_with_semantic_prefix(warning, semantic_trace) for warning in warnings]
+
+
+def _matching_active_waiver(waivers: tuple[Waiver, ...], property_name: str, step_id: str) -> Waiver | None:
+    today = date.today()
+    for waiver in waivers:
+        if waiver.invariant != property_name:
+            continue
+        if waiver.scope not in {step_id, f"step:{step_id}", "*"}:
+            continue
+        try:
+            if date.fromisoformat(waiver.expiry) < today:
+                continue
+        except ValueError:
+            continue
+        return waiver
+    return None
 
 
 def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
@@ -390,6 +455,9 @@ REMEDIATIONS = {
     "dns_ttl_elapsed_before_recursion": "Wait for the prior DNS TTL window to elapse before issuing another cutover.",
     "dns_ttl_elapsed_before_finalize": "Insert a wait step long enough to cover the record TTL before finalizing DNS migration.",
     "dns_no_split_brain_during_ttl": "Use an active-active-safe record (allow_split_brain=true) or avoid stateful writes until the TTL window elapses.",
+    "effect_annotation_required": "Add reviewed effect_annotations with effect_types, idempotency, reversibility, retry_safety, blast_radius, and expected_user_impact.",
+    "unsafe_retry_annotation": "Do not mark destructive or non-idempotent operations retry-safe unless the runbook models an idempotency guard and reversible outcome.",
+    "credential_active": "Rotate or restore the credential before dependent operations require it.",
 }
 
 

@@ -43,6 +43,7 @@ class MarkdownLintTests(unittest.TestCase):
             "Manually execute SQL update where tenant_id = 7.",
             "Backfill and replay jobs after the outage.",
             "Rotate the service credential key.",
+            "Retry the credential revocation if it does not work.",
             "Notify customers about possible degradation.",
             "Rollback the deployment if errors continue.",
             "Escalate to the SRE on-call owner.",
@@ -53,6 +54,7 @@ class MarkdownLintTests(unittest.TestCase):
         self.assertEqual(by_rule["manual-sql-needs-migration-model"].severity, "error")
         self.assertEqual(by_rule["backfill-needs-queue-capacity"].severity, "warning")
         self.assertEqual(by_rule["credential-handling-needs-rotation-model"].severity, "responsible-disclosure")
+        self.assertEqual(by_rule["unsafe-retry-needs-effect-annotation"].semantic_obligation, "unsafe_retry_annotation")
         self.assertEqual(by_rule["customer-notification-gap"].severity, "warning")
         self.assertEqual(by_rule["rollback-ambiguity-needs-explicit-action"].severity, "error")
         self.assertEqual(by_rule["unmodeled-escalation-path"].severity, "audit-only")

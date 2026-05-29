@@ -270,6 +270,73 @@ class ParserValidationTests(unittest.TestCase):
                 "steps": [],
             })
 
+    def test_parses_credentials_effect_annotations_and_waivers(self):
+        runbook = parse_runbook({
+            "metadata": {
+                "waivers": [{
+                    "id": "waive-rotation-doc",
+                    "owner": "security-oncall",
+                    "expiry": "2099-12-31",
+                    "scope": "step:rotate-api-key",
+                    "rationale": "Fixture documents a visible waiver for benchmark triage.",
+                    "invariant": "effect_annotation_required",
+                    "benchmark_visibility": "visible",
+                }]
+            },
+            "system": {"credentials": {"api-key": {"owner": "payments", "rotation_due_minute": 10}}},
+            "steps": [{
+                "id": "rotate-api-key",
+                "action": "rotate_credential",
+                "params": {"credential": "api-key"},
+                "effect_annotations": {
+                    "effect_types": ["credential_revocation"],
+                    "idempotency": "idempotent",
+                    "reversibility": "reversible",
+                    "retry_safety": "safe",
+                    "blast_radius": "single service credential",
+                    "expected_user_impact": "no expected customer impact after staged rotation",
+                    "reviewed_by": ["security-oncall"],
+                },
+                "effects": [{"kind": "credential_active", "credential": "api-key"}],
+            }],
+        })
+        self.assertEqual(runbook.state.credentials["api-key"].owner, "payments")
+        self.assertEqual(runbook.steps[0].effect_annotations["idempotency"], "idempotent")
+        self.assertEqual(runbook.waivers[0].benchmark_visibility, "visible")
+
+    def test_rejects_invalid_effect_annotations_and_waivers(self):
+        with self.assertRaisesRegex(RunbookParseError, "effect_types"):
+            parse_runbook({
+                "system": {"credentials": {"api-key": {}}},
+                "steps": [{
+                    "id": "revoke",
+                    "action": "revoke_credential",
+                    "params": {"credential": "api-key"},
+                    "effect_annotations": {"idempotency": "idempotent"},
+                }],
+            })
+
+        with self.assertRaisesRegex(RunbookParseError, "benchmark_visibility"):
+            parse_runbook({
+                "metadata": {"waivers": [{
+                    "id": "w1",
+                    "owner": "owner",
+                    "expiry": "2099-12-31",
+                    "scope": "*",
+                    "rationale": "test",
+                    "invariant": "effect_annotation_required",
+                    "benchmark_visibility": "private",
+                }]},
+                "system": {},
+                "steps": [],
+            })
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown credential"):
+            parse_runbook({
+                "system": {"credentials": {}},
+                "steps": [{"id": "revoke", "action": "revoke_credential", "params": {"credential": "missing"}}],
+            })
+
 
 if __name__ == "__main__":
     unittest.main()

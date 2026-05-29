@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from .descriptors import ACTION_SCHEMAS, CONDITION_SCHEMAS
-from .model import Alert, Cache, Database, DNSRecord, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Cache, Credential, Database, DNSRecord, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
 
 
 class ActionError(ValueError):
@@ -23,6 +23,7 @@ def _copy_state(state: SystemState, **updates: Any) -> SystemState:
         "deployments": state.deployments,
         "traffic_routes": state.traffic_routes,
         "dns_records": state.dns_records,
+        "credentials": state.credentials,
         "clock_minute": state.clock_minute,
     }
     data.update(updates)
@@ -76,6 +77,13 @@ def _dns_record(state: SystemState, name: str) -> DNSRecord:
         return state.dns_records[name]
     except KeyError as exc:
         raise ActionError(f"unknown DNS record {name!r}") from exc
+
+
+def _credential(state: SystemState, name: str) -> Credential:
+    try:
+        return state.credentials[name]
+    except KeyError as exc:
+        raise ActionError(f"unknown credential {name!r}") from exc
 
 
 def _with_service(state: SystemState, service: Service) -> SystemState:
@@ -320,6 +328,16 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         records = dict(state.dns_records)
         records[record.name] = replace(record, previous_region=None)
         return _copy_state(state, dns_records=records)
+    if action == "revoke_credential":
+        credential = _credential(state, str(p["credential"]))
+        credentials = dict(state.credentials)
+        credentials[credential.name] = replace(credential, revoked=True)
+        return _copy_state(state, credentials=credentials)
+    if action == "rotate_credential":
+        credential = _credential(state, str(p["credential"]))
+        credentials = dict(state.credentials)
+        credentials[credential.name] = replace(credential, revoked=False, rotation_due_minute=None)
+        return _copy_state(state, credentials=credentials)
     raise ActionError(f"unsupported action {action!r}")
 
 
@@ -394,4 +412,8 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
     if kind == "dns_no_split_brain":
         record = _dns_record(state, str(condition["record"]))
         return record.allow_split_brain or record.ttl_elapsed(state.clock_minute)
+    if kind == "credential_active":
+        return not _credential(state, str(condition["credential"])).revoked
+    if kind == "credential_revoked":
+        return _credential(state, str(condition["credential"])).revoked
     raise ActionError(f"unsupported condition kind {kind!r}")

@@ -47,6 +47,8 @@ ACTION_DENOTATIONS: dict[str, str] = {
     "update_dns_record": "Sets dns_records[record].region := target_region, previous_region := old region, and last_changed_minute := clock_minute.",
     "mark_dns_health_check": "Adds or removes region from dns_records[record].health_check_converged_regions according to converged.",
     "finalize_dns_record": "Sets dns_records[record].previous_region := None after the TTL proof obligation has elapsed.",
+    "revoke_credential": "Sets credentials[credential].revoked := true; ownership metadata and all non-credential state are framed.",
+    "rotate_credential": "Sets credentials[credential].revoked := false and rotation_due_minute := None after modeled rotation evidence.",
 }
 
 PROPERTY_CONTRACTS: dict[str, PropertyContract] = {
@@ -82,6 +84,9 @@ PROPERTY_CONTRACTS: dict[str, PropertyContract] = {
     "dns_ttl_elapsed_before_recursion": PropertyContract("dns_ttl_elapsed_before_recursion", "prior TTL elapsed or active-active split brain is safe", "update_dns_record starts a TTL window", "recursive cutovers do not overlap stateful TTL windows", "Wait for previous TTL or explicitly model active-active safety."),
     "dns_ttl_elapsed_before_finalize": PropertyContract("dns_ttl_elapsed_before_finalize", "record.ttl_elapsed(clock_minute)", "finalize_dns_record clears previous_region", "finalization happens after TTL", "Insert a wait covering the record TTL."),
     "dns_no_split_brain_during_ttl": PropertyContract("dns_no_split_brain_during_ttl", "record allows split brain or TTL has elapsed", "DNS cutover maintains previous_region during propagation", "stateful split-brain window is absent", "Wait for TTL or set allow_split_brain only for active-active-safe records."),
+    "effect_annotation_required": PropertyContract("effect_annotation_required", "high-risk actions declare reviewed effect metadata", "operator action may delete, revoke, drain, replay, degrade users, or make irreversible state changes", "effect annotations make retry/reversal/blast-radius assumptions auditable", "Add effect_annotations with effect_types, idempotency, reversibility, retry_safety, blast_radius, and expected_user_impact."),
+    "unsafe_retry_annotation": PropertyContract("unsafe_retry_annotation", "non-idempotent or irreversible actions are not marked retry-safe", "operator retry may repeat destructive effects", "retry policy matches modeled effect risk", "Mark retry_safety=unsafe/unknown or make the action idempotent/reversible with a reviewed guard."),
+    "credential_active": PropertyContract("credential_active", "credential is not revoked before dependent use", "credential actions may revoke or rotate credentials", "credential remains active unless explicitly revoked", "Rotate the credential or add a credential_active precondition before dependent operations."),
 }
 
 

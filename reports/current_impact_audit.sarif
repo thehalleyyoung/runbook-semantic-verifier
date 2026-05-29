@@ -33,6 +33,35 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 21
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least. Recommendation: Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations."
+          },
+          "properties": {
+            "findingId": "finding-001",
+            "findingType": "prose",
+            "semanticObligation": "restore_path_and_blast_radius_limited",
+            "semanticTrace": [],
+            "smallStepRule": ""
+          },
+          "ruleId": "data-deletion-needs-restore-precondition"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 105
                 }
               }
             }
@@ -41,7 +70,7 @@
             "text": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication Recommendation: Stop replay or add deduplication/idempotency guards before messages can be processed twice."
           },
           "properties": {
-            "findingId": "finding-001",
+            "findingId": "finding-002",
             "findingType": "semantic",
             "semanticObligation": "no_duplicate_processing_risk",
             "semanticTrace": [
@@ -60,6 +89,38 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 105
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window Recommendation: Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay."
+          },
+          "properties": {
+            "findingId": "finding-003",
+            "findingType": "semantic",
+            "semanticObligation": "no_replay_without_dedupe",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+            ],
+            "smallStepRule": "ActionGuard.MessageReplayDeduplication"
+          },
+          "ruleId": "no_replay_without_dedupe"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 123
                 }
               }
             }
@@ -68,7 +129,7 @@
             "text": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication Recommendation: Stop replay or add deduplication/idempotency guards before messages can be processed twice."
           },
           "properties": {
-            "findingId": "finding-002",
+            "findingId": "finding-004",
             "findingType": "semantic",
             "semanticObligation": "no_duplicate_processing_risk",
             "semanticTrace": [
@@ -89,6 +150,9 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 123
                 }
               }
             }
@@ -97,7 +161,7 @@
             "text": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers Recommendation: Rebalance to a positive consumer count while backlog exists, or drain the queue first."
           },
           "properties": {
-            "findingId": "finding-003",
+            "findingId": "finding-005",
             "findingType": "semantic",
             "semanticObligation": "no_rebalance_to_zero_consumers",
             "semanticTrace": [
@@ -117,32 +181,9 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
-                }
-              }
-            }
-          ],
-          "message": {
-            "text": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window Recommendation: Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay."
-          },
-          "properties": {
-            "findingId": "finding-004",
-            "findingType": "semantic",
-            "semanticObligation": "no_replay_without_dedupe",
-            "semanticTrace": [
-              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
-              "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
-            ],
-            "smallStepRule": "ActionGuard.MessageReplayDeduplication"
-          },
-          "ruleId": "no_replay_without_dedupe"
-        },
-        {
-          "level": "error",
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 123
                 }
               }
             }
@@ -151,7 +192,7 @@
             "text": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable Recommendation: Wait for consumer-group stability before leaving replay/backlog processing exposed."
           },
           "properties": {
-            "findingId": "finding-005",
+            "findingId": "finding-006",
             "findingType": "semantic",
             "semanticObligation": "no_unstable_consumer_group_with_backlog",
             "semanticTrace": [
@@ -172,6 +213,9 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 123
                 }
               }
             }
@@ -180,7 +224,7 @@
             "text": "queue tenant-index-fallback-scan has depth=36000 with no active consumers Recommendation: Keep at least one active consumer or drain backlog before rebalancing to zero consumers."
           },
           "properties": {
-            "findingId": "finding-006",
+            "findingId": "finding-007",
             "findingType": "semantic",
             "semanticObligation": "queue_backlog_requires_consumers",
             "semanticTrace": [
@@ -193,32 +237,6 @@
             "smallStepRule": "PostInvariant.QueueBacklogHasConsumers"
           },
           "ruleId": "queue_backlog_requires_consumers"
-        },
-        {
-          "level": "error",
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
-                },
-                "region": {
-                  "startLine": 21
-                }
-              }
-            }
-          ],
-          "message": {
-            "text": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least. Recommendation: Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations."
-          },
-          "properties": {
-            "findingId": "finding-007",
-            "findingType": "prose",
-            "semanticObligation": "restore_path_and_blast_radius_limited",
-            "semanticTrace": [],
-            "smallStepRule": ""
-          },
-          "ruleId": "data-deletion-needs-restore-precondition"
         },
         {
           "level": "warning",

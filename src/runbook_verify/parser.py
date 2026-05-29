@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, OperationDescriptor
-from .model import Alert, Cache, Database, DNSRecord, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Cache, Credential, Database, DNSRecord, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute, Waiver
 
 
 @dataclass
@@ -306,7 +306,18 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             health_check_converged_regions=converged_regions,
             allow_split_brain=bool(cfg.get("allow_split_brain", False)),
         )
-    return SystemState(regions=regions, services=services, databases=databases, queues=queues, caches=caches, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
+    credentials: dict[str, Credential] = {}
+    for name, cfg_any in _require_mapping(raw.get("credentials", {}), "system.credentials").items():
+        name = str(name)
+        cfg = _require_mapping(cfg_any, f"system.credentials.{name}")
+        rotation_due = cfg.get("rotation_due_minute")
+        credentials[name] = Credential(
+            name=name,
+            owner=str(cfg.get("owner", "unassigned")),
+            revoked=bool(cfg.get("revoked", False)),
+            rotation_due_minute=_optional_non_negative_int(rotation_due, f"system.credentials.{name}.rotation_due_minute"),
+        )
+    return SystemState(regions=regions, services=services, databases=databases, queues=queues, caches=caches, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, credentials=credentials, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
@@ -319,6 +330,8 @@ def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) ->
 
 def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
     system = parse_state(_require_mapping(doc.get("system", {}), "system"))
+    metadata = dict(_require_mapping(doc.get("metadata", {}), "metadata"))
+    waivers = _parse_waivers(metadata.get("waivers", []))
     source_lines = doc.get("__source_lines", {})
     if not isinstance(source_lines, dict):
         source_lines = {}
@@ -339,6 +352,7 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
             _validate_action_schema(action, params, f"step {sid}")
             requires = tuple(_condition(c, f"step {sid}.requires[{i}]") for i, c in enumerate(_require_list(raw_step.get("requires", []), f"step {sid}.requires")))
             effects = tuple(_condition(c, f"step {sid}.effects[{i}]") for i, c in enumerate(_require_list(raw_step.get("effects", []), f"step {sid}.effects")))
+            effect_annotations = _effect_annotations(raw_step.get("effect_annotations", {}), f"step {sid}.effect_annotations")
         except RunbookParseError as exc:
             exc.with_context(line=step_line, field=f"steps[{idx}]")
             raise
@@ -349,6 +363,7 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
             after=tuple(str(x) for x in raw_step.get("after", [])),
             requires=requires,
             effects=effects,
+            effect_annotations=effect_annotations,
             source_path=str(source_path) if source_path is not None else None,
             source_line=step_line,
         ))
@@ -370,6 +385,8 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
         max_depth=max_depth,
         allow_reordering=bool(doc.get("allow_reordering", True)),
         safety=safety,
+        metadata=metadata,
+        waivers=waivers,
     )
 
 
@@ -387,6 +404,98 @@ def _condition(raw: Any, where: str) -> dict[str, Any]:
         raise RunbookParseError(f"{where} has unsupported condition kind {kind!r}", field=f"{where}.kind")
     _validate_payload(descriptor, condition, where, extra_required={"kind"})
     return condition
+
+
+EFFECT_TYPES = {
+    "deletion",
+    "credential_revocation",
+    "manual_sql",
+    "traffic_drain",
+    "queue_replay",
+    "customer_visible_degradation",
+    "irreversible_state_change",
+}
+IDEMPOTENCY_VALUES = {"idempotent", "non_idempotent", "unknown"}
+REVERSIBILITY_VALUES = {"reversible", "irreversible", "unknown"}
+RETRY_SAFETY_VALUES = {"safe", "unsafe", "unknown"}
+BENCHMARK_VISIBILITY_VALUES = {"visible", "hidden", "blocking"}
+
+
+def _effect_annotations(raw: Any, where: str) -> dict[str, Any]:
+    if raw in ({}, None):
+        return {}
+    data = dict(_require_mapping(raw, where))
+    allowed = {
+        "effect_types",
+        "idempotency",
+        "reversibility",
+        "retry_safety",
+        "blast_radius",
+        "expected_user_impact",
+        "reviewed_by",
+    }
+    unknown = sorted(set(data) - allowed)
+    if unknown:
+        raise RunbookParseError(f"{where} has unknown field(s): {', '.join(unknown)}", field=f"{where}.{unknown[0]}")
+    types = data.get("effect_types")
+    if not isinstance(types, list) or not types or any(not isinstance(item, str) for item in types):
+        raise RunbookParseError(f"{where}.effect_types must be a non-empty string list", field=f"{where}.effect_types")
+    invalid = sorted(set(types) - EFFECT_TYPES)
+    if invalid:
+        raise RunbookParseError(f"{where}.effect_types has unsupported value(s): {', '.join(invalid)}", field=f"{where}.effect_types")
+    for key, values in (("idempotency", IDEMPOTENCY_VALUES), ("reversibility", REVERSIBILITY_VALUES), ("retry_safety", RETRY_SAFETY_VALUES)):
+        value = data.get(key)
+        if value not in values:
+            raise RunbookParseError(f"{where}.{key} must be one of {', '.join(sorted(values))}", field=f"{where}.{key}")
+    for key in ("blast_radius", "expected_user_impact"):
+        if not isinstance(data.get(key), str) or not data[key].strip():
+            raise RunbookParseError(f"{where}.{key} must be a non-empty string", field=f"{where}.{key}")
+    if "reviewed_by" in data and (not isinstance(data["reviewed_by"], list) or any(not isinstance(item, str) for item in data["reviewed_by"])):
+        raise RunbookParseError(f"{where}.reviewed_by must contain only strings", field=f"{where}.reviewed_by")
+    return data
+
+
+def _parse_waivers(raw: Any) -> tuple[Waiver, ...]:
+    if raw in (None, []):
+        return ()
+    items = _require_list(raw, "metadata.waivers")
+    waivers: list[Waiver] = []
+    seen: set[str] = set()
+    for index, item_any in enumerate(items):
+        where = f"metadata.waivers[{index}]"
+        item = _require_mapping(item_any, where)
+        required = {"id", "owner", "expiry", "scope", "rationale", "invariant", "benchmark_visibility"}
+        missing = sorted(required - set(item))
+        if missing:
+            raise RunbookParseError(f"{where} missing required field(s): {', '.join(missing)}", field=f"{where}.{missing[0]}")
+        unknown = sorted(set(item) - required)
+        if unknown:
+            raise RunbookParseError(f"{where} has unknown field(s): {', '.join(unknown)}", field=f"{where}.{unknown[0]}")
+        waiver_id = str(item["id"])
+        if waiver_id in seen:
+            raise RunbookParseError(f"{where}.id duplicates waiver id {waiver_id!r}", field=f"{where}.id")
+        seen.add(waiver_id)
+        visibility = str(item["benchmark_visibility"])
+        if visibility not in BENCHMARK_VISIBILITY_VALUES:
+            raise RunbookParseError(f"{where}.benchmark_visibility must be one of {', '.join(sorted(BENCHMARK_VISIBILITY_VALUES))}", field=f"{where}.benchmark_visibility")
+        try:
+            from datetime import date
+            date.fromisoformat(str(item["expiry"]))
+        except ValueError as exc:
+            raise RunbookParseError(f"{where}.expiry must be an ISO date", field=f"{where}.expiry") from exc
+        for key in ("owner", "scope", "rationale", "invariant"):
+            if not str(item[key]).strip():
+                raise RunbookParseError(f"{where}.{key} must be non-empty", field=f"{where}.{key}")
+        waivers.append(Waiver(
+            id=waiver_id,
+            owner=str(item["owner"]),
+            expiry=str(item["expiry"]),
+            scope=str(item["scope"]),
+            rationale=str(item["rationale"]),
+            invariant=str(item["invariant"]),
+            benchmark_visibility=visibility,
+        ))
+    return tuple(waivers)
 
 
 def _validate_action_schema(action: str, params: dict[str, Any], where: str) -> None:
@@ -484,6 +593,8 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
             require_entity("traffic route", str(params["route"]), state.traffic_routes)
         if "record" in params:
             require_entity("DNS record", str(params["record"]), state.dns_records)
+        if "credential" in params:
+            require_entity("credential", str(params["credential"]), state.credentials)
         if "region" in params:
             require_entity("region", str(params["region"]), state.regions)
         if "target_region" in params:
@@ -510,6 +621,7 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         ("flag", state.flags, "feature flag"),
         ("route", state.traffic_routes, "traffic route"),
         ("record", state.dns_records, "DNS record"),
+        ("credential", state.credentials, "credential"),
     ):
         if key in condition and str(condition[key]) not in collection:
             raise RunbookParseError(f"step {step_id} condition references unknown {label} {condition[key]!r}", field=f"step {step_id}.condition.{key}")

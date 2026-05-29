@@ -29,7 +29,9 @@ checker traces.
 | `restore_replica` | `service:string, replica:string` | Marks one drained service replica available again. | Sets services[service].replicas[replica].drained := false; all other state fields are framed. |
 | `resume_cache_writes` | `cache:string` | Re-enables writes to a cache after warmup/verification. | Sets caches[cache].write_frozen := false. |
 | `resume_queue` | `queue:string` | Resumes queue consumption/processing. | Sets queues[queue].paused := false. |
+| `revoke_credential` | `credential:string` | Marks a credential revoked so dependent actions must use rotated credentials before continuing. | Sets credentials[credential].revoked := true; ownership metadata and all non-credential state are framed. |
 | `rollback_deployment` | `service:string, to?:string` | Moves a service deployment pointer to a previous or named version. | Sets services[service].deployment and deployments[service].current to params.to or 'previous'. |
+| `rotate_credential` | `credential:string` | Clears revoked/rotation-due state for a modeled credential after rotation. | Sets credentials[credential].revoked := false and rotation_due_minute := None after modeled rotation evidence. |
 | `run_migration` | `database:string, in_progress?:boolean, compatible?:boolean` | Updates database migration progress and compatibility flags. | Sets database migration_in_progress and migration_compatible from parameters, defaulting to preserve compatibility. |
 | `scale_service` | `service:string, replicas:integer>=0, region?:string` | Resizes a service replica set using deterministic generated replica ids. | Resizes services[service].replicas to params.replicas, generating healthy undrained replicas in params.region when growing. |
 | `shift_traffic` | `route:string, region:string, percent:integer>=0<=100` | Sets weighted routing for a route in one region; two-region routes automatically assign the remainder to the peer region. | Sets traffic_routes[route].weights[region] := percent and, for two-region routes, assigns the peer region 100 - percent. |
@@ -51,6 +53,8 @@ checker traces.
 | `cache_warm` | `cache:string` | Requires or asserts that cache warmup has reached the modeled threshold. |
 | `cache_writes_frozen` | `cache:string` | Requires or asserts that cache writes are frozen before a destructive flush. |
 | `consumer_group_stable` | `queue:string` | Requires or asserts that consumer-group rebalancing has converged. |
+| `credential_active` | `credential:string` | Requires or asserts a credential is not revoked. |
+| `credential_revoked` | `credential:string` | Requires or asserts a credential has been revoked. |
 | `database_primary_region` | `database:string, region:string` | Requires or asserts a database primary region. |
 | `database_quorum_confirmed` | `database:string` | Requires or asserts confirmed database quorum. |
 | `dns_health_check_converged` | `record:string, region:string` | Requires or asserts health-check convergence before DNS cutover. |

@@ -1,5 +1,26 @@
 {
   "aggregate": {
+    "adoption_summary": {
+      "oracle_review_labels": {
+        "false_positive": 1,
+        "true_hazard": 1,
+        "unsupported_claim": 1,
+        "useful_warning": 1
+      },
+      "remediation_actions": [
+        "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+      ],
+      "risk_classes_detected": [
+        "data-deletion-needs-restore-precondition",
+        "destructive-delete-needs-targeting",
+        "no_duplicate_processing_risk",
+        "no_rebalance_to_zero_consumers",
+        "no_replay_without_dedupe",
+        "no_unstable_consumer_group_with_backlog",
+        "prose-suppression-applied",
+        "queue_backlog_requires_consumers"
+      ]
+    },
     "pass": true,
     "performance_counters": {
       "avg_branch_factor": 1.0,
@@ -41,15 +62,47 @@
       "prose-suppression-applied": 1
     },
     "runbooks": 1,
-    "runtime_seconds": 0.0021034160163253546,
+    "runtime_seconds": 0.004564500006381422,
     "states_explored": 3,
     "traces_explored": 1,
+    "validity_threat_categories": {
+      "abstraction_bias": 1,
+      "bounded_search_limits": 1,
+      "public_data_incompleteness": 1
+    },
     "violations_by_property": {
       "no_duplicate_processing_risk": 2,
       "no_rebalance_to_zero_consumers": 1,
       "no_replay_without_dedupe": 1,
       "no_unstable_consumer_group_with_backlog": 1,
       "queue_backlog_requires_consumers": 1
+    },
+    "workflow_baselines": {
+      "bounded_checking": {
+        "fail": 1,
+        "pass": 0
+      },
+      "combined_workflow": {
+        "fail": 0,
+        "pass": 1
+      },
+      "prose_linting": {
+        "fail": 1,
+        "pass": 0
+      },
+      "schema_only_validation": {
+        "fail": 0,
+        "pass": 1
+      },
+      "semantic_diffing": {
+        "configured_pairs": 0,
+        "fail": 0,
+        "pass": 0
+      },
+      "type_effect_checking": {
+        "fail": 1,
+        "pass": 0
+      }
     }
   },
   "name": "current public runbook impact benchmark",
@@ -58,6 +111,22 @@
     {
       "benchmark_metadata": {
         "abstraction_level": "derived-public-runbook",
+        "adoption_summary": {
+          "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+          "remediation_actions": [
+            "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+          ],
+          "risk_classes_detected": [
+            "data-deletion-needs-restore-precondition",
+            "destructive-delete-needs-targeting",
+            "no_duplicate_processing_risk",
+            "no_rebalance_to_zero_consumers",
+            "no_replay_without_dedupe",
+            "no_unstable_consumer_group_with_backlog",
+            "prose-suppression-applied",
+            "queue_backlog_requires_consumers"
+          ]
+        },
         "expected_result": {
           "prose_rules": [
             "data-deletion-needs-restore-precondition",
@@ -78,12 +147,31 @@
           "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model.",
           "status": "public-license"
         },
+        "oracle_review": {
+          "allowed_labels": [
+            "true_hazard",
+            "useful_warning",
+            "false_positive",
+            "unsupported_claim"
+          ],
+          "notes": "No independent SRE oracle review is claimed for this fixture.",
+          "status": "not-reviewed"
+        },
         "provenance": {
           "kind": "public-current",
           "notes": "Short attributed public excerpts plus independently authored defensive model.",
           "retrieved": "2026-05-29",
           "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
           "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md"
+        },
+        "reproduction": {
+          "budget": "standard-library Python; intended to run in seconds on a laptop",
+          "commands": [
+            "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+          ],
+          "expected_outputs": [
+            "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+          ]
         },
         "responsible_disclosure": {
           "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim.",
@@ -98,6 +186,11 @@
           "consumer_group_rebalance",
           "benchmark_expected_prose_rules",
           "auditable_prose_suppressions"
+        ],
+        "validity_threat_categories": [
+          "abstraction_bias",
+          "bounded_search_limits",
+          "public_data_incompleteness"
         ],
         "validity_threats": [
           "Public runbook excerpts are incomplete",
@@ -125,6 +218,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "performance_counters": {
+        "annotation_warnings": 0,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
@@ -155,7 +249,8 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 2
+        "transitions_explored": 2,
+        "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "backfill-needs-queue-capacity": 1,
@@ -163,7 +258,7 @@
         "destructive-delete-needs-targeting": 1,
         "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.0020835000032093376,
+      "runtime_seconds": 0.004552625003270805,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -173,7 +268,52 @@
         "no_replay_without_dedupe": 1,
         "no_unstable_consumer_group_with_backlog": 1,
         "queue_backlog_requires_consumers": 1
+      },
+      "workflow_baselines": {
+        "bounded_checking": {
+          "counterexamples": 6,
+          "pass": false,
+          "violations_by_property": {
+            "no_duplicate_processing_risk": 2,
+            "no_rebalance_to_zero_consumers": 1,
+            "no_replay_without_dedupe": 1,
+            "no_unstable_consumer_group_with_backlog": 1,
+            "queue_backlog_requires_consumers": 1
+          }
+        },
+        "combined_workflow": {
+          "pass": true,
+          "uses": [
+            "schema_only_validation",
+            "prose_linting",
+            "bounded_checking",
+            "type_effect_checking",
+            "semantic_diffing_when_configured"
+          ]
+        },
+        "prose_linting": {
+          "finding_count": 4,
+          "findings_by_rule": {
+            "backfill-needs-queue-capacity": 1,
+            "data-deletion-needs-restore-precondition": 1,
+            "destructive-delete-needs-targeting": 1,
+            "prose-suppression-applied": 1
+          },
+          "pass": false
+        },
+        "schema_only_validation": {
+          "errors": [],
+          "pass": true
+        },
+        "type_effect_checking": {
+          "pass": false,
+          "proof_obligation_failures": {
+            "precondition": 2,
+            "safety_postcondition": 4
+          }
+        }
       }
     }
-  ]
+  ],
+  "semantic_diff_baselines": []
 }

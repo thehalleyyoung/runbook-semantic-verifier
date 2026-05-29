@@ -9,9 +9,10 @@
 - Parse errors: 0
 - Semantic counterexamples: 6
 - Unverified prose claims: 4
-- Missing rollback/restore coverage: 0
+- Missing rollback/restore coverage: 1
 - Stale preconditions: 3
 - Blocking stale preconditions: 1
+- Waiver debt: 0 (expired: 0)
 - Benchmark expectation mismatches: 0
 
 ## Runbooks
@@ -40,13 +41,17 @@
 
 ## Missing rollback/restore coverage
 
-No high-risk executable step lacked a modeled rollback/restore action.
+- `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` has high-risk steps `delete-stale-tenant-indexes-trigger-fallback` but no modeled rollback/restore action.
 
 ## Stale preconditions
 
 - `error` `replica_count_mismatch` in `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`: service 'tempo-query' models 2 replica(s) but inventory expects 3 (obligation `inventory_refinement_precondition`)
 - `warning` `missing_service_alert` in `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`: service 'tempo-query' omits inventory alert(s): tempo-query-consumer-group-unstable, tempo-query-fallback-backlog (obligation `inventory_refinement_precondition`)
 - `warning` `missing_dependency` in `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`: service 'tempo-query' omits inventory dependency name(s): tempo-ring (obligation `inventory_refinement_precondition`)
+
+## Waiver debt
+
+No model waivers declared.
 
 ## Proof obligations
 
