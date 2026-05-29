@@ -26,6 +26,9 @@ dependency names, and replica counts, reporting stale assumptions as
 The DSL also models queue
 replay/DLQ/consumer-group semantics, DNS cutovers with TTL and health-check
 convergence obligations, and cache flush/warmup/cold-start/capacity semantics.
+Action descriptors now carry generated denotational state-transformer text, and
+semantic findings carry Hoare triples, weakest-precondition hints, source lines,
+causal dependencies, and state deltas in `frv check --format json`.
 The historical fixture reconstructs the GitHub
 October 21, 2018 MySQL failover incident from public postmortem facts. The
 current case studies analyze short attributed excerpts from Grafana Tempo's
@@ -96,6 +99,15 @@ differently named system exists.
   operator-choice, action/wait, failure, postcondition, and bounded-exploration
   rule names documented in `docs/small_step_semantics.md`; they are explanatory
   witnesses for the bounded DSL execution, not a stronger proof system.
+- Hoare triples and weakest-precondition templates are generated from
+  `src/runbook_verify/contracts.py` and documented in
+  `docs/weakest_preconditions.md`. They explain the bounded proof obligation
+  that failed for a DSL trace; they are not machine-checked program-logic proofs
+  over production infrastructure.
+- `frv check --format json` emits explanation records with `semantic_trace`,
+  `state_delta`, `causal_dependencies`, `source`, `hoare_triple`, and
+  `weakest_precondition_hint` for editor/review integration. The data is derived
+  from the same bounded checker result.
 - Configuration profiles set CLI default exit policies for audit, lint, CI gate,
   readiness, owner-scorecard, and benchmark reproduction workflows. Explicit
   `--fail-on` values override profile defaults, and profiles do not suppress or
@@ -174,6 +186,8 @@ differently named system exists.
   - `case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md`
   - `reports/github_oct21_semantic_diff.json`
   - `reports/github_oct21_semantic_diff.md`
+  - `reports/github_oct21_check_explanations.json`
+  - `reports/github_oct21_check_explanations.md`
   - `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`
   - `reports/current_impact.json`
   - `reports/current_impact.md`

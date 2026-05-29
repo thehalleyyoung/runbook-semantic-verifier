@@ -6,6 +6,7 @@ from typing import Any
 
 from .actions import ActionError, apply_action
 from .checker import Checker, Violation
+from .contracts import weakest_precondition_for
 from .markdown_lint import SEVERITY_RANK, lint_markdown_tree
 from .model import Runbook, SystemState
 from .parser import RunbookParseError, is_runbook_document, load_document, parse_runbook
@@ -104,6 +105,7 @@ def render_explanation_markdown(explanation: dict[str, Any]) -> str:
         f"- Obligation: `{explanation['semantic_obligation']}`",
         f"- Location: `{explanation['source']['path']}:{explanation['source']['line'] or ''}`",
         f"- Message: {explanation['message']}",
+        f"- Hoare triple: `{explanation.get('hoare_triple') or '(not registered)'}`",
         f"- Weakest-precondition hint: {explanation['weakest_precondition_hint']}",
         f"- Remediation: {explanation['remediation']}",
         "",
@@ -132,16 +134,38 @@ def _finding_from_violation(path: Path, violation: Violation) -> dict[str, Any]:
         "severity": "error",
         "rank": SEVERITY_RANK["error"],
         "path": str(path),
-        "line": None,
+        "line": violation.source_line,
         "rule": violation.property,
         "semantic_obligation": violation.property,
         "step": violation.step,
         "trace": list(violation.trace),
         "semantic_trace": list(violation.semantic_trace),
         "small_step_rule": violation.small_step_rule,
+        "hoare_triple": violation.hoare_triple,
         "message": violation.message,
         "recommendation": violation.remediation,
     }
+
+
+def explain_violation(runbook: Runbook, violation: Violation, finding_id: str = "finding-001") -> dict[str, Any]:
+    return _explain_semantic_finding(
+        {
+            "id": finding_id,
+            "rule": violation.property,
+            "severity": "error",
+            "semantic_obligation": violation.property,
+            "step": violation.step,
+            "trace": list(violation.trace),
+            "semantic_trace": list(violation.semantic_trace),
+            "small_step_rule": violation.small_step_rule,
+            "message": violation.message,
+            "recommendation": violation.remediation,
+            "hoare_triple": violation.hoare_triple,
+            "line": violation.source_line,
+            "path": violation.source_path,
+        },
+        runbook,
+    )
 
 
 def _explain_semantic_finding(finding: dict[str, Any], runbook: Runbook) -> dict[str, Any]:
@@ -174,6 +198,7 @@ def _explain_semantic_finding(finding: dict[str, Any], runbook: Runbook) -> dict
         "severity": finding["severity"],
         "semantic_obligation": finding["semantic_obligation"],
         "small_step_rule": finding.get("small_step_rule") or rule_info.get("small_step_rule", f"SafetyInvariant.{rule}"),
+        "hoare_triple": finding.get("hoare_triple"),
         "message": finding["message"],
         "trace": trace,
         "semantic_trace": [str(item) for item in finding.get("semantic_trace", [])],
@@ -186,7 +211,7 @@ def _explain_semantic_finding(finding: dict[str, Any], runbook: Runbook) -> dict
         "source": source,
         "state_delta": _state_delta(before, after) if after is not None else [],
         "action_error": action_error,
-        "weakest_precondition_hint": rule_info.get("weakest_precondition_hint", "Strengthen the runbook preconditions so this invariant holds before and after the action."),
+        "weakest_precondition_hint": rule_info.get("weakest_precondition_hint", weakest_precondition_for(rule)),
         "remediation": finding.get("recommendation"),
         "remediation_examples": rule_info.get("remediation_examples", []),
     }

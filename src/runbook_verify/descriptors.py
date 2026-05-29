@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from .contracts import action_denotation
+
 FieldType = Literal["string", "integer", "boolean", "string_list"]
 
 
@@ -173,12 +175,12 @@ def render_action_reference_markdown() -> str:
         "and bounded-exploration rules that wrap these action transitions and appear in",
         "checker traces.",
         "",
-        "| Action | Parameters | Semantics |",
-        "| --- | --- | --- |",
+        "| Action | Parameters | Operational summary | Denotational state transformer |",
+        "| --- | --- | --- | --- |",
     ]
     for name in sorted(ACTION_DESCRIPTORS):
         desc = ACTION_DESCRIPTORS[name]
-        lines.append(f"| `{name}` | `{desc.signature()}` | {desc.summary} |")
+        lines.append(f"| `{name}` | `{desc.signature()}` | {desc.summary} | {action_denotation(name)} |")
     lines.extend([
         "",
         "## Condition descriptors",

@@ -11,7 +11,7 @@ from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_b
 from .checker import Checker
 from .ci_gate import build_ci_gate_report, render_ci_gate_json, render_ci_gate_markdown
 from .coverage import CoverageError, build_coverage_report, render_coverage_json, render_coverage_markdown
-from .explanation import ExplainError, explain_finding, render_explanation_json, render_explanation_markdown
+from .explanation import ExplainError, explain_finding, explain_violation, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla
 from .formal_objects import FormalObjectsError, build_formal_objects_report, render_formal_objects_json, render_formal_objects_markdown
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
@@ -33,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     check_p.add_argument("runbook")
     check_p.add_argument("--expect-violations", action="store_true", help="exit 0 only when at least one violation is found")
     check_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
+    check_p.add_argument("--format", choices=["text", "json"], default="text", help="check report format")
     validate_p = sub.add_parser("validate", help="parse and validate a runbook without state-space exploration")
     validate_p.add_argument("runbook")
     validate_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
@@ -245,13 +246,21 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "check":
         result = Checker(runbook).check()
+        if args.format == "json":
+            print(_render_check_json(runbook, result), end="")
+            if args.expect_violations:
+                return 0 if result.violations else 1
+            return 0 if result.safe else 1
         print(f"Runbook: {runbook.name}")
         print(f"States explored: {result.states_explored}; terminal traces: {result.traces_explored}; max depth reached: {result.max_depth_reached}")
         print(f"Small-step rules observed: {json.dumps(result.performance_counters()['semantic_rule_counts'], sort_keys=True)}")
         if result.violations:
             print("Violations:")
             for v in result.violations:
-                print(f"- [{v.property}] rule={v.small_step_rule} trace={' -> '.join(v.trace)}: {v.message}")
+                location = f" source={v.source_path}:{v.source_line}" if v.source_path and v.source_line else ""
+                print(f"- [{v.property}] rule={v.small_step_rule}{location} trace={' -> '.join(v.trace)}: {v.message}")
+                if v.hoare_triple:
+                    print(f"  hoare: {v.hoare_triple}")
                 if v.semantic_trace:
                     print(f"  semantic_trace: {' -> '.join(v.semantic_trace)}")
                 if v.remediation:
@@ -328,10 +337,11 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "severity": "error",
                 "rank": SEVERITY_RANK["error"],
                 "path": str(file),
-                "line": None,
+                "line": violation.source_line,
                 "rule": violation.property,
                 "semantic_obligation": violation.property,
                 "small_step_rule": violation.small_step_rule,
+                "hoare_triple": violation.hoare_triple,
                 "step": violation.step,
                 "trace": list(violation.trace),
                 "semantic_trace": list(violation.semantic_trace),
@@ -374,6 +384,17 @@ def _print_parse_error(exc: RunbookParseError, diagnostics_format: str = "text",
         print(f"{location}: parse error: {exc}", file=sys.stderr)
     else:
         print(f"parse error: {exc}", file=sys.stderr)
+
+
+def _render_check_json(runbook: object, result: object) -> str:
+    explanations = [explain_violation(runbook, violation, f"finding-{idx:03d}") for idx, violation in enumerate(result.violations, start=1)]
+    payload = {
+        "runbook": getattr(runbook, "name"),
+        "safe": result.safe,
+        "performance_counters": result.performance_counters(),
+        "findings": explanations,
+    }
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
 def _runbook_files(root: Path) -> list[Path]:

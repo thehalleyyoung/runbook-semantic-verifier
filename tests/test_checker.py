@@ -28,6 +28,7 @@ class CheckerTests(unittest.TestCase):
         self.assertIn("bounded_alert_suppression", props)
         self.assertTrue(all(v.small_step_rule for v in result.violations))
         self.assertTrue(all(v.semantic_trace for v in result.violations))
+        self.assertTrue(all(v.hoare_triple for v in result.violations))
 
     def test_dependency_order_prevents_premature_failover(self):
         result = Checker(load_runbook(ROOT / "examples" / "safe_runbook.json")).check()

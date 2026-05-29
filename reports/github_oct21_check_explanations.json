@@ -1,0 +1,119 @@
+{
+  "findings": [
+    {
+      "action": "failover_database",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
+      },
+      "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+      "id": "finding-001",
+      "message": "step orchestrator-failover-to-west requires {'kind': 'database_quorum_confirmed', 'database': 'mysql-metadata'}",
+      "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+      "remediation_examples": [
+        "Add an `after` dependency on the step that proves the condition.",
+        "Add a concrete guard such as `region_healthy`, `database_quorum_confirmed`, or `service_available_at_least`."
+      ],
+      "rule": "precondition",
+      "semantic_obligation": "precondition",
+      "semantic_trace": [
+        "Schedule.SequenceNext(orchestrator-failover-to-west)",
+        "StepEnabled.Requires(orchestrator-failover-to-west)"
+      ],
+      "severity": "error",
+      "small_step_rule": "StepEnabled.Requires",
+      "source": {
+        "excerpt": "\"id\": \"orchestrator-failover-to-west\",",
+        "line": 87,
+        "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md"
+      },
+      "state_delta": [
+        {
+          "after": "us-west",
+          "before": "us-east",
+          "field": "databases.mysql-metadata.primary_region"
+        }
+      ],
+      "step": "orchestrator-failover-to-west",
+      "trace": [
+        "orchestrator-failover-to-west"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Before this action is enabled, an earlier step or explicit assumption must establish the failed `requires` condition."
+    },
+    {
+      "action": "failover_database",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
+      },
+      "hoare_triple": "{ database_quorum_confirmed(database) when data_loss_risk=true } action_effect: failover_database may risk data loss { data-loss-risk failover has quorum evidence }",
+      "id": "finding-002",
+      "message": "database mysql-metadata failover has data-loss risk before quorum confirmation",
+      "remediation": "Confirm quorum or explicit data-loss approval before failover.",
+      "remediation_examples": [
+        "Run `confirm_quorum` before `failover_database`.",
+        "Add a `database_quorum_confirmed` precondition to the failover step."
+      ],
+      "rule": "quorum_before_data_loss_action",
+      "semantic_obligation": "quorum_before_data_loss_action",
+      "semantic_trace": [
+        "Schedule.SequenceNext(orchestrator-failover-to-west)",
+        "ActionGuard.DatabaseFailoverQuorum(orchestrator-failover-to-west)"
+      ],
+      "severity": "error",
+      "small_step_rule": "ActionGuard.DatabaseFailoverQuorum",
+      "source": {
+        "excerpt": "\"id\": \"orchestrator-failover-to-west\",",
+        "line": 87,
+        "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md"
+      },
+      "state_delta": [
+        {
+          "after": "us-west",
+          "before": "us-east",
+          "field": "databases.mysql-metadata.primary_region"
+        }
+      ],
+      "step": "orchestrator-failover-to-west",
+      "trace": [
+        "orchestrator-failover-to-west"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "A data-loss-risk failover requires database quorum/data-safety confirmation in the pre-state."
+    }
+  ],
+  "performance_counters": {
+    "avg_branch_factor": 1.0,
+    "branch_factor_total": 5,
+    "branch_points": 5,
+    "max_branch_factor": 1,
+    "max_depth_reached": false,
+    "minimized_counterexample_trace_length": 1,
+    "proof_obligation_failures": {
+      "precondition": 2
+    },
+    "proof_obligations_checked": {
+      "action_defined": 5,
+      "precondition": 2,
+      "promised_effect": 0,
+      "safety_postcondition": 60
+    },
+    "reductions_applied": 0,
+    "semantic_rule_counts": {
+      "Action.Execute": 5,
+      "ActionGuard.DatabaseFailoverQuorum": 1,
+      "Explore.Terminal": 1,
+      "Schedule.SequenceNext": 5,
+      "StepEnabled.Requires": 1
+    },
+    "states_explored": 6,
+    "symbolic_splits": 0,
+    "terminal_traces": 1,
+    "transitions_explored": 5
+  },
+  "runbook": "GitHub Oct21 2018 MySQL failover reconstruction",
+  "safe": false
+}

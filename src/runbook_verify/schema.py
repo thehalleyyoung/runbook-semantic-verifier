@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from .contracts import action_denotation
 from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, FieldDescriptor, OperationDescriptor
 
 
@@ -231,7 +232,10 @@ def _condition_schema() -> dict[str, Any]:
 def _tagged_object_schema(tag_field: str, payload_field: str, tag: str, descriptor: OperationDescriptor) -> dict[str, Any]:
     return {
         "if": {"properties": {tag_field: {"const": tag}}, "required": [tag_field]},
-        "then": {"properties": {payload_field: _object_payload_schema(descriptor)}},
+        "then": {
+            "$comment": f"{descriptor.summary} Denotation: {action_denotation(tag)}",
+            "properties": {payload_field: _object_payload_schema(descriptor)},
+        },
     }
 
 

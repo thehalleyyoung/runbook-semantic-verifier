@@ -6,38 +6,38 @@ validation, JSON Schema generation, and formal exporters. See
 and bounded-exploration rules that wrap these action transitions and appear in
 checker traces.
 
-| Action | Parameters | Semantics |
-| --- | --- | --- |
-| `confirm_quorum` | `database:string` | Marks database quorum/data-safety confirmation complete. |
-| `drain_dead_letter_queue` | `queue:string, count:integer>=0` | Removes messages from a queue's dead-letter backlog after modeled triage. |
-| `drain_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer drained; traffic must already be shifted away. |
-| `drain_region` | `region:string, services?:string[]` | Drains replicas in a region, optionally limited to named services. |
-| `drain_replica` | `service:string, replica:string` | Marks one service replica drained and unavailable. |
-| `failover_database` | `database:string, target_region:string, data_loss_risk?:boolean` | Changes database primary region and records data-loss risk for invariants. |
-| `failover_traffic` | `route:string, target_region:string` | Moves all modeled route traffic to one target region and zeroes the other route weights. |
-| `finalize_dns_record` | `record:string` | Clears a DNS record's prior target after the TTL wait obligation has elapsed. |
-| `finish_migration` | `database:string` | Clears the database migration-in-progress flag. |
-| `flush_cache` | `cache:string` | Evicts all modeled cache entries, making the cache cold and recording stale-read risk unless writes are frozen. |
-| `freeze_cache_writes` | `cache:string` | Freezes writes that could repopulate or serve stale values during a cache flush. |
-| `mark_dns_health_check` | `record:string, region:string, converged:boolean` | Records whether DNS health checks have converged for a record's regional endpoint. |
-| `mark_region_health` | `region:string, healthy:boolean` | Sets a region health flag used by failover checks. |
-| `pause_queue` | `queue:string` | Pauses queue consumption/processing. |
-| `rebalance_consumers` | `queue:string, consumers:integer>=0, stable?:boolean` | Changes consumer-group capacity and records whether the group has reached a stable post-rebalance assignment. |
-| `replay_messages` | `queue:string, count:integer>=0, from_dead_letter?:boolean, dedupe_key?:string, idempotent?:boolean` | Replays messages into a queue, optionally from the dead-letter queue, and records duplicate-processing risk unless a dedupe key, idempotency proof, or dedupe window is present. |
-| `restart_service` | `service:string` | Reasserts the modeled service without changing capacity. |
-| `restore_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer active again. |
-| `restore_replica` | `service:string, replica:string` | Marks one drained service replica available again. |
-| `resume_cache_writes` | `cache:string` | Re-enables writes to a cache after warmup/verification. |
-| `resume_queue` | `queue:string` | Resumes queue consumption/processing. |
-| `rollback_deployment` | `service:string, to?:string` | Moves a service deployment pointer to a previous or named version. |
-| `run_migration` | `database:string, in_progress?:boolean, compatible?:boolean` | Updates database migration progress and compatibility flags. |
-| `scale_service` | `service:string, replicas:integer>=0, region?:string` | Resizes a service replica set using deterministic generated replica ids. |
-| `shift_traffic` | `route:string, region:string, percent:integer>=0<=100` | Sets weighted routing for a route in one region; two-region routes automatically assign the remainder to the peer region. |
-| `suppress_alert` | `alert:string, expires_after_minutes:integer>=1` | Suppresses an alert until the bounded expiry minute. |
-| `toggle_flag` | `flag:string, enabled:boolean` | Sets a feature flag to the requested boolean value. |
-| `update_dns_record` | `record:string, target_region:string` | Changes a DNS record target region and starts the modeled TTL propagation window. |
-| `wait` | `minutes:integer>=0` | Advances the model clock by a non-negative number of minutes. |
-| `warm_cache` | `cache:string, entries:integer>=0` | Warms a cache with a bounded number of entries and clears modeled stale-read risk when the warmup threshold is met. |
+| Action | Parameters | Operational summary | Denotational state transformer |
+| --- | --- | --- | --- |
+| `confirm_quorum` | `database:string` | Marks database quorum/data-safety confirmation complete. | Sets databases[database].quorum_confirmed := true. |
+| `drain_dead_letter_queue` | `queue:string, count:integer>=0` | Removes messages from a queue's dead-letter backlog after modeled triage. | Subtracts count from queues[queue].dead_letter_depth after validating the modeled backlog bound. |
+| `drain_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer drained; traffic must already be shifted away. | Adds region to traffic_routes[route].drained_regions. |
+| `drain_region` | `region:string, services?:string[]` | Drains replicas in a region, optionally limited to named services. | For each selected service replica in params.region, sets drained := true; replicas in other regions are framed. |
+| `drain_replica` | `service:string, replica:string` | Marks one service replica drained and unavailable. | Sets services[service].replicas[replica].drained := true; all other state fields are framed. |
+| `failover_database` | `database:string, target_region:string, data_loss_risk?:boolean` | Changes database primary region and records data-loss risk for invariants. | Sets databases[database].primary_region := target_region; quorum and health facts are not created by the action. |
+| `failover_traffic` | `route:string, target_region:string` | Moves all modeled route traffic to one target region and zeroes the other route weights. | Sets traffic_routes[route].weights[target_region] := 100 and all other modeled route weights to 0. |
+| `finalize_dns_record` | `record:string` | Clears a DNS record's prior target after the TTL wait obligation has elapsed. | Sets dns_records[record].previous_region := None after the TTL proof obligation has elapsed. |
+| `finish_migration` | `database:string` | Clears the database migration-in-progress flag. | Sets databases[database].migration_in_progress := false. |
+| `flush_cache` | `cache:string` | Evicts all modeled cache entries, making the cache cold and recording stale-read risk unless writes are frozen. | Sets caches[cache].entries := 0, warm := false, and stale_read_risk := not write_frozen. |
+| `freeze_cache_writes` | `cache:string` | Freezes writes that could repopulate or serve stale values during a cache flush. | Sets caches[cache].write_frozen := true. |
+| `mark_dns_health_check` | `record:string, region:string, converged:boolean` | Records whether DNS health checks have converged for a record's regional endpoint. | Adds or removes region from dns_records[record].health_check_converged_regions according to converged. |
+| `mark_region_health` | `region:string, healthy:boolean` | Sets a region health flag used by failover checks. | Sets regions[region].healthy := healthy. |
+| `pause_queue` | `queue:string` | Pauses queue consumption/processing. | Sets queues[queue].paused := true. |
+| `rebalance_consumers` | `queue:string, consumers:integer>=0, stable?:boolean` | Changes consumer-group capacity and records whether the group has reached a stable post-rebalance assignment. | Sets queues[queue].consumers := consumers and consumer_group_stable := stable (default false). |
+| `replay_messages` | `queue:string, count:integer>=0, from_dead_letter?:boolean, dedupe_key?:string, idempotent?:boolean` | Replays messages into a queue, optionally from the dead-letter queue, and records duplicate-processing risk unless a dedupe key, idempotency proof, or dedupe window is present. | Adds count to queues[queue].depth, optionally subtracts count from dead_letter_depth, and sets duplicate_risk unless dedupe/idempotency is modeled. |
+| `restart_service` | `service:string` | Reasserts the modeled service without changing capacity. | Identity transformer on service capacity and deployment; validates the referenced service exists. |
+| `restore_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer active again. | Removes region from traffic_routes[route].drained_regions. |
+| `restore_replica` | `service:string, replica:string` | Marks one drained service replica available again. | Sets services[service].replicas[replica].drained := false; all other state fields are framed. |
+| `resume_cache_writes` | `cache:string` | Re-enables writes to a cache after warmup/verification. | Sets caches[cache].write_frozen := false. |
+| `resume_queue` | `queue:string` | Resumes queue consumption/processing. | Sets queues[queue].paused := false. |
+| `rollback_deployment` | `service:string, to?:string` | Moves a service deployment pointer to a previous or named version. | Sets services[service].deployment and deployments[service].current to params.to or 'previous'. |
+| `run_migration` | `database:string, in_progress?:boolean, compatible?:boolean` | Updates database migration progress and compatibility flags. | Sets database migration_in_progress and migration_compatible from parameters, defaulting to preserve compatibility. |
+| `scale_service` | `service:string, replicas:integer>=0, region?:string` | Resizes a service replica set using deterministic generated replica ids. | Resizes services[service].replicas to params.replicas, generating healthy undrained replicas in params.region when growing. |
+| `shift_traffic` | `route:string, region:string, percent:integer>=0<=100` | Sets weighted routing for a route in one region; two-region routes automatically assign the remainder to the peer region. | Sets traffic_routes[route].weights[region] := percent and, for two-region routes, assigns the peer region 100 - percent. |
+| `suppress_alert` | `alert:string, expires_after_minutes:integer>=1` | Suppresses an alert until the bounded expiry minute. | Sets alerts[alert].suppressed_until_minute := clock_minute + expires_after_minutes. |
+| `toggle_flag` | `flag:string, enabled:boolean` | Sets a feature flag to the requested boolean value. | Sets feature_flags[flag].enabled := enabled, creating the modeled flag if absent. |
+| `update_dns_record` | `record:string, target_region:string` | Changes a DNS record target region and starts the modeled TTL propagation window. | Sets dns_records[record].region := target_region, previous_region := old region, and last_changed_minute := clock_minute. |
+| `wait` | `minutes:integer>=0` | Advances the model clock by a non-negative number of minutes. | Advances clock_minute by params.minutes; all modeled entities are framed. |
+| `warm_cache` | `cache:string, entries:integer>=0` | Warms a cache with a bounded number of entries and clears modeled stale-read risk when the warmup threshold is met. | Sets caches[cache].entries := entries, warm according to warmup threshold, and clears stale_read_risk. |
 
 ## Condition descriptors
 

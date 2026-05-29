@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from runbook_verify.exporter import export_tla
 from runbook_verify.descriptors import render_action_reference_markdown
+from runbook_verify.contracts import render_weakest_preconditions_markdown
 from runbook_verify.parser import load_runbook
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,17 +30,20 @@ class CliAndExportTests(unittest.TestCase):
         proc = self._run("check", "examples/unsafe_runbook.json", "--expect-violations")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("Violations", proc.stdout)
+        self.assertIn("hoare:", proc.stdout)
 
     def test_export_contains_tla_safety_theorem(self):
         text = export_tla(load_runbook(ROOT / "examples" / "safe_runbook.json"))
         self.assertIn("THEOREM Spec => []Safety", text)
         self.assertIn("scale-api-west", text)
         self.assertIn("scale_service(service:string, replicas:integer>=0", text)
+        self.assertIn("\\* denotation:", text)
 
     def test_cli_export_alloy(self):
         proc = self._run("export", "examples/safe_runbook.json", "--format", "alloy")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("module runbook_verification", proc.stdout)
+        self.assertIn("denotation:", proc.stdout)
 
     def test_cli_schema_exports_runbook_contract(self):
         proc = self._run("schema")
@@ -48,6 +52,7 @@ class CliAndExportTests(unittest.TestCase):
         self.assertEqual(schema["$schema"], "https://json-schema.org/draft/2020-12/schema")
         self.assertIn("failover_database", schema["$defs"]["step"]["properties"]["action"]["enum"])
         self.assertIn("condition", schema["$defs"])
+        self.assertTrue(any("Denotation:" in item["then"]["$comment"] for item in schema["$defs"]["step"]["allOf"]))
 
     def test_checked_in_schema_matches_cli_output(self):
         proc = self._run("schema")
@@ -59,6 +64,25 @@ class CliAndExportTests(unittest.TestCase):
             render_action_reference_markdown(),
             (ROOT / "docs" / "action_semantics.md").read_text(encoding="utf-8"),
         )
+        self.assertIn("Denotational state transformer", render_action_reference_markdown())
+
+    def test_weakest_precondition_doc_matches_contract_catalog(self):
+        self.assertEqual(
+            render_weakest_preconditions_markdown(),
+            (ROOT / "docs" / "weakest_preconditions.md").read_text(encoding="utf-8"),
+        )
+
+    def test_cli_check_json_includes_explanation_trace_contract_and_source(self):
+        proc = self._run("check", "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md", "--expect-violations", "--format", "json")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertFalse(payload["safe"])
+        finding = payload["findings"][0]
+        self.assertIn("state_delta", finding)
+        self.assertIn("causal_dependencies", finding)
+        self.assertIn("semantic_trace", finding)
+        self.assertIn("hoare_triple", finding)
+        self.assertTrue(finding["source"]["path"].endswith("github_oct21_reconstructed_runbook.md"))
 
     def test_cli_validate_does_not_run_checker(self):
         proc = self._run("validate", "examples/unsafe_runbook.json")

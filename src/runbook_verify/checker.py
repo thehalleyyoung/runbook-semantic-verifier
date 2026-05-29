@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .actions import ActionError, apply_action, condition_holds
+from .contracts import hoare_triple_for
 from .model import Runbook, Step, SystemState
 from .semantics import (
     ACTION_EXECUTE,
@@ -27,6 +28,9 @@ class Violation:
     remediation: str | None = None
     small_step_rule: str | None = None
     semantic_trace: tuple[str, ...] = ()
+    hoare_triple: str | None = None
+    source_path: str | None = None
+    source_line: int | None = None
 
 
 @dataclass
@@ -114,6 +118,7 @@ class Checker:
                 pre = self._pre_action_violations(state, step, trace, schedule_trace)
                 _record_obligations(result, "precondition", len(step.requires), pre)
                 if pre:
+                    pre = [self._with_step_context(violation) for violation in pre]
                     result.violations.extend(pre)
                     for violation in pre:
                         if violation.small_step_rule:
@@ -128,7 +133,7 @@ class Checker:
                     _record_obligations(result, "action_defined", 1, [violation])
                     if violation.small_step_rule:
                         _record_rule(result, violation.small_step_rule)
-                    result.violations.append(violation)
+                    result.violations.append(self._with_step_context(violation))
                     result.safe = False
                     continue
                 _record_obligations(result, "action_defined", 1, [])
@@ -138,6 +143,7 @@ class Checker:
                 _record_obligations(result, "safety_postcondition", _safety_obligation_count(next_state), post)
                 _record_obligations(result, "promised_effect", len(step.effects), [v for v in post if v.property in {"effect", "effect_defined"}])
                 if post:
+                    post = [self._with_step_context(violation) for violation in post]
                     result.violations.extend(post)
                     for violation in post:
                         if violation.small_step_rule:
@@ -309,6 +315,12 @@ class Checker:
             if svc.available_count() < svc.min_available
         ]
 
+    def _with_step_context(self, violation: Violation) -> Violation:
+        step = self.steps_by_id.get(violation.step or "")
+        if step is None:
+            return violation
+        return replace(violation, source_path=step.source_path, source_line=step.source_line)
+
 
 def _record_obligations(result: CheckResult, group: str, checked: int, failures: list[Violation]) -> None:
     observed = max(checked, len(failures))
@@ -385,7 +397,7 @@ def _violation(property: str, message: str, trace: tuple[str, ...], step: str | 
     rule = small_step_rule(property)
     if semantic_trace is None:
         semantic_trace = (label_rule(rule, step),)
-    return Violation(property, message, _minimize_trace(trace, step), step, REMEDIATIONS.get(property), rule, semantic_trace)
+    return Violation(property, message, _minimize_trace(trace, step), step, REMEDIATIONS.get(property), rule, semantic_trace, hoare_triple_for(property))
 
 
 def _append_property_rule(semantic_trace: tuple[str, ...], property: str, step: str | None) -> tuple[str, ...]:

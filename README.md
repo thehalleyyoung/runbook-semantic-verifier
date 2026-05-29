@@ -2,9 +2,12 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **39/100** items in the local roadmap are complete. The
+Current roadmap status: **44/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
-small-step semantic rule traces, formal object maps, Markdown audits, semantic diffs, explanations, readiness reports, owner
+small-step semantic rule traces, denotational action contracts, Hoare-style
+finding obligations, weakest-precondition templates, JSON explanation traces,
+editor-friendly diagnostic examples, formal object maps, Markdown audits,
+semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
 CI gates and pull-request annotations for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
@@ -30,6 +33,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/complete_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
+PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations --format json
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format markdown --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format sarif --expect-findings
@@ -98,17 +102,20 @@ can be emitted as structured JSON diagnostics with `path`, `line`, `field`,
 schema` prints the JSON Schema for editor, registry, and CI integration; the
 canonical checked-in artifact lives at `docs/schema/runbook.schema.json`. See
 `docs/schema/examples.md`, `docs/schema/examples/complete_runbook.json`,
-`docs/schema/compatibility_policy.md`, `docs/action_semantics.md`, and
-`docs/small_step_semantics.md` for a commented prose walkthrough, strict JSON
+`docs/schema/compatibility_policy.md`, `docs/action_semantics.md`,
+`docs/small_step_semantics.md`, `docs/weakest_preconditions.md`, and
+`docs/diagnostic_examples.md` for a commented prose walkthrough, strict JSON
 fixture covering every supported top-level field, schema versioning/deprecation
-guarantees, generated action/condition semantics tables, and the scheduling /
-action / wait / failure / budget rules mirrored in traces:
+guarantees, generated action/condition semantics tables with denotational state
+transformers, scheduling / action / wait / failure / budget rules mirrored in
+traces, weakest-precondition templates, and editor-ready diagnostic payloads:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/complete_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
+PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations --format json
 ```
 Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,
@@ -155,6 +162,7 @@ src/runbook_verify/
   model.py      immutable domain model for systems and runbooks
   parser.py     JSON loader plus optional YAML support
   actions.py    operational semantics for runbook actions
+  contracts.py  denotational action contracts, Hoare triples, weakest preconditions
   checker.py    bounded state-space explorer and safety checker
   explanation.py finding ids plus rule/source/state-delta explanations
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
@@ -181,6 +189,17 @@ The checker is deliberately small: it models a runbook as a finite set of steps,
 enumerates all dependency-respecting traces up to `max_depth`, applies action
 semantics to immutable system states, deduplicates canonical states, and records
 safety violations with shortest traces and remediation hints.
+
+`frv check --format json` emits the same counterexamples as structured
+explanation records. Each finding includes the small-step trace, source line,
+causal dependencies, state delta, Hoare triple, and weakest-precondition hint
+needed by editor integrations or review bots:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli check \
+  case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md \
+  --expect-violations --format json
+```
 
 ## Real-world finding workflow
 
@@ -486,7 +505,10 @@ to US West, unreplicated writes in US East, pausing webhook and Pages work to
 protect data integrity, and a recovery plan based on backup restoration and
 replica synchronization. The modeled safety failure is a data-loss-risk
 database failover before the DSL's explicit quorum/data-safety precondition has
-been confirmed.
+been confirmed. `reports/github_oct21_check_explanations.json` and
+`reports/github_oct21_check_explanations.md` show the same bounded finding as
+review-tool-ready JSON/Markdown with source line, state delta, Hoare triple, and
+weakest-precondition evidence.
 
 Run it directly:
 

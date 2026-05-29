@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .contracts import action_denotation
 from .descriptors import ACTION_DESCRIPTORS
 from .model import Runbook
 
@@ -40,6 +41,7 @@ def export_tla(runbook: Runbook) -> str:
     for step in runbook.steps:
         descriptor = ACTION_DESCRIPTORS[step.action]
         lines.append(f"\\* {step.id}: {step.action}({descriptor.signature()}) {step.params}")
+        lines.append(f"\\* denotation: {action_denotation(step.action)}")
     return "\n".join(lines) + "\n"
 
 
@@ -50,7 +52,7 @@ def export_alloy(runbook: Runbook) -> str:
     ]
     for step in runbook.steps:
         descriptor = ACTION_DESCRIPTORS[step.action]
-        lines.append(f"one sig { _symbol(step.id) } extends Step {{}} // {step.action}({descriptor.signature()})")
+        lines.append(f"one sig { _symbol(step.id) } extends Step {{}} // {step.action}({descriptor.signature()}); denotation: {action_denotation(step.action)}")
     lines.extend([
         "sig State { done: set Step }",
         "pred transition[s, s': State] { some st: Step - s.done | s'.done = s.done + st }",

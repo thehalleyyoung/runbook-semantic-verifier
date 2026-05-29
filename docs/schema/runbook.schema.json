@@ -585,6 +585,7 @@
             ]
           },
           "then": {
+            "$comment": "Marks database quorum/data-safety confirmation complete. Denotation: Sets databases[database].quorum_confirmed := true.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -613,6 +614,7 @@
             ]
           },
           "then": {
+            "$comment": "Removes messages from a queue's dead-letter backlog after modeled triage. Denotation: Subtracts count from queues[queue].dead_letter_depth after validating the modeled backlog bound.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -646,6 +648,7 @@
             ]
           },
           "then": {
+            "$comment": "Marks a route's regional load balancer drained; traffic must already be shifted away. Denotation: Adds region to traffic_routes[route].drained_regions.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -678,6 +681,7 @@
             ]
           },
           "then": {
+            "$comment": "Drains replicas in a region, optionally limited to named services. Denotation: For each selected service replica in params.region, sets drained := true; replicas in other regions are framed.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -712,6 +716,7 @@
             ]
           },
           "then": {
+            "$comment": "Marks one service replica drained and unavailable. Denotation: Sets services[service].replicas[replica].drained := true; all other state fields are framed.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -744,6 +749,7 @@
             ]
           },
           "then": {
+            "$comment": "Changes database primary region and records data-loss risk for invariants. Denotation: Sets databases[database].primary_region := target_region; quorum and health facts are not created by the action.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -779,6 +785,7 @@
             ]
           },
           "then": {
+            "$comment": "Moves all modeled route traffic to one target region and zeroes the other route weights. Denotation: Sets traffic_routes[route].weights[target_region] := 100 and all other modeled route weights to 0.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -811,6 +818,7 @@
             ]
           },
           "then": {
+            "$comment": "Clears a DNS record's prior target after the TTL wait obligation has elapsed. Denotation: Sets dns_records[record].previous_region := None after the TTL proof obligation has elapsed.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -839,6 +847,7 @@
             ]
           },
           "then": {
+            "$comment": "Clears the database migration-in-progress flag. Denotation: Sets databases[database].migration_in_progress := false.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -867,6 +876,7 @@
             ]
           },
           "then": {
+            "$comment": "Evicts all modeled cache entries, making the cache cold and recording stale-read risk unless writes are frozen. Denotation: Sets caches[cache].entries := 0, warm := false, and stale_read_risk := not write_frozen.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -895,6 +905,7 @@
             ]
           },
           "then": {
+            "$comment": "Freezes writes that could repopulate or serve stale values during a cache flush. Denotation: Sets caches[cache].write_frozen := true.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -923,6 +934,7 @@
             ]
           },
           "then": {
+            "$comment": "Records whether DNS health checks have converged for a record's regional endpoint. Denotation: Adds or removes region from dns_records[record].health_check_converged_regions according to converged.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -959,6 +971,7 @@
             ]
           },
           "then": {
+            "$comment": "Sets a region health flag used by failover checks. Denotation: Sets regions[region].healthy := healthy.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -991,6 +1004,7 @@
             ]
           },
           "then": {
+            "$comment": "Pauses queue consumption/processing. Denotation: Sets queues[queue].paused := true.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1019,6 +1033,7 @@
             ]
           },
           "then": {
+            "$comment": "Changes consumer-group capacity and records whether the group has reached a stable post-rebalance assignment. Denotation: Sets queues[queue].consumers := consumers and consumer_group_stable := stable (default false).",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1055,6 +1070,7 @@
             ]
           },
           "then": {
+            "$comment": "Replays messages into a queue, optionally from the dead-letter queue, and records duplicate-processing risk unless a dedupe key, idempotency proof, or dedupe window is present. Denotation: Adds count to queues[queue].depth, optionally subtracts count from dead_letter_depth, and sets duplicate_risk unless dedupe/idempotency is modeled.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1097,6 +1113,7 @@
             ]
           },
           "then": {
+            "$comment": "Reasserts the modeled service without changing capacity. Denotation: Identity transformer on service capacity and deployment; validates the referenced service exists.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1125,6 +1142,7 @@
             ]
           },
           "then": {
+            "$comment": "Marks a route's regional load balancer active again. Denotation: Removes region from traffic_routes[route].drained_regions.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1157,6 +1175,7 @@
             ]
           },
           "then": {
+            "$comment": "Marks one drained service replica available again. Denotation: Sets services[service].replicas[replica].drained := false; all other state fields are framed.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1189,6 +1208,7 @@
             ]
           },
           "then": {
+            "$comment": "Re-enables writes to a cache after warmup/verification. Denotation: Sets caches[cache].write_frozen := false.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1217,6 +1237,7 @@
             ]
           },
           "then": {
+            "$comment": "Resumes queue consumption/processing. Denotation: Sets queues[queue].paused := false.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1245,6 +1266,7 @@
             ]
           },
           "then": {
+            "$comment": "Moves a service deployment pointer to a previous or named version. Denotation: Sets services[service].deployment and deployments[service].current to params.to or 'previous'.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1276,6 +1298,7 @@
             ]
           },
           "then": {
+            "$comment": "Updates database migration progress and compatibility flags. Denotation: Sets database migration_in_progress and migration_compatible from parameters, defaulting to preserve compatibility.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1310,6 +1333,7 @@
             ]
           },
           "then": {
+            "$comment": "Resizes a service replica set using deterministic generated replica ids. Denotation: Resizes services[service].replicas to params.replicas, generating healthy undrained replicas in params.region when growing.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1346,6 +1370,7 @@
             ]
           },
           "then": {
+            "$comment": "Sets weighted routing for a route in one region; two-region routes automatically assign the remainder to the peer region. Denotation: Sets traffic_routes[route].weights[region] := percent and, for two-region routes, assigns the peer region 100 - percent.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1384,6 +1409,7 @@
             ]
           },
           "then": {
+            "$comment": "Suppresses an alert until the bounded expiry minute. Denotation: Sets alerts[alert].suppressed_until_minute := clock_minute + expires_after_minutes.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1417,6 +1443,7 @@
             ]
           },
           "then": {
+            "$comment": "Sets a feature flag to the requested boolean value. Denotation: Sets feature_flags[flag].enabled := enabled, creating the modeled flag if absent.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1449,6 +1476,7 @@
             ]
           },
           "then": {
+            "$comment": "Changes a DNS record target region and starts the modeled TTL propagation window. Denotation: Sets dns_records[record].region := target_region, previous_region := old region, and last_changed_minute := clock_minute.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1481,6 +1509,7 @@
             ]
           },
           "then": {
+            "$comment": "Advances the model clock by a non-negative number of minutes. Denotation: Advances clock_minute by params.minutes; all modeled entities are framed.",
             "properties": {
               "params": {
                 "additionalProperties": false,
@@ -1510,6 +1539,7 @@
             ]
           },
           "then": {
+            "$comment": "Warms a cache with a bounded number of entries and clears modeled stale-read risk when the warmup threshold is met. Denotation: Sets caches[cache].entries := entries, warm according to warmup threshold, and clears stale_read_risk.",
             "properties": {
               "params": {
                 "additionalProperties": false,
