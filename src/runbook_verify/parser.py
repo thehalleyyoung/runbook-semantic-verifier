@@ -367,6 +367,7 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
     system = parse_state(_require_mapping(doc.get("system", {}), "system"))
     metadata = dict(_require_mapping(doc.get("metadata", {}), "metadata"))
     waivers = _parse_waivers(metadata.get("waivers", []))
+    metadata = _parse_contract_metadata(metadata, system)
     source_lines = doc.get("__source_lines", {})
     if not isinstance(source_lines, dict):
         source_lines = {}
@@ -413,6 +414,7 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
         raise RunbookParseError(f"unknown dependency step id(s): {', '.join(missing)}", field="steps.after")
     _validate_dependency_graph(steps)
     _validate_step_references(system, steps)
+    _validate_contract_step_references(metadata, seen)
     _validate_generated_scale_replicas(system, steps)
     max_depth = _non_negative_int(doc.get("max_depth", len(steps)), "max_depth")
     safety = dict(_require_mapping(doc.get("safety", {}), "safety"))
@@ -549,6 +551,82 @@ def _parse_waivers(raw: Any) -> tuple[Waiver, ...]:
     return tuple(waivers)
 
 
+def _parse_contract_metadata(metadata: dict[str, Any], state: SystemState) -> dict[str, Any]:
+    normalized = dict(metadata)
+    if "assume_guarantee_contracts" in normalized:
+        normalized["assume_guarantee_contracts"] = _parse_assume_guarantee_contracts(
+            normalized["assume_guarantee_contracts"], state
+        )
+    if "rely_guarantee" in normalized:
+        normalized["rely_guarantee"] = _parse_rely_guarantees(normalized["rely_guarantee"], state)
+    return normalized
+
+
+def _parse_assume_guarantee_contracts(raw: Any, state: SystemState) -> list[dict[str, Any]]:
+    contracts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, item_any in enumerate(_require_list(raw, "metadata.assume_guarantee_contracts")):
+        where = f"metadata.assume_guarantee_contracts[{index}]"
+        item = _require_mapping(item_any, where)
+        required = {"id", "provider", "consumer", "guarantees"}
+        optional = {"assumptions", "evidence", "source_url", "notes"}
+        _validate_keys(item, required, optional, where)
+        contract_id = str(item["id"])
+        if contract_id in seen:
+            raise RunbookParseError(f"{where}.id duplicates assume-guarantee contract id {contract_id!r}", field=f"{where}.id")
+        seen.add(contract_id)
+        assumptions = [_condition(c, f"{where}.assumptions[{i}]") for i, c in enumerate(_require_list(item.get("assumptions", []), f"{where}.assumptions"))]
+        guarantees = [_condition(c, f"{where}.guarantees[{i}]") for i, c in enumerate(_require_list(item["guarantees"], f"{where}.guarantees"))]
+        if not guarantees:
+            raise RunbookParseError(f"{where}.guarantees must contain at least one condition", field=f"{where}.guarantees")
+        for condition in (*assumptions, *guarantees):
+            _validate_condition_references(state, contract_id, condition)
+        contracts.append({
+            "id": contract_id,
+            "provider": str(item["provider"]),
+            "consumer": str(item["consumer"]),
+            "assumptions": assumptions,
+            "guarantees": guarantees,
+            **{key: item[key] for key in optional if key in item},
+        })
+    return contracts
+
+
+def _parse_rely_guarantees(raw: Any, state: SystemState) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, item_any in enumerate(_require_list(raw, "metadata.rely_guarantee")):
+        where = f"metadata.rely_guarantee[{index}]"
+        item = _require_mapping(item_any, where)
+        required = {"id", "actor", "action", "params", "preserves"}
+        optional = {"notes", "applies_before"}
+        _validate_keys(item, required, optional, where)
+        entry_id = str(item["id"])
+        if entry_id in seen:
+            raise RunbookParseError(f"{where}.id duplicates rely-guarantee id {entry_id!r}", field=f"{where}.id")
+        seen.add(entry_id)
+        action = str(item["action"])
+        params = dict(_require_mapping(item["params"], f"{where}.params"))
+        _validate_action_schema(action, params, where)
+        preserves = [_condition(c, f"{where}.preserves[{i}]") for i, c in enumerate(_require_list(item["preserves"], f"{where}.preserves"))]
+        if not preserves:
+            raise RunbookParseError(f"{where}.preserves must contain at least one condition", field=f"{where}.preserves")
+        temp = Step(id=f"rely:{entry_id}", action=action, params=params, effects=tuple(preserves))
+        _validate_step_references(state, [temp])
+        entry = {
+            "id": entry_id,
+            "actor": str(item["actor"]),
+            "action": action,
+            "params": params,
+            "preserves": preserves,
+            **{key: item[key] for key in optional if key in item and key != "applies_before"},
+        }
+        if "applies_before" in item:
+            entry["applies_before"] = tuple(str(step_id) for step_id in _require_list(item["applies_before"], f"{where}.applies_before"))
+        entries.append(entry)
+    return entries
+
+
 def _validate_action_schema(action: str, params: dict[str, Any], where: str) -> None:
     descriptor = ACTION_DESCRIPTORS.get(action)
     if descriptor is None:
@@ -683,6 +761,16 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         svc = state.services[str(condition["service"])]
         if str(condition["replica"]) not in {replica.id for replica in svc.replicas}:
             raise RunbookParseError(f"step {step_id} condition references unknown replica {condition['replica']!r} for service {svc.name!r}", field=f"step {step_id}.condition.replica")
+
+
+def _validate_contract_step_references(metadata: dict[str, Any], step_ids: set[str]) -> None:
+    for index, entry in enumerate(metadata.get("rely_guarantee", [])):
+        for step_id in entry.get("applies_before", ()):
+            if step_id not in step_ids:
+                raise RunbookParseError(
+                    f"metadata.rely_guarantee[{index}].applies_before references unknown step {step_id!r}",
+                    field=f"metadata.rely_guarantee[{index}].applies_before",
+                )
 
 
 def _validate_generated_scale_replicas(state: SystemState, steps: list[Step]) -> None:

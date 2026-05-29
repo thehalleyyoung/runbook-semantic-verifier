@@ -1,319 +1,627 @@
 {
-  "aggregate": {
-    "adoption_summary": {
-      "oracle_review_labels": {
-        "false_positive": 1,
-        "true_hazard": 1,
-        "unsupported_claim": 1,
-        "useful_warning": 1
-      },
-      "remediation_actions": [
-        "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
-      ],
-      "risk_classes_detected": [
-        "data-deletion-needs-restore-precondition",
-        "destructive-delete-needs-targeting",
-        "no_duplicate_processing_risk",
-        "no_rebalance_to_zero_consumers",
-        "no_replay_without_dedupe",
-        "no_unstable_consumer_group_with_backlog",
-        "prose-suppression-applied",
-        "queue_backlog_requires_consumers"
-      ]
-    },
-    "pass": true,
-    "performance_counters": {
-      "avg_branch_factor": 1.0,
-      "branch_factor_total": 2,
-      "branch_points": 2,
-      "max_branch_factor": 1,
-      "max_depth_reached": false,
-      "minimized_counterexample_trace_length": 1,
-      "proof_obligation_failures": {
-        "precondition": 2,
-        "safety_postcondition": 4
-      },
-      "proof_obligations_checked": {
-        "action_defined": 2,
-        "precondition": 2,
-        "promised_effect": 0,
-        "safety_postcondition": 14
-      },
-      "reductions_applied": 0,
-      "semantic_rule_counts": {
-        "Action.Execute": 2,
-        "ActionGuard.ConsumerRebalanceProgress": 1,
-        "ActionGuard.MessageReplayDeduplication": 1,
-        "Explore.Terminal": 1,
-        "PostInvariant.ConsumerGroupStableForBacklog": 1,
-        "PostInvariant.NoDuplicateReplayProcessing": 2,
-        "PostInvariant.QueueBacklogHasConsumers": 1,
-        "Schedule.SequenceNext": 2
-      },
-      "states_explored": 3,
-      "symbolic_splits": 0,
-      "terminal_traces": 1,
-      "transitions_explored": 2
-    },
-    "prose_findings_by_rule": {
-      "backfill-needs-queue-capacity": 1,
-      "data-deletion-needs-restore-precondition": 1,
-      "destructive-delete-needs-targeting": 1,
-      "prose-suppression-applied": 1
-    },
-    "runbooks": 1,
-    "runtime_seconds": 0.004564500006381422,
-    "states_explored": 3,
-    "traces_explored": 1,
-    "validity_threat_categories": {
-      "abstraction_bias": 1,
-      "bounded_search_limits": 1,
-      "public_data_incompleteness": 1
-    },
-    "violations_by_property": {
-      "no_duplicate_processing_risk": 2,
-      "no_rebalance_to_zero_consumers": 1,
-      "no_replay_without_dedupe": 1,
-      "no_unstable_consumer_group_with_backlog": 1,
-      "queue_backlog_requires_consumers": 1
-    },
-    "workflow_baselines": {
-      "bounded_checking": {
-        "fail": 1,
-        "pass": 0
-      },
-      "combined_workflow": {
-        "fail": 0,
-        "pass": 1
-      },
-      "prose_linting": {
-        "fail": 1,
-        "pass": 0
-      },
-      "schema_only_validation": {
-        "fail": 0,
-        "pass": 1
-      },
-      "semantic_diffing": {
-        "configured_pairs": 0,
-        "fail": 0,
-        "pass": 0
-      },
-      "type_effect_checking": {
-        "fail": 1,
-        "pass": 0
-      }
-    }
-  },
-  "name": "current public runbook impact benchmark",
-  "profile": null,
-  "runbooks": [
+  "annotation_warnings": [],
+  "findings": [
     {
-      "benchmark_metadata": {
-        "abstraction_level": "derived-public-runbook",
-        "adoption_summary": {
-          "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
-          "remediation_actions": [
-            "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
-          ],
-          "risk_classes_detected": [
-            "data-deletion-needs-restore-precondition",
-            "destructive-delete-needs-targeting",
-            "no_duplicate_processing_risk",
-            "no_rebalance_to_zero_consumers",
-            "no_replay_without_dedupe",
-            "no_unstable_consumer_group_with_backlog",
-            "prose-suppression-applied",
-            "queue_backlog_requires_consumers"
-          ]
-        },
-        "expected_result": {
-          "prose_rules": [
-            "data-deletion-needs-restore-precondition",
-            "destructive-delete-needs-targeting",
-            "prose-suppression-applied"
-          ],
-          "safe": false,
-          "violation_properties": [
-            "no_duplicate_processing_risk",
-            "no_rebalance_to_zero_consumers",
-            "no_replay_without_dedupe",
-            "no_unstable_consumer_group_with_backlog",
-            "queue_backlog_requires_consumers"
-          ]
-        },
-        "license": {
-          "name": "AGPL-3.0",
-          "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model.",
-          "status": "public-license"
-        },
-        "oracle_review": {
-          "allowed_labels": [
-            "true_hazard",
-            "useful_warning",
-            "false_positive",
-            "unsupported_claim"
-          ],
-          "notes": "No independent SRE oracle review is claimed for this fixture.",
-          "status": "not-reviewed"
-        },
-        "provenance": {
-          "kind": "public-current",
-          "notes": "Short attributed public excerpts plus independently authored defensive model.",
-          "retrieved": "2026-05-29",
-          "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
-          "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md"
-        },
-        "reproduction": {
-          "budget": "standard-library Python; intended to run in seconds on a laptop",
-          "commands": [
-            "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
-          ],
-          "expected_outputs": [
-            "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
-          ]
-        },
-        "responsible_disclosure": {
-          "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim.",
-          "status": "public-information"
-        },
-        "semantic_features": [
-          "public_current_case",
-          "markdown_prose_lint",
-          "message_replay",
-          "dead_letter_queue",
-          "dedupe_key",
-          "consumer_group_rebalance",
-          "benchmark_expected_prose_rules",
-          "auditable_prose_suppressions"
-        ],
-        "validity_threat_categories": [
-          "abstraction_bias",
-          "bounded_search_limits",
-          "public_data_incompleteness"
-        ],
-        "validity_threats": [
-          "Public runbook excerpts are incomplete",
-          "Executable model is derived, not maintainer-authored",
-          "Result is advisory and bounded to modeled queue fallback replay and consumer-group behavior."
-        ]
+      "action": "replay_messages",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
       },
-      "errors": [],
-      "expected_labels": {
-        "expected_prose_rules": [
-          "data-deletion-needs-restore-precondition",
-          "destructive-delete-needs-targeting",
-          "prose-suppression-applied"
-        ],
-        "expected_safe": false,
-        "expected_violation_properties": [
-          "no_duplicate_processing_risk",
-          "no_rebalance_to_zero_consumers",
-          "no_replay_without_dedupe",
-          "no_unstable_consumer_group_with_backlog",
-          "queue_backlog_requires_consumers"
-        ]
-      },
-      "name": "Grafana Tempo current public runbook derived safety model",
-      "pass": true,
-      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "performance_counters": {
-        "annotation_warnings": 0,
-        "avg_branch_factor": 1.0,
-        "branch_factor_total": 2,
-        "branch_points": 2,
-        "max_branch_factor": 1,
-        "max_depth_reached": false,
-        "minimized_counterexample_trace_length": 1,
-        "proof_obligation_failures": {
-          "precondition": 2,
-          "safety_postcondition": 4
-        },
-        "proof_obligations_checked": {
-          "action_defined": 2,
-          "precondition": 2,
-          "promised_effect": 0,
-          "safety_postcondition": 14
-        },
-        "reductions_applied": 0,
-        "semantic_rule_counts": {
-          "Action.Execute": 2,
-          "ActionGuard.ConsumerRebalanceProgress": 1,
-          "ActionGuard.MessageReplayDeduplication": 1,
-          "Explore.Terminal": 1,
-          "PostInvariant.ConsumerGroupStableForBacklog": 1,
-          "PostInvariant.NoDuplicateReplayProcessing": 2,
-          "PostInvariant.QueueBacklogHasConsumers": 1,
-          "Schedule.SequenceNext": 2
-        },
-        "states_explored": 3,
-        "symbolic_splits": 0,
-        "terminal_traces": 1,
-        "transitions_explored": 2,
-        "waivers_applied": 0
-      },
-      "prose_findings_by_rule": {
-        "backfill-needs-queue-capacity": 1,
-        "data-deletion-needs-restore-precondition": 1,
-        "destructive-delete-needs-targeting": 1,
-        "prose-suppression-applied": 1
-      },
-      "runtime_seconds": 0.004552625003270805,
-      "safe": false,
-      "states_explored": 3,
-      "traces_explored": 1,
-      "violations_by_property": {
-        "no_duplicate_processing_risk": 2,
-        "no_rebalance_to_zero_consumers": 1,
-        "no_replay_without_dedupe": 1,
-        "no_unstable_consumer_group_with_backlog": 1,
-        "queue_backlog_requires_consumers": 1
-      },
-      "workflow_baselines": {
-        "bounded_checking": {
-          "counterexamples": 6,
-          "pass": false,
-          "violations_by_property": {
-            "no_duplicate_processing_risk": 2,
-            "no_rebalance_to_zero_consumers": 1,
-            "no_replay_without_dedupe": 1,
-            "no_unstable_consumer_group_with_backlog": 1,
-            "queue_backlog_requires_consumers": 1
-          }
-        },
-        "combined_workflow": {
-          "pass": true,
-          "uses": [
-            "schema_only_validation",
-            "prose_linting",
-            "bounded_checking",
-            "type_effect_checking",
-            "semantic_diffing_when_configured"
-          ]
-        },
-        "prose_linting": {
-          "finding_count": 4,
-          "findings_by_rule": {
-            "backfill-needs-queue-capacity": 1,
-            "data-deletion-needs-restore-precondition": 1,
-            "destructive-delete-needs-targeting": 1,
-            "prose-suppression-applied": 1
-          },
-          "pass": false
-        },
-        "schema_only_validation": {
-          "errors": [],
-          "pass": true
-        },
-        "type_effect_checking": {
-          "pass": false,
-          "proof_obligation_failures": {
-            "precondition": 2,
-            "safety_postcondition": 4
+      "hoare_triple": "{ replay has dedupe_key, idempotent=true, positive dedupe window, or count=0 } action_effect: replay_messages adds messages { replay does not introduce duplicate-processing risk }",
+      "id": "finding-001",
+      "json_patches": [
+        {
+          "op": "add",
+          "path": "/steps/0/requires/-",
+          "value": {
+            "kind": "queue_replay_deduplicated",
+            "queue": "tenant-index-fallback-scan",
+            "window_minutes": 60
           }
         }
-      }
+      ],
+      "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
+      "remediation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
+      "remediation_examples": [
+        "Set `dedupe_key` on `replay_messages`.",
+        "Add a positive `dedupe_window_minutes` queue assumption.",
+        "Use `idempotent: true` only when the replay handler is documented idempotent."
+      ],
+      "rule": "no_replay_without_dedupe",
+      "semantic_obligation": "no_replay_without_dedupe",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
+      "severity": "error",
+      "small_step_rule": "ActionGuard.MessageReplayDeduplication",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 129,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "36000",
+          "before": "18000",
+          "field": "queues.tenant-index-fallback-scan.depth"
+        },
+        {
+          "after": "True",
+          "before": "False",
+          "field": "queues.tenant-index-fallback-scan.duplicate_risk"
+        }
+      ],
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
+      "suggested_preconditions": [
+        {
+          "kind": "queue_replay_deduplicated",
+          "queue": "tenant-index-fallback-scan",
+          "window_minutes": 60
+        }
+      ],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Before replaying messages, the pre-state or action parameters must prove a dedupe key, idempotent handler, or bounded dedupe window."
+    },
+    {
+      "action": "replay_messages",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
+      },
+      "hoare_triple": "{ invariant precondition for rely_guarantee_interference:background-tenant-index-writes } action_effect { rely_guarantee_interference:background-tenant-index-writes holds }",
+      "id": "finding-002",
+      "json_patches": [],
+      "message": "concurrent actor background-tenant-index-writes may break rely/guarantee preservation before delete-stale-tenant-indexes-trigger-fallback: {'kind': 'queue_depth_at_most', 'queue': 'tenant-index-fallback-scan', 'depth': 18000}",
+      "remediation": null,
+      "remediation_examples": [],
+      "rule": "rely_guarantee_interference:background-tenant-index-writes",
+      "semantic_obligation": "rely_guarantee_interference:background-tenant-index-writes",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "SafetyInvariant.rely_guarantee_interference(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
+      "severity": "error",
+      "small_step_rule": "SafetyInvariant.rely_guarantee_interference:background-tenant-index-writes",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 129,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "36000",
+          "before": "18000",
+          "field": "queues.tenant-index-fallback-scan.depth"
+        },
+        {
+          "after": "True",
+          "before": "False",
+          "field": "queues.tenant-index-fallback-scan.duplicate_risk"
+        }
+      ],
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Strengthen the runbook preconditions so the invariant holds before and after the action."
+    },
+    {
+      "action": "replay_messages",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
+      },
+      "hoare_triple": "{ duplicate_risk is false and replay guards preserve it } action_effect: unsafe replay may set duplicate_risk=true { duplicate_risk remains false }",
+      "id": "finding-003",
+      "json_patches": [],
+      "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+      "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+      "remediation_examples": [
+        "Replay from the dead-letter queue with a stable dedupe key.",
+        "Drain or quarantine duplicate-risk messages before resuming consumers."
+      ],
+      "rule": "no_duplicate_processing_risk",
+      "semantic_obligation": "no_duplicate_processing_risk",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "PostInvariant.NoDuplicateReplayProcessing(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
+      "severity": "error",
+      "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 129,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "36000",
+          "before": "18000",
+          "field": "queues.tenant-index-fallback-scan.depth"
+        },
+        {
+          "after": "True",
+          "before": "False",
+          "field": "queues.tenant-index-fallback-scan.duplicate_risk"
+        }
+      ],
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "A replay step may not leave the queue in a duplicate-risk state unless deduplication/idempotency was modeled."
+    },
+    {
+      "action": "replay_messages",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
+      },
+      "hoare_triple": "{ invariant precondition for assume_guarantee_contract:tempo-query-fallback-contract } action_effect { assume_guarantee_contract:tempo-query-fallback-contract holds }",
+      "id": "finding-004",
+      "json_patches": [],
+      "message": "assume-guarantee contract tempo-query-fallback-contract guarantee failed: {'kind': 'queue_depth_at_most', 'queue': 'tenant-index-fallback-scan', 'depth': 18000}",
+      "remediation": null,
+      "remediation_examples": [],
+      "rule": "assume_guarantee_contract:tempo-query-fallback-contract",
+      "semantic_obligation": "assume_guarantee_contract:tempo-query-fallback-contract",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "SafetyInvariant.assume_guarantee_contract(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
+      "severity": "error",
+      "small_step_rule": "SafetyInvariant.assume_guarantee_contract:tempo-query-fallback-contract",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 129,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "36000",
+          "before": "18000",
+          "field": "queues.tenant-index-fallback-scan.depth"
+        },
+        {
+          "after": "True",
+          "before": "False",
+          "field": "queues.tenant-index-fallback-scan.duplicate_risk"
+        }
+      ],
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Strengthen the runbook preconditions so the invariant holds before and after the action."
+    },
+    {
+      "action": "rebalance_consumers",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ],
+        "prior_trace_steps": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ]
+      },
+      "hoare_triple": "{ depth=0 or target consumers>0 } action_effect: rebalance_consumers sets consumer count { backlog is not assigned zero consumers }",
+      "id": "finding-005",
+      "json_patches": [
+        {
+          "op": "add",
+          "path": "/steps/1/requires/-",
+          "value": {
+            "depth": 0,
+            "kind": "queue_depth_at_most",
+            "queue": "tenant-index-fallback-scan"
+          }
+        }
+      ],
+      "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
+      "remediation": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
+      "remediation_examples": [
+        "Use `rebalance_consumers` with `consumers` greater than zero.",
+        "Drain the queue before scaling consumers to zero."
+      ],
+      "rule": "no_rebalance_to_zero_consumers",
+      "semantic_obligation": "no_rebalance_to_zero_consumers",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "ActionGuard.ConsumerRebalanceProgress(rebalance-fallback-consumers)"
+      ],
+      "severity": "error",
+      "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 147,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "False",
+          "before": "True",
+          "field": "queues.tenant-index-fallback-scan.consumer_group_stable"
+        },
+        {
+          "after": "0",
+          "before": "1",
+          "field": "queues.tenant-index-fallback-scan.consumers"
+        }
+      ],
+      "step": "rebalance-fallback-consumers",
+      "suggested_preconditions": [
+        {
+          "depth": 0,
+          "kind": "queue_depth_at_most",
+          "queue": "tenant-index-fallback-scan"
+        }
+      ],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "A queue with backlog requires a positive post-rebalance consumer count."
+    },
+    {
+      "action": "rebalance_consumers",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ],
+        "prior_trace_steps": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ]
+      },
+      "hoare_triple": "{ invariant precondition for rely_guarantee_interference:background-tenant-index-writes } action_effect { rely_guarantee_interference:background-tenant-index-writes holds }",
+      "id": "finding-006",
+      "json_patches": [],
+      "message": "concurrent actor background-tenant-index-writes may break rely/guarantee preservation before rebalance-fallback-consumers: {'kind': 'queue_depth_at_most', 'queue': 'tenant-index-fallback-scan', 'depth': 18000}",
+      "remediation": null,
+      "remediation_examples": [],
+      "rule": "rely_guarantee_interference:background-tenant-index-writes",
+      "semantic_obligation": "rely_guarantee_interference:background-tenant-index-writes",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "SafetyInvariant.rely_guarantee_interference(rebalance-fallback-consumers)"
+      ],
+      "severity": "error",
+      "small_step_rule": "SafetyInvariant.rely_guarantee_interference:background-tenant-index-writes",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 147,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "False",
+          "before": "True",
+          "field": "queues.tenant-index-fallback-scan.consumer_group_stable"
+        },
+        {
+          "after": "0",
+          "before": "1",
+          "field": "queues.tenant-index-fallback-scan.consumers"
+        }
+      ],
+      "step": "rebalance-fallback-consumers",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Strengthen the runbook preconditions so the invariant holds before and after the action."
+    },
+    {
+      "action": "rebalance_consumers",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ],
+        "prior_trace_steps": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ]
+      },
+      "hoare_triple": "{ duplicate_risk is false and replay guards preserve it } action_effect: unsafe replay may set duplicate_risk=true { duplicate_risk remains false }",
+      "id": "finding-007",
+      "json_patches": [],
+      "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+      "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+      "remediation_examples": [
+        "Replay from the dead-letter queue with a stable dedupe key.",
+        "Drain or quarantine duplicate-risk messages before resuming consumers."
+      ],
+      "rule": "no_duplicate_processing_risk",
+      "semantic_obligation": "no_duplicate_processing_risk",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "PostInvariant.NoDuplicateReplayProcessing(rebalance-fallback-consumers)"
+      ],
+      "severity": "error",
+      "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 147,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "False",
+          "before": "True",
+          "field": "queues.tenant-index-fallback-scan.consumer_group_stable"
+        },
+        {
+          "after": "0",
+          "before": "1",
+          "field": "queues.tenant-index-fallback-scan.consumers"
+        }
+      ],
+      "step": "rebalance-fallback-consumers",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "A replay step may not leave the queue in a duplicate-risk state unless deduplication/idempotency was modeled."
+    },
+    {
+      "action": "rebalance_consumers",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ],
+        "prior_trace_steps": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ]
+      },
+      "hoare_triple": "{ depth=0 or consumers>0 } action_effect: replay/rebalance may change depth or consumers { backlog has at least one consumer }",
+      "id": "finding-008",
+      "json_patches": [],
+      "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
+      "remediation": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
+      "remediation_examples": [
+        "Restore consumers before replay.",
+        "Pause replay until consumer capacity is available."
+      ],
+      "rule": "queue_backlog_requires_consumers",
+      "semantic_obligation": "queue_backlog_requires_consumers",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "PostInvariant.QueueBacklogHasConsumers(rebalance-fallback-consumers)"
+      ],
+      "severity": "error",
+      "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 147,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "False",
+          "before": "True",
+          "field": "queues.tenant-index-fallback-scan.consumer_group_stable"
+        },
+        {
+          "after": "0",
+          "before": "1",
+          "field": "queues.tenant-index-fallback-scan.consumers"
+        }
+      ],
+      "step": "rebalance-fallback-consumers",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Every reachable queue state with backlog must retain at least one active consumer."
+    },
+    {
+      "action": "rebalance_consumers",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ],
+        "prior_trace_steps": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ]
+      },
+      "hoare_triple": "{ depth=0 or consumer_group_stable=true } action_effect: rebalance/replay may leave backlog { backlog is processed only by a stable consumer group }",
+      "id": "finding-009",
+      "json_patches": [],
+      "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
+      "remediation": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
+      "remediation_examples": [
+        "Set `stable: true` only after a modeled wait/health check.",
+        "Add a `consumer_group_stable` effect to the stabilization step."
+      ],
+      "rule": "no_unstable_consumer_group_with_backlog",
+      "semantic_obligation": "no_unstable_consumer_group_with_backlog",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "PostInvariant.ConsumerGroupStableForBacklog(rebalance-fallback-consumers)"
+      ],
+      "severity": "error",
+      "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 147,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "False",
+          "before": "True",
+          "field": "queues.tenant-index-fallback-scan.consumer_group_stable"
+        },
+        {
+          "after": "0",
+          "before": "1",
+          "field": "queues.tenant-index-fallback-scan.consumers"
+        }
+      ],
+      "step": "rebalance-fallback-consumers",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Consumer-group rebalancing must converge before the runbook leaves backlog to be processed."
+    },
+    {
+      "action": "rebalance_consumers",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ],
+        "prior_trace_steps": [
+          "delete-stale-tenant-indexes-trigger-fallback"
+        ]
+      },
+      "hoare_triple": "{ invariant precondition for assume_guarantee_contract:tempo-query-fallback-contract } action_effect { assume_guarantee_contract:tempo-query-fallback-contract holds }",
+      "id": "finding-010",
+      "json_patches": [],
+      "message": "assume-guarantee contract tempo-query-fallback-contract guarantee failed: {'kind': 'queue_depth_at_most', 'queue': 'tenant-index-fallback-scan', 'depth': 18000}",
+      "remediation": null,
+      "remediation_examples": [],
+      "rule": "assume_guarantee_contract:tempo-query-fallback-contract",
+      "semantic_obligation": "assume_guarantee_contract:tempo-query-fallback-contract",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "SafetyInvariant.assume_guarantee_contract(rebalance-fallback-consumers)"
+      ],
+      "severity": "error",
+      "small_step_rule": "SafetyInvariant.assume_guarantee_contract:tempo-query-fallback-contract",
+      "source": {
+        "excerpt": "{",
+        "field": "params",
+        "line": 147,
+        "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+      },
+      "state_delta": [
+        {
+          "after": "False",
+          "before": "True",
+          "field": "queues.tenant-index-fallback-scan.consumer_group_stable"
+        },
+        {
+          "after": "0",
+          "before": "1",
+          "field": "queues.tenant-index-fallback-scan.consumers"
+        }
+      ],
+      "step": "rebalance-fallback-consumers",
+      "suggested_preconditions": [],
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Strengthen the runbook preconditions so the invariant holds before and after the action."
     }
   ],
-  "semantic_diff_baselines": []
+  "performance_counters": {
+    "abstract_states": 0,
+    "annotation_warnings": 0,
+    "avg_branch_factor": 1.0,
+    "branch_factor_total": 2,
+    "branch_points": 2,
+    "counterexamples_minimized": 0,
+    "dominance_pruned_states": 0,
+    "exploration_seed": null,
+    "exploration_strategy": "breadth_first",
+    "fairness_model": "fifo",
+    "inconclusive": false,
+    "inconclusive_reason": null,
+    "max_branch_factor": 1,
+    "max_depth_reached": false,
+    "minimized_counterexample_trace_length": 1,
+    "proof_obligation_failures": {
+      "assume_guarantee_contract": 2,
+      "precondition": 4,
+      "rely_guarantee": 2,
+      "safety_postcondition": 6
+    },
+    "proof_obligations_checked": {
+      "action_defined": 2,
+      "assume_guarantee_contract": 3,
+      "precondition": 4,
+      "promised_effect": 0,
+      "rely_guarantee": 4,
+      "safety_postcondition": 14
+    },
+    "reductions_applied": 0,
+    "semantic_rule_counts": {
+      "Action.Execute": 2,
+      "ActionGuard.ConsumerRebalanceProgress": 1,
+      "ActionGuard.MessageReplayDeduplication": 1,
+      "Explore.Terminal": 1,
+      "PostInvariant.ConsumerGroupStableForBacklog": 1,
+      "PostInvariant.NoDuplicateReplayProcessing": 2,
+      "PostInvariant.QueueBacklogHasConsumers": 1,
+      "SafetyInvariant.assume_guarantee_contract:tempo-query-fallback-contract": 2,
+      "SafetyInvariant.rely_guarantee_interference:background-tenant-index-writes": 2,
+      "Schedule.SequenceNext": 2
+    },
+    "states_explored": 3,
+    "symbolic_splits": 0,
+    "terminal_traces": 1,
+    "timeout_seconds": null,
+    "transitions_explored": 2,
+    "waivers_applied": 0
+  },
+  "runbook": "Grafana Tempo current public runbook derived safety model",
+  "safe": false,
+  "waivers_applied": []
 }

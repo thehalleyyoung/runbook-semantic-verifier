@@ -27,7 +27,9 @@ The DSL also models queue replay/DLQ/consumer-group semantics, DNS cutovers with
 TTL and health-check convergence obligations, cache flush/warmup/cold-start/
 capacity semantics, object-storage restore/failover with write-freeze, RPO/RTO,
 and multi-region durability obligations, credential rotation/revocation state,
-reviewed high-risk effect annotations, and auditable model waivers.
+reviewed high-risk effect annotations, auditable model waivers,
+assume/guarantee contracts, rely/guarantee external-actor interference checks,
+and explicit finite queue/cache abstraction obligations.
 Formal-export evidence now includes docs separating starter specs from hand-strengthened proofs, mechanized-semantics notes, exporter conformance fixtures, native/exported counterexample projection reports, formal-methods limitation notes, and a shared SRE/security/PL/formal-methods glossary.
 Action descriptors now carry generated denotational state-transformer text, and
 semantic findings carry Hoare triples, weakest-precondition hints, source lines,
@@ -131,9 +133,10 @@ differently named system exists.
   conformance-tested artifacts, not complete proofs until reviewers strengthen
   invariant bodies and environment assumptions.
 - `frv proof-obligations` emits invariant, declared precondition/effect,
-  temporal-monitor, exporter-abstraction, and checker-optimization obligations in
-  Markdown or JSON so public case-study reports can cite exactly what is checked,
-  exported as a label, or left to external logs/hand proofs.
+  assume/guarantee, rely/guarantee, temporal-monitor, exporter-abstraction,
+  finite-abstraction, and checker-optimization obligations in Markdown or JSON so
+  public case-study reports can cite exactly what is checked, exported as a
+  label, or left to external logs/hand proofs.
 - `frv check --format json` emits explanation records with `semantic_trace`,
   `state_delta`, `causal_dependencies`, nested `source.field`, `hoare_triple`, synthesized precondition candidates, JSON-patch snippets, and
   `weakest_precondition_hint` for editor/review integration. The data is derived
@@ -163,6 +166,10 @@ differently named system exists.
 - Queue replay, DLQ draining, deduplication guards, and consumer-group
   rebalancing are checked as bounded small-step transitions with concrete
   duplicate-processing and backlog counterexamples.
+- Assume/guarantee contracts in runbook metadata check modeled component
+  assumptions and guarantees at bounded checker states. Rely/guarantee entries
+  model one permitted external-actor action before each runbook step and report
+  preservation failures as concrete bounded counterexamples.
 - Cache write freezes, destructive flushes, warmup thresholds, capacity limits,
   and stale-read risk are checked as bounded small-step transitions with
   concrete cold-start and over-capacity counterexamples.
@@ -230,6 +237,9 @@ differently named system exists.
 
 - This is not a full temporal model checker for arbitrary distributed systems.
 - Generated TLA+/Alloy artifacts are starter specifications preserving labels and bounded relations; they do not prove production infrastructure safety without hand-strengthened predicates and reviewed environment assumptions.
+- Finite queue/cache abstraction obligations document threshold choices for
+  unbounded live resources; they do not prove arbitrary infinite-state queue or
+  cache behavior beyond the modeled counters and bounds.
 - The historical fixture is reconstructed from public facts, not exact original
   runbook text.
 - The GitHub quorum-guard remediation fixture is a bounded counterfactual model

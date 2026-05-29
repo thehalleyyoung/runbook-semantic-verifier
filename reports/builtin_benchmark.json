@@ -11,6 +11,7 @@
         "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
       ],
       "risk_classes_detected": [
+        "assume_guarantee_contract:tempo-query-fallback-contract",
         "bounded_alert_suppression",
         "cache-flush-needs-warmup-capacity",
         "cache_flush_requires_write_freeze",
@@ -39,25 +40,32 @@
         "prose-suppression-applied",
         "queue_backlog_requires_consumers",
         "quorum_before_data_loss_action",
+        "rely_guarantee_interference:background-tenant-index-writes",
         "service_min_available"
       ]
     },
     "pass": true,
     "performance_counters": {
+      "abstract_states": 0,
       "avg_branch_factor": 1.7282608695652173,
       "branch_factor_total": 159,
       "branch_points": 92,
+      "dominance_pruned_states": 0,
       "max_branch_factor": 5,
       "max_depth_reached": true,
       "minimized_counterexample_trace_length": 1,
       "proof_obligation_failures": {
-        "precondition": 103,
-        "safety_postcondition": 91
+        "assume_guarantee_contract": 2,
+        "precondition": 105,
+        "rely_guarantee": 2,
+        "safety_postcondition": 93
       },
       "proof_obligations_checked": {
         "action_defined": 159,
-        "precondition": 119,
+        "assume_guarantee_contract": 3,
+        "precondition": 121,
         "promised_effect": 12,
+        "rely_guarantee": 4,
         "safety_postcondition": 999
       },
       "reductions_applied": 22,
@@ -84,6 +92,7 @@
         "PostInvariant.NoStaleReadsAfterCacheFlush": 2,
         "PostInvariant.QueueBacklogHasConsumers": 2,
         "PostInvariant.ServiceHasReplica": 34,
+        "SafetyInvariant.assume_guarantee_contract:tempo-query-fallback-contract": 2,
         "SafetyInvariant.object_bucket_replication_min_regions": 1,
         "SafetyInvariant.object_bucket_replication_regions_healthy": 3,
         "SafetyInvariant.object_replication_target_region_healthy": 2,
@@ -91,6 +100,7 @@
         "SafetyInvariant.object_restore_requires_write_freeze": 2,
         "SafetyInvariant.object_restore_within_rpo": 2,
         "SafetyInvariant.object_restore_within_rto": 2,
+        "SafetyInvariant.rely_guarantee_interference:background-tenant-index-writes": 2,
         "Schedule.DependencyReady": 138,
         "Schedule.OperatorChoice": 103,
         "Schedule.SequenceNext": 21,
@@ -110,7 +120,7 @@
       "prose-suppression-applied": 1
     },
     "runbooks": 14,
-    "runtime_seconds": 0.05623020901111886,
+    "runtime_seconds": 0.056455375015502796,
     "states_explored": 108,
     "traces_explored": 16,
     "validity_threat_categories": {
@@ -120,6 +130,7 @@
       "synthetic_mutant_bias": 9
     },
     "violations_by_property": {
+      "assume_guarantee_contract:tempo-query-fallback-contract": 2,
       "bounded_alert_suppression": 15,
       "cache_flush_requires_write_freeze": 2,
       "cache_warmup_before_traffic": 6,
@@ -146,6 +157,7 @@
       "precondition": 1,
       "queue_backlog_requires_consumers": 2,
       "quorum_before_data_loss_action": 16,
+      "rely_guarantee_interference:background-tenant-index-writes": 2,
       "service_min_available": 54
     },
     "workflow_baselines": {
@@ -251,11 +263,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 20,
         "avg_branch_factor": 1.8333333333333333,
         "branch_factor_total": 44,
         "branch_points": 24,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -267,8 +281,10 @@
         "proof_obligation_failures": {},
         "proof_obligations_checked": {
           "action_defined": 44,
+          "assume_guarantee_contract": 0,
           "precondition": 8,
           "promised_effect": 1,
+          "rely_guarantee": 0,
           "safety_postcondition": 308
         },
         "reductions_applied": 12,
@@ -286,7 +302,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.005969833000563085,
+      "runtime_seconds": 0.002927458001067862,
       "safe": true,
       "states_explored": 25,
       "traces_explored": 1,
@@ -411,11 +427,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 60,
         "avg_branch_factor": 2.2903225806451615,
         "branch_factor_total": 71,
         "branch_points": 31,
         "counterexamples_minimized": 42,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -430,8 +448,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 71,
+          "assume_guarantee_contract": 0,
           "precondition": 67,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 497
         },
         "reductions_applied": 9,
@@ -455,7 +475,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.014351915975566953,
+      "runtime_seconds": 0.01367170800222084,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -579,11 +599,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_safe.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -595,8 +617,10 @@
         "proof_obligation_failures": {},
         "proof_obligations_checked": {
           "action_defined": 2,
+          "assume_guarantee_contract": 0,
           "precondition": 2,
           "promised_effect": 3,
+          "rely_guarantee": 0,
           "safety_postcondition": 10
         },
         "reductions_applied": 0,
@@ -613,7 +637,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.00165275001199916,
+      "runtime_seconds": 0.001332708983682096,
       "safe": true,
       "states_explored": 3,
       "traces_explored": 1,
@@ -737,11 +761,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_unsafe.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -756,8 +782,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 2,
+          "assume_guarantee_contract": 0,
           "precondition": 2,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 10
         },
         "reductions_applied": 0,
@@ -779,7 +807,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0018102079920936376,
+      "runtime_seconds": 0.0010935839964076877,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -901,11 +929,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/cache_flush_safe.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 4,
         "branch_points": 4,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -917,8 +947,10 @@
         "proof_obligation_failures": {},
         "proof_obligations_checked": {
           "action_defined": 4,
+          "assume_guarantee_contract": 0,
           "precondition": 3,
           "promised_effect": 3,
+          "rely_guarantee": 0,
           "safety_postcondition": 20
         },
         "reductions_applied": 0,
@@ -935,7 +967,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0019604999979492277,
+      "runtime_seconds": 0.0010556250053923577,
       "safe": true,
       "states_explored": 5,
       "traces_explored": 1,
@@ -1057,11 +1089,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/cache_flush_unsafe.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.5,
         "branch_factor_total": 3,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -1076,8 +1110,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 3,
+          "assume_guarantee_contract": 0,
           "precondition": 3,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 15
         },
         "reductions_applied": 0,
@@ -1099,7 +1135,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0027213749999646097,
+      "runtime_seconds": 0.0010810829990077764,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,
@@ -1218,11 +1254,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/credential_rotation_runbook.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 0,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -1234,8 +1272,10 @@
         "proof_obligation_failures": {},
         "proof_obligations_checked": {
           "action_defined": 2,
+          "assume_guarantee_contract": 0,
           "precondition": 0,
           "promised_effect": 2,
+          "rely_guarantee": 0,
           "safety_postcondition": 2
         },
         "reductions_applied": 0,
@@ -1252,7 +1292,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0022443339985329658,
+      "runtime_seconds": 0.0010117089841514826,
       "safe": true,
       "states_explored": 3,
       "traces_explored": 1,
@@ -1370,11 +1410,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/real_world/kubernetes_region_failover.md",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 7,
         "avg_branch_factor": 1.5714285714285714,
         "branch_factor_total": 11,
         "branch_points": 7,
         "counterexamples_minimized": 7,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -1389,8 +1431,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 11,
+          "assume_guarantee_contract": 0,
           "precondition": 11,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 22
         },
         "reductions_applied": 1,
@@ -1414,7 +1458,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.0049954169953707606,
+      "runtime_seconds": 0.003747832990484312,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -1549,11 +1593,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 5,
         "branch_points": 5,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -1567,8 +1613,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 5,
+          "assume_guarantee_contract": 0,
           "precondition": 2,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 60
         },
         "reductions_applied": 0,
@@ -1589,7 +1637,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0034974169975612313,
+      "runtime_seconds": 0.0032568750029895455,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -1644,6 +1692,7 @@
             "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
           ],
           "risk_classes_detected": [
+            "assume_guarantee_contract:tempo-query-fallback-contract",
             "data-deletion-needs-restore-precondition",
             "destructive-delete-needs-targeting",
             "no_duplicate_processing_risk",
@@ -1651,7 +1700,8 @@
             "no_replay_without_dedupe",
             "no_unstable_consumer_group_with_backlog",
             "prose-suppression-applied",
-            "queue_backlog_requires_consumers"
+            "queue_backlog_requires_consumers",
+            "rely_guarantee_interference:background-tenant-index-writes"
           ]
         },
         "expected_result": {
@@ -1662,11 +1712,13 @@
           ],
           "safe": false,
           "violation_properties": [
+            "assume_guarantee_contract:tempo-query-fallback-contract",
             "no_duplicate_processing_risk",
             "no_rebalance_to_zero_consumers",
             "no_replay_without_dedupe",
             "no_unstable_consumer_group_with_backlog",
-            "queue_backlog_requires_consumers"
+            "queue_backlog_requires_consumers",
+            "rely_guarantee_interference:background-tenant-index-writes"
           ]
         },
         "license": {
@@ -1713,7 +1765,9 @@
           "dedupe_key",
           "consumer_group_rebalance",
           "benchmark_expected_prose_rules",
-          "auditable_prose_suppressions"
+          "auditable_prose_suppressions",
+          "assume_guarantee_contract",
+          "rely_guarantee_interference"
         ],
         "validity_threat_categories": [
           "abstraction_bias",
@@ -1735,22 +1789,26 @@
         ],
         "expected_safe": false,
         "expected_violation_properties": [
+          "assume_guarantee_contract:tempo-query-fallback-contract",
           "no_duplicate_processing_risk",
           "no_rebalance_to_zero_consumers",
           "no_replay_without_dedupe",
           "no_unstable_consumer_group_with_backlog",
-          "queue_backlog_requires_consumers"
+          "queue_backlog_requires_consumers",
+          "rely_guarantee_interference:background-tenant-index-writes"
         ]
       },
       "name": "Grafana Tempo current public runbook derived safety model",
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 0,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -1760,13 +1818,17 @@
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
         "proof_obligation_failures": {
-          "precondition": 2,
-          "safety_postcondition": 4
+          "assume_guarantee_contract": 2,
+          "precondition": 4,
+          "rely_guarantee": 2,
+          "safety_postcondition": 6
         },
         "proof_obligations_checked": {
           "action_defined": 2,
-          "precondition": 2,
+          "assume_guarantee_contract": 3,
+          "precondition": 4,
           "promised_effect": 0,
+          "rely_guarantee": 4,
           "safety_postcondition": 14
         },
         "reductions_applied": 0,
@@ -1778,6 +1840,8 @@
           "PostInvariant.ConsumerGroupStableForBacklog": 1,
           "PostInvariant.NoDuplicateReplayProcessing": 2,
           "PostInvariant.QueueBacklogHasConsumers": 1,
+          "SafetyInvariant.assume_guarantee_contract:tempo-query-fallback-contract": 2,
+          "SafetyInvariant.rely_guarantee_interference:background-tenant-index-writes": 2,
           "Schedule.SequenceNext": 2
         },
         "states_explored": 3,
@@ -1793,27 +1857,31 @@
         "destructive-delete-needs-targeting": 1,
         "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.003430749988183379,
+      "runtime_seconds": 0.00313499997719191,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
       "violations_by_property": {
+        "assume_guarantee_contract:tempo-query-fallback-contract": 2,
         "no_duplicate_processing_risk": 2,
         "no_rebalance_to_zero_consumers": 1,
         "no_replay_without_dedupe": 1,
         "no_unstable_consumer_group_with_backlog": 1,
-        "queue_backlog_requires_consumers": 1
+        "queue_backlog_requires_consumers": 1,
+        "rely_guarantee_interference:background-tenant-index-writes": 2
       },
       "workflow_baselines": {
         "bounded_checking": {
-          "counterexamples": 6,
+          "counterexamples": 10,
           "pass": false,
           "violations_by_property": {
+            "assume_guarantee_contract:tempo-query-fallback-contract": 2,
             "no_duplicate_processing_risk": 2,
             "no_rebalance_to_zero_consumers": 1,
             "no_replay_without_dedupe": 1,
             "no_unstable_consumer_group_with_backlog": 1,
-            "queue_backlog_requires_consumers": 1
+            "queue_backlog_requires_consumers": 1,
+            "rely_guarantee_interference:background-tenant-index-writes": 2
           }
         },
         "combined_workflow": {
@@ -1843,8 +1911,10 @@
         "type_effect_checking": {
           "pass": false,
           "proof_obligation_failures": {
-            "precondition": 2,
-            "safety_postcondition": 4
+            "assume_guarantee_contract": 2,
+            "precondition": 4,
+            "rely_guarantee": 2,
+            "safety_postcondition": 6
           }
         }
       }
@@ -1940,11 +2010,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -1959,8 +2031,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 2,
+          "assume_guarantee_contract": 0,
           "precondition": 3,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 10
         },
         "reductions_applied": 0,
@@ -1981,7 +2055,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0029245420009829104,
+      "runtime_seconds": 0.0025023340131156147,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -2126,11 +2200,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 1,
         "avg_branch_factor": 1.5,
         "branch_factor_total": 3,
         "branch_points": 2,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -2145,8 +2221,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 3,
+          "assume_guarantee_contract": 0,
           "precondition": 3,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 15
         },
         "reductions_applied": 0,
@@ -2170,7 +2248,7 @@
       "prose_findings_by_rule": {
         "cache-flush-needs-warmup-capacity": 2
       },
-      "runtime_seconds": 0.0029140420083422214,
+      "runtime_seconds": 0.002312708005774766,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,
@@ -2293,11 +2371,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/object_storage_restore_safe.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 0,
         "avg_branch_factor": 1.0,
         "branch_factor_total": 4,
         "branch_points": 4,
         "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "fifo",
@@ -2309,8 +2389,10 @@
         "proof_obligation_failures": {},
         "proof_obligations_checked": {
           "action_defined": 4,
+          "assume_guarantee_contract": 0,
           "precondition": 3,
           "promised_effect": 3,
+          "rely_guarantee": 0,
           "safety_postcondition": 8
         },
         "reductions_applied": 0,
@@ -2327,7 +2409,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0014513750211335719,
+      "runtime_seconds": 0.015734999993583187,
       "safe": true,
       "states_explored": 5,
       "traces_explored": 1,
@@ -2455,11 +2537,13 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/object_storage_restore_unsafe.json",
       "performance_counters": {
+        "abstract_states": 0,
         "annotation_warnings": 2,
         "avg_branch_factor": 1.3333333333333333,
         "branch_factor_total": 4,
         "branch_points": 3,
         "counterexamples_minimized": 5,
+        "dominance_pruned_states": 0,
         "exploration_seed": null,
         "exploration_strategy": "breadth_first",
         "fairness_model": "dependency",
@@ -2474,8 +2558,10 @@
         },
         "proof_obligations_checked": {
           "action_defined": 4,
+          "assume_guarantee_contract": 0,
           "precondition": 10,
           "promised_effect": 0,
+          "rely_guarantee": 0,
           "safety_postcondition": 8
         },
         "reductions_applied": 0,
@@ -2500,7 +2586,7 @@
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0023489999875891954,
+      "runtime_seconds": 0.001692917023319751,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 1,

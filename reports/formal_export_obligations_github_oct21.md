@@ -1,4 +1,4 @@
-# Proof obligations: GitHub Oct21 2018 MySQL failover reconstruction
+# Proof obligations: GitHub Oct21 2018 MySQL failover reconstruction with quorum guard
 
 These obligations make explicit what the native checker, exported starter models, and future runtime monitors are expected to preserve. They are bounded artifact obligations, not claims about live infrastructure.
 
@@ -32,6 +32,13 @@ These obligations make explicit what the native checker, exported starter models
 | `invariant:no_traffic_to_drained_load_balancer` | invariant | `no_traffic_to_drained_load_balancer` | positive traffic only reaches active load balancers | native bounded checker; exported as TLA+/Alloy label |
 | `invariant:no_traffic_to_unhealthy_region` | invariant | `no_traffic_to_unhealthy_region` | positive traffic only reaches healthy regions | native bounded checker; exported as TLA+/Alloy label |
 | `invariant:no_unstable_consumer_group_with_backlog` | invariant | `no_unstable_consumer_group_with_backlog` | backlog is processed only by a stable consumer group | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_bucket_replication_min_regions` | invariant | `object_bucket_replication_min_regions` | bucket durability requirement is preserved | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_bucket_replication_regions_healthy` | invariant | `object_bucket_replication_regions_healthy` | all bucket replica regions are healthy | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_replication_target_region_healthy` | invariant | `object_replication_target_region_healthy` | bucket replicas are only added in healthy regions | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_restore_requires_snapshot` | invariant | `object_restore_requires_snapshot` | restore has a concrete snapshot source | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_restore_requires_write_freeze` | invariant | `object_restore_requires_write_freeze` | restore is not racing concurrent bucket writes | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_restore_within_rpo` | invariant | `object_restore_within_rpo` | recovery point objective is met | native bounded checker; exported as TLA+/Alloy label |
+| `invariant:object_restore_within_rto` | invariant | `object_restore_within_rto` | recovery time objective is met | native bounded checker; exported as TLA+/Alloy label |
 | `invariant:precondition` | invariant | `precondition` | declared requires obligations are true before action | native bounded checker; exported as TLA+/Alloy label |
 | `invariant:queue_backlog_requires_consumers` | invariant | `queue_backlog_requires_consumers` | backlog has at least one consumer | native bounded checker; exported as TLA+/Alloy label |
 | `invariant:quorum_before_data_loss_action` | invariant | `quorum_before_data_loss_action` | data-loss-risk failover has quorum evidence | native bounded checker; exported as TLA+/Alloy label |
@@ -43,3 +50,4 @@ These obligations make explicit what the native checker, exported starter models
 | `exporter:tla-abstraction` | exporter-abstraction | `TLA+` | Export preserves step ids, dependencies, state-variable names, property identifiers, and action denotation comments. | round-trip exporter tests |
 | `exporter:alloy-abstraction` | exporter-abstraction | `Alloy` | Export preserves step signatures, dependency graph, waiver labels, entity signatures, and safety-property labels. | round-trip exporter tests |
 | `checker:optimization-soundness` | checker-optimization | `bounded exploration` | Current exporter conformance assumes no partial-order or dominance pruning changes native counterexample labels. | benchmark performance counters and regression tests |
+| `checker:finite-abstraction-soundness` | checker-abstraction | `bounded queue/cache abstraction` | Queue depths and cache entry counts are modeled as non-negative counters with explicit capacity/depth obligations, so unbounded live resources are represented by finite thresholds chosen by each fixture. | native bounded checker, schema bounds, and benchmark fixtures |

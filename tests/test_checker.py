@@ -407,6 +407,86 @@ class CheckerExplanationTests(unittest.TestCase):
         self.assertGreater(reduced.reductions_applied, 0)
         self.assertLess(reduced.transitions_explored, exhaustive.transitions_explored)
 
+    def test_assume_guarantee_contracts_check_initial_and_step_guarantees(self):
+        safe = parse_runbook({
+            "metadata": {
+                "assume_guarantee_contracts": [{
+                    "id": "cache-contract",
+                    "provider": "api-cache",
+                    "consumer": "api",
+                    "assumptions": [{"kind": "cache_capacity_at_least", "cache": "redis", "entries": 100}],
+                    "guarantees": [{"kind": "cache_capacity_at_least", "cache": "redis", "entries": 100}],
+                }]
+            },
+            "system": {
+                "services": {"api": {"min_available": 0, "replicas": []}},
+                "caches": {"redis": {"service": "api", "entries": 0, "warm": False, "capacity_entries": 100}},
+            },
+            "steps": [{"id": "warm", "action": "warm_cache", "params": {"cache": "redis", "entries": 100}}],
+        })
+        safe_result = Checker(safe).check()
+        self.assertTrue(safe_result.safe, safe_result.violations)
+        counters = safe_result.performance_counters()
+        self.assertGreater(counters["proof_obligations_checked"]["assume_guarantee_contract"], 0)
+        self.assertNotIn("assume_guarantee_contract", counters["proof_obligation_failures"])
+
+        unsafe = parse_runbook({
+            "metadata": {
+                "assume_guarantee_contracts": [{
+                    "id": "queue-contract",
+                    "provider": "worker",
+                    "consumer": "api",
+                    "guarantees": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 0}],
+                }]
+            },
+            "system": {"queues": {"jobs": {"depth": 0, "consumers": 1}}},
+            "steps": [{"id": "replay", "action": "replay_messages", "params": {"queue": "jobs", "count": 3, "dedupe_key": "id"}}],
+        })
+        unsafe_result = Checker(unsafe).check()
+        props = {v.property for v in unsafe_result.violations}
+        self.assertIn("assume_guarantee_contract:queue-contract", props)
+
+    def test_rely_guarantee_interference_models_external_actors(self):
+        runbook = parse_runbook({
+            "metadata": {
+                "rely_guarantee": [{
+                    "id": "producer-burst",
+                    "actor": "async-producer",
+                    "action": "replay_messages",
+                    "params": {"queue": "jobs", "count": 3},
+                    "preserves": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 5}],
+                }]
+            },
+            "system": {"queues": {"jobs": {"depth": 4, "consumers": 1}}},
+            "steps": [{"id": "wait", "action": "wait", "params": {"minutes": 1}}],
+        })
+        result = Checker(runbook).check()
+        props = {v.property for v in result.violations}
+        self.assertIn("rely_guarantee_interference:producer-burst", props)
+        self.assertGreater(result.performance_counters()["proof_obligation_failures"]["rely_guarantee"], 0)
+
+    def test_rely_guarantee_can_target_specific_steps(self):
+        runbook = parse_runbook({
+            "metadata": {
+                "rely_guarantee": [{
+                    "id": "producer-burst",
+                    "actor": "async-producer",
+                    "action": "replay_messages",
+                    "params": {"queue": "jobs", "count": 3},
+                    "preserves": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 5}],
+                    "applies_before": ["later"],
+                }]
+            },
+            "system": {"queues": {"jobs": {"depth": 4, "consumers": 1}}},
+            "steps": [
+                {"id": "wait", "action": "wait", "params": {"minutes": 1}},
+                {"id": "later", "action": "wait", "params": {"minutes": 1}, "after": ["wait"]},
+            ],
+        })
+        result = Checker(runbook).check()
+        matching = [v for v in result.violations if v.property == "rely_guarantee_interference:producer-burst"]
+        self.assertEqual([v.step for v in matching], ["later"])
+
 
 if __name__ == "__main__":
     unittest.main()

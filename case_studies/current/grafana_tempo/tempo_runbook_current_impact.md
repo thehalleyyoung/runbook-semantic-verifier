@@ -49,6 +49,29 @@ not an undisclosed vulnerability claim about Grafana Tempo.
     "service_owners": {
       "tempo-query": ["grafana-tempo-public-fixture"]
     },
+    "assume_guarantee_contracts": [
+      {
+        "id": "tempo-query-fallback-contract",
+        "provider": "tempo-query",
+        "consumer": "tenant-index-fallback-scan",
+        "guarantees": [
+          { "kind": "queue_depth_at_most", "queue": "tenant-index-fallback-scan", "depth": 18000 }
+        ],
+        "evidence": "Bounded abstraction of public prose that says isolated tenants should be targeted before fallback scan work is triggered."
+      }
+    ],
+    "rely_guarantee": [
+      {
+        "id": "background-tenant-index-writes",
+        "actor": "tempo-ingester-background-traffic",
+        "action": "replay_messages",
+        "params": { "queue": "tenant-index-fallback-scan", "count": 1 },
+        "preserves": [
+          { "kind": "queue_depth_at_most", "queue": "tenant-index-fallback-scan", "depth": 18000 }
+        ],
+        "notes": "Models one external producer step before each operator action; the preservation intentionally fails in this advisory fixture."
+      }
+    ],
     "remediation_history": [
       {
         "date": "2026-05-29",
@@ -59,7 +82,9 @@ not an undisclosed vulnerability claim about Grafana Tempo.
     "labels": {
       "expected_safe": false,
       "expected_violation_properties": [
+        "assume_guarantee_contract:tempo-query-fallback-contract",
         "no_replay_without_dedupe",
+        "rely_guarantee_interference:background-tenant-index-writes",
         "no_duplicate_processing_risk",
         "no_rebalance_to_zero_consumers",
         "queue_backlog_requires_consumers",

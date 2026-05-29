@@ -243,10 +243,31 @@ def export_conformance_manifest(runbook: Runbook) -> dict[str, Any]:
             }
             for waiver in runbook.waivers
         ],
+        "assume_guarantee_contracts": [
+            {
+                "id": str(contract["id"]),
+                "provider": contract.get("provider"),
+                "consumer": contract.get("consumer"),
+                "assumptions": list(contract.get("assumptions", [])),
+                "guarantees": list(contract.get("guarantees", [])),
+            }
+            for contract in runbook.metadata.get("assume_guarantee_contracts", [])
+        ],
+        "rely_guarantee": [
+            {
+                "id": str(entry["id"]),
+                "actor": entry.get("actor"),
+                "action": entry.get("action"),
+                "params": entry.get("params"),
+                "preserves": list(entry.get("preserves", [])),
+            }
+            for entry in runbook.metadata.get("rely_guarantee", [])
+        ],
         "abstractions": [
             "Exporter emits starter models preserving names, dependencies, property labels, and action comments; native Python checker remains the executable semantics.",
             "TLA+ invariant bodies are templates unless manually strengthened with concrete state encodings.",
             "Alloy assertions preserve bounded relations and labels; arithmetic service/queue/cache checks are delegated to frv.",
+            "Assume/guarantee and rely/guarantee metadata is preserved in proof-obligation manifests and checked by the native bounded interpreter.",
         ],
     }
 
@@ -288,6 +309,41 @@ def build_proof_obligations(runbook: Runbook) -> list[dict[str, Any]]:
                 "claim": "runtime logs should preserve modeled wait/expiry/TTL ordering if used for runtime verification",
                 "checked_by": "not checked without external execution log",
             })
+    for contract in runbook.metadata.get("assume_guarantee_contracts", []):
+        contract_id = str(contract["id"])
+        for idx, condition in enumerate(contract.get("assumptions", []), start=1):
+            obligations.append({
+                "id": f"assume:{contract_id}:{idx}",
+                "kind": "assume-guarantee-assumption",
+                "subject": contract_id,
+                "claim": json.dumps(condition, sort_keys=True),
+                "checked_by": "native checker at initial state and after modeled steps",
+            })
+        for idx, condition in enumerate(contract.get("guarantees", []), start=1):
+            obligations.append({
+                "id": f"guarantee:{contract_id}:{idx}",
+                "kind": "assume-guarantee-guarantee",
+                "subject": contract_id,
+                "claim": json.dumps(condition, sort_keys=True),
+                "checked_by": "native checker at initial state and after contracted steps",
+            })
+    for entry in runbook.metadata.get("rely_guarantee", []):
+        rely_id = str(entry["id"])
+        obligations.append({
+            "id": f"rely-action:{rely_id}:1",
+            "kind": "rely-guarantee-interference-action",
+            "subject": rely_id,
+            "claim": json.dumps({"action": entry.get("action"), "params": entry.get("params", {})}, sort_keys=True),
+            "checked_by": "native checker as one-step external actor interference",
+        })
+        for idx, condition in enumerate(entry.get("preserves", []), start=1):
+            obligations.append({
+                "id": f"rely-preserves:{rely_id}:{idx}",
+                "kind": "rely-guarantee-preservation",
+                "subject": rely_id,
+                "claim": json.dumps(condition, sort_keys=True),
+                "checked_by": "native checker before each applicable runbook action",
+            })
     obligations.extend([
         {
             "id": "exporter:tla-abstraction",
@@ -309,6 +365,13 @@ def build_proof_obligations(runbook: Runbook) -> list[dict[str, Any]]:
             "subject": "bounded exploration",
             "claim": "Current exporter conformance assumes no partial-order or dominance pruning changes native counterexample labels.",
             "checked_by": "benchmark performance counters and regression tests",
+        },
+        {
+            "id": "checker:finite-abstraction-soundness",
+            "kind": "checker-abstraction",
+            "subject": "bounded queue/cache abstraction",
+            "claim": "Queue depths and cache entry counts are modeled as non-negative counters with explicit capacity/depth obligations, so unbounded live resources are represented by finite thresholds chosen by each fixture.",
+            "checked_by": "native bounded checker, schema bounds, and benchmark fixtures",
         },
     ])
     return obligations

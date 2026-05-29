@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **95/100** items in the local roadmap are complete. The
+Current roadmap status: **100/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces with synthesized precondition/JSON-patch candidates, multiline Markdown DSL source mapping, greedy dependency-preserving counterexample minimization,
@@ -19,7 +19,12 @@ cache flush/warmup/cold-start/capacity semantics, object-storage
 restore/failover semantics with RPO/RTO and multi-region durability checks, credential
 rotation/revocation semantics, high-risk effect annotations with auditable
 waivers, and checked-in
-historical/current public case-study evidence, and conservative partial-order reduction, opt-in dominance pruning for monotone hazard abstractions, bounded symbolic-choice expansion, and native/exported trace-equivalence reports. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
+historical/current public case-study evidence, assume/guarantee contracts for
+compositional service obligations, rely/guarantee interference checks for
+external actors, explicit finite queue/cache abstraction obligations, and
+conservative partial-order reduction, opt-in dominance pruning for monotone
+hazard abstractions, bounded symbolic-choice expansion, and native/exported
+trace-equivalence reports. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
 Benchmark and evaluation reports now also carry validity-threat categories, workflow-baseline
 comparisons, seeded/reproducible exploration metadata, semantic-diff remediation pairs, longitudinal gate evaluation over revision pairs, SRE-style usability task proxies, oracle-review labels, reproducible
 report-generation commands, contribution rules, and adoption-oriented risk/action
@@ -116,6 +121,10 @@ Top-level fields:
   `expected_violation_properties`, and `expected_prose_rules`.
 - `metadata.waivers`: optional auditable waivers with owner, expiry, scope,
   invariant, rationale, and benchmark visibility.
+- `metadata.assume_guarantee_contracts`: optional provider/consumer contracts
+  with modeled assumptions and guarantees checked at bounded states.
+- `metadata.rely_guarantee`: optional external-actor action plus preservation
+  conditions checked as one-step interference before each modeled action.
 
 The parser validates supported actions using typed field descriptors shared by
 parser checks, JSON Schema generation, the action semantics reference, and
@@ -193,6 +202,8 @@ The prototype checks pragmatic cloud-operations hazards:
   high-risk actions warn when required destructive/idempotency/retry-safety
   annotations are missing or inconsistent unless covered by an active waiver;
 - declared step preconditions and effects must hold.
+- declared assume/guarantee contracts and rely/guarantee preservation conditions
+  must hold within the bounded modeled state space.
 
 ## Architecture
 
@@ -278,7 +289,8 @@ model remains safe or exposes expected findings. `frv paper-tables` renders
 feature-coverage, benchmark, ablation-proxy, counterexample-usefulness, and
 adoption-workflow tables from the same benchmark contract used by CI. Checked-in
 examples live at `reports/github_oct21_runtime_verification.md`,
-`reports/github_oct21_mutations.md`, and `reports/paper_tables_builtin.md`.
+`reports/github_oct21_mutations.md`, `reports/paper_tables_builtin.md`, and
+the final reproducibility map in `reports/final_artifact_bundle.md`.
 
 ## Real-world finding workflow
 
@@ -723,7 +735,14 @@ runbook-template-derived cache-flush mutant.
 
 ## Paper angle
 
-A paper titled _Verifying Incident Runbooks for Cloud-Native Systems_ could evaluate how many injected runbook bugs are caught, how much modeling effort is needed, which production hazards are expressible, and whether operators can understand the DSL. The exporter gives a bridge to TLA+/Alloy-style artifacts for formal-methods credibility while the Python checker keeps experiments reproducible locally.
+A paper titled _Verifying Incident Runbooks for Cloud-Native Systems_ could
+evaluate how many injected runbook bugs are caught, how much modeling effort is
+needed, which production hazards are expressible, and whether operators can
+understand the DSL. The checked-in final artifact bundle ties together the
+public fixtures, benchmark manifest, generated reports, proof-obligation
+exports, and bounded claims/limitations. The exporter gives a bridge to
+TLA+/Alloy-style artifacts for formal-methods credibility while the Python
+checker keeps experiments reproducible locally.
 
 ## LLM-process separation note
 

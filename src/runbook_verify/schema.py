@@ -27,6 +27,8 @@ def build_json_schema() -> dict[str, Any]:
                     "owners": {"type": "array", "items": {"oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": True}]}},
                     "service_owners": {"type": "object", "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]}},
                     "waivers": {"type": "array", "items": {"$ref": "#/$defs/waiver"}},
+                    "assume_guarantee_contracts": {"type": "array", "items": {"$ref": "#/$defs/assume_guarantee_contract"}},
+                    "rely_guarantee": {"type": "array", "items": {"$ref": "#/$defs/rely_guarantee"}},
                 },
             },
             "allow_reordering": {"type": "boolean"},
@@ -69,6 +71,8 @@ def build_json_schema() -> dict[str, Any]:
             "step": _step_schema(),
             "condition": _condition_schema(),
             "waiver": _waiver_schema(),
+            "assume_guarantee_contract": _assume_guarantee_contract_schema(),
+            "rely_guarantee": _rely_guarantee_schema(),
             "effect_annotations": _effect_annotation_schema(),
         },
     }
@@ -298,6 +302,42 @@ def _waiver_schema() -> dict[str, Any]:
             "invariant": {"type": "string"},
             "benchmark_visibility": {"type": "string", "enum": ["blocking", "hidden", "visible"]},
         },
+    }
+
+
+def _assume_guarantee_contract_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["id", "provider", "consumer", "guarantees"],
+        "properties": {
+            "id": {"type": "string"},
+            "provider": {"type": "string"},
+            "consumer": {"type": "string"},
+            "assumptions": {"type": "array", "items": {"$ref": "#/$defs/condition"}},
+            "guarantees": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/condition"}},
+            "evidence": {"type": "string"},
+            "source_url": {"type": "string"},
+            "notes": {"type": "string"},
+        },
+    }
+
+
+def _rely_guarantee_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["id", "actor", "action", "params", "preserves"],
+        "properties": {
+            "id": {"type": "string"},
+            "actor": {"type": "string"},
+            "action": {"type": "string", "enum": sorted(ACTION_DESCRIPTORS)},
+            "params": {"type": "object"},
+            "preserves": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/condition"}},
+            "applies_before": {"type": "array", "items": {"type": "string"}},
+            "notes": {"type": "string"},
+        },
+        "allOf": [_tagged_object_schema("action", "params", name, descriptor) for name, descriptor in sorted(ACTION_DESCRIPTORS.items())],
     }
 
 

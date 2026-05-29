@@ -361,6 +361,76 @@ class ParserValidationTests(unittest.TestCase):
                 "steps": [{"id": "revoke", "action": "revoke_credential", "params": {"credential": "missing"}}],
             })
 
+    def test_parses_assume_guarantee_and_rely_guarantee_metadata(self):
+        runbook = parse_runbook({
+            "metadata": {
+                "assume_guarantee_contracts": [{
+                    "id": "queue-drain-contract",
+                    "provider": "worker",
+                    "consumer": "api",
+                    "assumptions": [{"kind": "queue_has_consumers", "queue": "jobs", "count": 1}],
+                    "guarantees": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 0}],
+                }],
+                "rely_guarantee": [{
+                    "id": "producer-interference",
+                    "actor": "producer",
+                    "action": "replay_messages",
+                    "params": {"queue": "jobs", "count": 1},
+                    "preserves": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 10}],
+                    "applies_before": ["wait"],
+                }],
+            },
+            "system": {"queues": {"jobs": {"depth": 0, "consumers": 1}}},
+            "steps": [{"id": "wait", "action": "wait", "params": {"minutes": 1}}],
+        })
+        self.assertEqual(runbook.metadata["assume_guarantee_contracts"][0]["id"], "queue-drain-contract")
+        self.assertEqual(runbook.metadata["rely_guarantee"][0]["actor"], "producer")
+        self.assertEqual(runbook.metadata["rely_guarantee"][0]["applies_before"], ("wait",))
+
+    def test_rejects_invalid_contract_metadata_references(self):
+        with self.assertRaisesRegex(RunbookParseError, "missing required"):
+            parse_runbook({
+                "metadata": {
+                    "assume_guarantee_contracts": [{
+                        "id": "bad-contract",
+                        "guarantees": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 0}],
+                    }]
+                },
+                "system": {"queues": {"jobs": {}}},
+                "steps": [],
+            })
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown queue"):
+            parse_runbook({
+                "metadata": {
+                    "rely_guarantee": [{
+                        "id": "bad-rely",
+                        "actor": "producer",
+                        "action": "replay_messages",
+                        "params": {"queue": "missing", "count": 1},
+                        "preserves": [{"kind": "queue_depth_at_most", "queue": "missing", "depth": 0}],
+                    }]
+                },
+                "system": {"queues": {}},
+                "steps": [],
+            })
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown step"):
+            parse_runbook({
+                "metadata": {
+                    "rely_guarantee": [{
+                        "id": "bad-target",
+                        "actor": "producer",
+                        "action": "replay_messages",
+                        "params": {"queue": "jobs", "count": 1},
+                        "preserves": [{"kind": "queue_depth_at_most", "queue": "jobs", "depth": 10}],
+                        "applies_before": ["missing"],
+                    }]
+                },
+                "system": {"queues": {"jobs": {}}},
+                "steps": [{"id": "wait", "action": "wait", "params": {"minutes": 1}}],
+            })
+
 
 if __name__ == "__main__":
     unittest.main()

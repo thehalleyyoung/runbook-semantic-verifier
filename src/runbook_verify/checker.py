@@ -126,6 +126,8 @@ class Checker:
         self.fairness_model = str(runbook.safety.get("fairness", "dependency" if runbook.allow_reordering else "fifo"))
         self.partial_order_reduction = bool(runbook.safety.get("partial_order_reduction", True))
         self.dominance_pruning = bool(runbook.safety.get("dominance_pruning", False))
+        self.assume_guarantee_contracts = tuple(runbook.metadata.get("assume_guarantee_contracts", ()))
+        self.rely_guarantees = tuple(runbook.metadata.get("rely_guarantee", ()))
         self._rng = random.Random(self.seed)
 
     def check(self) -> CheckResult:
@@ -134,6 +136,16 @@ class Checker:
         result.exploration_seed = self.seed
         result.fairness_model = self.fairness_model
         result.timeout_seconds = self.timeout_seconds
+        initial_contracts = self._assume_guarantee_violations(self.runbook.state, tuple(), tuple())
+        if initial_contracts:
+            result.violations.extend(initial_contracts)
+            result.safe = False
+        _record_obligations(
+            result,
+            "assume_guarantee_contract",
+            _assume_guarantee_obligation_count(self.assume_guarantee_contracts),
+            initial_contracts,
+        )
         deadline = time.monotonic() + self.timeout_seconds if isinstance(self.timeout_seconds, int) else None
         initial = (self.runbook.state, frozenset(), tuple(), tuple())
         queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]] = deque([initial])
@@ -187,6 +199,12 @@ class Checker:
                 schedule_trace = semantic_trace + scheduling_rules(step, len(enabled), self.runbook.allow_reordering)
                 _record_labeled_rules(result, schedule_trace[len(semantic_trace):])
                 pre = self._pre_action_violations(state, step, trace, schedule_trace)
+                _record_obligations(
+                    result,
+                    "rely_guarantee",
+                    _rely_guarantee_obligation_count(self.rely_guarantees, step.id),
+                    [v for v in pre if v.property.startswith("rely_guarantee_interference:")],
+                )
                 for warning in _effect_annotation_warnings(step, trace + (step.id,), schedule_trace):
                     warning = self._with_step_context(warning)
                     waiver = _matching_active_waiver(self.runbook.waivers, warning.property, step.id)
@@ -219,6 +237,12 @@ class Checker:
                 _record_labeled_rules(result, next_semantic_trace[len(schedule_trace):])
                 post = self._post_action_violations(next_state, step, trace + (step.id,), next_semantic_trace)
                 _record_obligations(result, "safety_postcondition", _safety_obligation_count(next_state), post)
+                _record_obligations(
+                    result,
+                    "assume_guarantee_contract",
+                    _assume_guarantee_obligation_count(self.assume_guarantee_contracts),
+                    [v for v in post if v.property.startswith("assume_guarantee")],
+                )
                 _record_obligations(result, "promised_effect", len(step.effects), [v for v in post if v.property in {"effect", "effect_defined"}])
                 if post:
                     post = [self._with_step_context(violation) for violation in post]
@@ -368,6 +392,7 @@ class Checker:
             record = state.dns_records[str(step.params["record"])]
             if not record.ttl_elapsed(state.clock_minute):
                 violations.append(_violation("dns_ttl_elapsed_before_finalize", f"DNS record {record.name} TTL window has not elapsed before finalize", trace + (step.id,), step.id))
+        violations.extend(self._rely_guarantee_violations(state, step, trace, semantic_trace))
         return [_with_semantic_prefix(violation, semantic_trace) for violation in violations]
 
     def _post_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
@@ -428,7 +453,74 @@ class Checker:
                 continue
             if not holds:
                 violations.append(_with_source_field(_violation("effect", f"step {step.id} promised effect {condition}", trace, step.id), f"effects[{condition_index}]"))
+        violations.extend(self._assume_guarantee_violations(state, trace, semantic_trace, step.id))
         return [_with_semantic_prefix(violation, semantic_trace) for violation in violations]
+
+    def _assume_guarantee_violations(
+        self,
+        state: SystemState,
+        trace: tuple[str, ...],
+        semantic_trace: tuple[str, ...],
+        step_id: str | None = None,
+    ) -> list[Violation]:
+        violations: list[Violation] = []
+        for contract in self.assume_guarantee_contracts:
+            contract_id = str(contract.get("id", "contract"))
+            assumptions = tuple(contract.get("assumptions", ()))
+            if assumptions and not all(condition_holds(state, assumption) for assumption in assumptions):
+                violations.append(_violation(
+                    f"assume_guarantee_assumption:{contract_id}",
+                    f"assume-guarantee contract {contract_id} assumptions are not satisfied",
+                    trace,
+                    step_id,
+                    _append_property_rule(semantic_trace, "assume_guarantee_assumption", step_id or "initial"),
+                ))
+                continue
+            for guarantee in contract.get("guarantees", ()):
+                if not condition_holds(state, guarantee):
+                    violations.append(_violation(
+                        f"assume_guarantee_contract:{contract_id}",
+                        f"assume-guarantee contract {contract_id} guarantee failed: {guarantee}",
+                        trace,
+                        step_id,
+                        _append_property_rule(semantic_trace, "assume_guarantee_contract", step_id or "initial"),
+                    ))
+        return violations
+
+    def _rely_guarantee_violations(
+        self,
+        state: SystemState,
+        step: Step,
+        trace: tuple[str, ...],
+        semantic_trace: tuple[str, ...],
+    ) -> list[Violation]:
+        violations: list[Violation] = []
+        for entry in self.rely_guarantees:
+            entry_id = str(entry.get("id", "environment"))
+            applies_before = tuple(str(step_id) for step_id in entry.get("applies_before", ()))
+            if applies_before and step.id not in applies_before:
+                continue
+            try:
+                perturbed = apply_action(state, Step(id=f"rely:{entry_id}", action=str(entry["action"]), params=dict(entry["params"])))
+            except ActionError as exc:
+                violations.append(_violation(
+                    f"rely_guarantee_interference:{entry_id}",
+                    f"concurrent actor {entry_id} could not be modeled before {step.id}: {exc}",
+                    trace + (step.id,),
+                    step.id,
+                    _append_property_rule(semantic_trace, "rely_guarantee_interference", step.id),
+                ))
+                continue
+            for guarantee in entry.get("preserves", ()):
+                if not condition_holds(perturbed, guarantee):
+                    violations.append(_violation(
+                        f"rely_guarantee_interference:{entry_id}",
+                        f"concurrent actor {entry_id} may break rely/guarantee preservation before {step.id}: {guarantee}",
+                        trace + (step.id,),
+                        step.id,
+                        _append_property_rule(semantic_trace, "rely_guarantee_interference", step.id),
+                    ))
+        return violations
 
     def _availability_would_be_violated(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
         try:
@@ -532,6 +624,20 @@ def _record_rule(result: CheckResult, rule: str) -> None:
 def _record_labeled_rules(result: CheckResult, rules: tuple[str, ...]) -> None:
     for rule in rules:
         _record_rule(result, _unlabel_rule(rule))
+
+
+def _assume_guarantee_obligation_count(contracts: tuple[dict[str, Any], ...]) -> int:
+    return sum(len(contract.get("assumptions", ())) + len(contract.get("guarantees", ())) for contract in contracts)
+
+
+def _rely_guarantee_obligation_count(entries: tuple[dict[str, Any], ...], step_id: str) -> int:
+    total = 0
+    for entry in entries:
+        applies_before = tuple(str(target) for target in entry.get("applies_before", ()))
+        if applies_before and step_id not in applies_before:
+            continue
+        total += 1 + len(entry.get("preserves", ()))
+    return total
 
 
 def _unlabel_rule(rule: str) -> str:

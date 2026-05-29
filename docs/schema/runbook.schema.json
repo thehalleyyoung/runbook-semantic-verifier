@@ -1,5 +1,48 @@
 {
   "$defs": {
+    "assume_guarantee_contract": {
+      "additionalProperties": false,
+      "properties": {
+        "assumptions": {
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "type": "array"
+        },
+        "consumer": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "guarantees": {
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "provider",
+        "consumer",
+        "guarantees"
+      ],
+      "type": "object"
+    },
     "condition": {
       "oneOf": [
         {
@@ -775,6 +818,1262 @@
         "retry_safety",
         "blast_radius",
         "expected_user_impact"
+      ],
+      "type": "object"
+    },
+    "rely_guarantee": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "confirm_quorum"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks database quorum/data-safety confirmation complete. Denotation: Sets databases[database].quorum_confirmed := true.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_dead_letter_queue"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Removes messages from a queue's dead-letter backlog after modeled triage. Denotation: Subtracts count from queues[queue].dead_letter_depth after validating the modeled backlog bound.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "count",
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_load_balancer"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks a route's regional load balancer drained; traffic must already be shifted away. Denotation: Adds region to traffic_routes[route].drained_regions.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "region",
+                  "route"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_region"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Drains replicas in a region, optionally limited to named services. Denotation: For each selected service replica in params.region, sets drained := true; replicas in other regions are framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "services": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_replica"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks one service replica drained and unavailable. Denotation: Sets services[service].replicas[replica].drained := true; all other state fields are framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "replica": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "replica",
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "failover_database"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Changes database primary region and records data-loss risk for invariants. Denotation: Sets databases[database].primary_region := target_region; quorum and health facts are not created by the action.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_loss_risk": {
+                    "type": "boolean"
+                  },
+                  "database": {
+                    "type": "string"
+                  },
+                  "target_region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database",
+                  "target_region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "failover_traffic"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Moves all modeled route traffic to one target region and zeroes the other route weights. Denotation: Sets traffic_routes[route].weights[target_region] := 100 and all other modeled route weights to 0.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "route": {
+                    "type": "string"
+                  },
+                  "target_region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "route",
+                  "target_region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "finalize_dns_record"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Clears a DNS record's prior target after the TTL wait obligation has elapsed. Denotation: Sets dns_records[record].previous_region := None after the TTL proof obligation has elapsed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "record": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "record"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "finish_migration"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Clears the database migration-in-progress flag. Denotation: Sets databases[database].migration_in_progress := false.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "flush_cache"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Evicts all modeled cache entries, making the cache cold and recording stale-read risk unless writes are frozen. Denotation: Sets caches[cache].entries := 0, warm := false, and stale_read_risk := not write_frozen.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "cache"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "freeze_bucket_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Freezes object bucket writes before snapshot restore or replication-sensitive maintenance. Denotation: Sets object_buckets[bucket].writes_frozen := true before restore or replication-sensitive maintenance.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "bucket"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "freeze_cache_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Freezes writes that could repopulate or serve stale values during a cache flush. Denotation: Sets caches[cache].write_frozen := true.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "cache"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "mark_dns_health_check"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Records whether DNS health checks have converged for a record's regional endpoint. Denotation: Adds or removes region from dns_records[record].health_check_converged_regions according to converged.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "converged": {
+                    "type": "boolean"
+                  },
+                  "record": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "converged",
+                  "record",
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "mark_region_health"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Sets a region health flag used by failover checks. Denotation: Sets regions[region].healthy := healthy.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "healthy": {
+                    "type": "boolean"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "healthy",
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "pause_queue"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Pauses queue consumption/processing. Denotation: Sets queues[queue].paused := true.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rebalance_consumers"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Changes consumer-group capacity and records whether the group has reached a stable post-rebalance assignment. Denotation: Sets queues[queue].consumers := consumers and consumer_group_stable := stable (default false).",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "consumers": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "queue": {
+                    "type": "string"
+                  },
+                  "stable": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "consumers",
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "replay_messages"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Replays messages into a queue, optionally from the dead-letter queue, and records duplicate-processing risk unless a dedupe key, idempotency proof, or dedupe window is present. Denotation: Adds count to queues[queue].depth, optionally subtracts count from dead_letter_depth, and sets duplicate_risk unless dedupe/idempotency is modeled.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "dedupe_key": {
+                    "type": "string"
+                  },
+                  "from_dead_letter": {
+                    "type": "boolean"
+                  },
+                  "idempotent": {
+                    "type": "boolean"
+                  },
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "count",
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "replicate_bucket"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Adds a modeled object-storage replica region after checking target health. Denotation: Adds params.region to object_buckets[bucket].replicated_regions; all non-bucket state is framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "bucket",
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restart_service"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Reasserts the modeled service without changing capacity. Denotation: Identity transformer on service capacity and deployment; validates the referenced service exists.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restore_bucket_snapshot"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Restores a bucket from a snapshot, checking write freeze plus RPO/RTO obligations. Denotation: Sets object_buckets[bucket].restore_completed := true, records snapshot age and restore completion minute, and advances the model clock by duration_minutes.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  },
+                  "duration_minutes": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "snapshot_age_minutes": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "bucket",
+                  "snapshot_age_minutes"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restore_load_balancer"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks a route's regional load balancer active again. Denotation: Removes region from traffic_routes[route].drained_regions.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "region",
+                  "route"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restore_replica"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks one drained service replica available again. Denotation: Sets services[service].replicas[replica].drained := false; all other state fields are framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "replica": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "replica",
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "resume_bucket_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Re-enables object bucket writes after restore and replication obligations are satisfied. Denotation: Sets object_buckets[bucket].writes_frozen := false after restore and durability checks.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "bucket"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "resume_cache_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Re-enables writes to a cache after warmup/verification. Denotation: Sets caches[cache].write_frozen := false.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "cache"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "resume_queue"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Resumes queue consumption/processing. Denotation: Sets queues[queue].paused := false.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "revoke_credential"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Marks a credential revoked so dependent actions must use rotated credentials before continuing. Denotation: Sets credentials[credential].revoked := true; ownership metadata and all non-credential state are framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "credential": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rollback_deployment"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Moves a service deployment pointer to a previous or named version. Denotation: Sets services[service].deployment and deployments[service].current to params.to or 'previous'.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rotate_credential"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Clears revoked/rotation-due state for a modeled credential after rotation. Denotation: Sets credentials[credential].revoked := false and rotation_due_minute := None after modeled rotation evidence.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "credential": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "credential"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "run_migration"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Updates database migration progress and compatibility flags. Denotation: Sets database migration_in_progress and migration_compatible from parameters, defaulting to preserve compatibility.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "compatible": {
+                    "type": "boolean"
+                  },
+                  "database": {
+                    "type": "string"
+                  },
+                  "in_progress": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "scale_service"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Resizes a service replica set using deterministic generated replica ids. Denotation: Resizes services[service].replicas to params.replicas, generating healthy undrained replicas in params.region when growing.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "replicas": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "replicas",
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "shift_traffic"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Sets weighted routing for a route in one region; two-region routes automatically assign the remainder to the peer region. Denotation: Sets traffic_routes[route].weights[region] := percent and, for two-region routes, assigns the peer region 100 - percent.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "percent": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "region": {
+                    "type": "string"
+                  },
+                  "route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "percent",
+                  "region",
+                  "route"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "suppress_alert"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Suppresses an alert until the bounded expiry minute. Denotation: Sets alerts[alert].suppressed_until_minute := clock_minute + expires_after_minutes.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "alert": {
+                    "type": "string"
+                  },
+                  "expires_after_minutes": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "alert",
+                  "expires_after_minutes"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "toggle_flag"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Sets a feature flag to the requested boolean value. Denotation: Sets feature_flags[flag].enabled := enabled, creating the modeled flag if absent.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "flag": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "flag"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "update_dns_record"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Changes a DNS record target region and starts the modeled TTL propagation window. Denotation: Sets dns_records[record].region := target_region, previous_region := old region, and last_changed_minute := clock_minute.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "record": {
+                    "type": "string"
+                  },
+                  "target_region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "record",
+                  "target_region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "wait"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Advances the model clock by a non-negative number of minutes. Denotation: Advances clock_minute by params.minutes; all modeled entities are framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "minutes": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "minutes"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "warm_cache"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Warms a cache with a bounded number of entries and clears modeled stale-read risk when the warmup threshold is met. Denotation: Sets caches[cache].entries := entries, warm according to warmup threshold, and clears stale_read_risk.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  },
+                  "entries": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "cache",
+                  "entries"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "confirm_quorum",
+            "drain_dead_letter_queue",
+            "drain_load_balancer",
+            "drain_region",
+            "drain_replica",
+            "failover_database",
+            "failover_traffic",
+            "finalize_dns_record",
+            "finish_migration",
+            "flush_cache",
+            "freeze_bucket_writes",
+            "freeze_cache_writes",
+            "mark_dns_health_check",
+            "mark_region_health",
+            "pause_queue",
+            "rebalance_consumers",
+            "replay_messages",
+            "replicate_bucket",
+            "restart_service",
+            "restore_bucket_snapshot",
+            "restore_load_balancer",
+            "restore_replica",
+            "resume_bucket_writes",
+            "resume_cache_writes",
+            "resume_queue",
+            "revoke_credential",
+            "rollback_deployment",
+            "rotate_credential",
+            "run_migration",
+            "scale_service",
+            "shift_traffic",
+            "suppress_alert",
+            "toggle_flag",
+            "update_dns_record",
+            "wait",
+            "warm_cache"
+          ],
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "applies_before": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object"
+        },
+        "preserves": {
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "actor",
+        "action",
+        "params",
+        "preserves"
       ],
       "type": "object"
     },
@@ -2459,6 +3758,12 @@
     "metadata": {
       "additionalProperties": true,
       "properties": {
+        "assume_guarantee_contracts": {
+          "items": {
+            "$ref": "#/$defs/assume_guarantee_contract"
+          },
+          "type": "array"
+        },
         "owner": {
           "type": "string"
         },
@@ -2473,6 +3778,12 @@
                 "type": "object"
               }
             ]
+          },
+          "type": "array"
+        },
+        "rely_guarantee": {
+          "items": {
+            "$ref": "#/$defs/rely_guarantee"
           },
           "type": "array"
         },

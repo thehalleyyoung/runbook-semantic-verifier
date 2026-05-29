@@ -341,11 +341,13 @@
       "expected_result": {
         "safe": false,
         "violation_properties": [
+          "assume_guarantee_contract:tempo-query-fallback-contract",
           "no_duplicate_processing_risk",
           "no_rebalance_to_zero_consumers",
           "no_replay_without_dedupe",
           "no_unstable_consumer_group_with_backlog",
-          "queue_backlog_requires_consumers"
+          "queue_backlog_requires_consumers",
+          "rely_guarantee_interference:background-tenant-index-writes"
         ],
         "prose_rules": [
           "data-deletion-needs-restore-precondition",
@@ -371,7 +373,9 @@
         "dedupe_key",
         "consumer_group_rebalance",
         "benchmark_expected_prose_rules",
-        "auditable_prose_suppressions"
+        "auditable_prose_suppressions",
+        "assume_guarantee_contract",
+        "rely_guarantee_interference"
       ]
     },
     {
