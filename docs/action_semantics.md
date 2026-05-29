@@ -18,15 +18,19 @@ checker traces.
 | `finalize_dns_record` | `record:string` | Clears a DNS record's prior target after the TTL wait obligation has elapsed. | Sets dns_records[record].previous_region := None after the TTL proof obligation has elapsed. |
 | `finish_migration` | `database:string` | Clears the database migration-in-progress flag. | Sets databases[database].migration_in_progress := false. |
 | `flush_cache` | `cache:string` | Evicts all modeled cache entries, making the cache cold and recording stale-read risk unless writes are frozen. | Sets caches[cache].entries := 0, warm := false, and stale_read_risk := not write_frozen. |
+| `freeze_bucket_writes` | `bucket:string` | Freezes object bucket writes before snapshot restore or replication-sensitive maintenance. | Sets object_buckets[bucket].writes_frozen := true before restore or replication-sensitive maintenance. |
 | `freeze_cache_writes` | `cache:string` | Freezes writes that could repopulate or serve stale values during a cache flush. | Sets caches[cache].write_frozen := true. |
 | `mark_dns_health_check` | `record:string, region:string, converged:boolean` | Records whether DNS health checks have converged for a record's regional endpoint. | Adds or removes region from dns_records[record].health_check_converged_regions according to converged. |
 | `mark_region_health` | `region:string, healthy:boolean` | Sets a region health flag used by failover checks. | Sets regions[region].healthy := healthy. |
 | `pause_queue` | `queue:string` | Pauses queue consumption/processing. | Sets queues[queue].paused := true. |
 | `rebalance_consumers` | `queue:string, consumers:integer>=0, stable?:boolean` | Changes consumer-group capacity and records whether the group has reached a stable post-rebalance assignment. | Sets queues[queue].consumers := consumers and consumer_group_stable := stable (default false). |
 | `replay_messages` | `queue:string, count:integer>=0, from_dead_letter?:boolean, dedupe_key?:string, idempotent?:boolean` | Replays messages into a queue, optionally from the dead-letter queue, and records duplicate-processing risk unless a dedupe key, idempotency proof, or dedupe window is present. | Adds count to queues[queue].depth, optionally subtracts count from dead_letter_depth, and sets duplicate_risk unless dedupe/idempotency is modeled. |
+| `replicate_bucket` | `bucket:string, region:string` | Adds a modeled object-storage replica region after checking target health. | Adds params.region to object_buckets[bucket].replicated_regions; all non-bucket state is framed. |
 | `restart_service` | `service:string` | Reasserts the modeled service without changing capacity. | Identity transformer on service capacity and deployment; validates the referenced service exists. |
+| `restore_bucket_snapshot` | `bucket:string, snapshot_age_minutes:integer>=0, duration_minutes?:integer>=0` | Restores a bucket from a snapshot, checking write freeze plus RPO/RTO obligations. | Sets object_buckets[bucket].restore_completed := true, records snapshot age and restore completion minute, and advances the model clock by duration_minutes. |
 | `restore_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer active again. | Removes region from traffic_routes[route].drained_regions. |
 | `restore_replica` | `service:string, replica:string` | Marks one drained service replica available again. | Sets services[service].replicas[replica].drained := false; all other state fields are framed. |
+| `resume_bucket_writes` | `bucket:string` | Re-enables object bucket writes after restore and replication obligations are satisfied. | Sets object_buckets[bucket].writes_frozen := false after restore and durability checks. |
 | `resume_cache_writes` | `cache:string` | Re-enables writes to a cache after warmup/verification. | Sets caches[cache].write_frozen := false. |
 | `resume_queue` | `queue:string` | Resumes queue consumption/processing. | Sets queues[queue].paused := false. |
 | `revoke_credential` | `credential:string` | Marks a credential revoked so dependent actions must use rotated credentials before continuing. | Sets credentials[credential].revoked := true; ownership metadata and all non-credential state are framed. |
@@ -47,6 +51,12 @@ checker traces.
 | --- | --- | --- |
 | `alert_active` | `alert:string, active:boolean` | Requires or asserts an alert activity value. |
 | `alert_suppressed_for_at_most` | `alert:string, minutes:integer>=0` | Requires or asserts bounded alert suppression duration. |
+| `bucket_replicated_to` | `bucket:string, region:string` | Requires or asserts that a bucket is replicated to a region. |
+| `bucket_restore_completed` | `bucket:string` | Requires or asserts that a bucket snapshot restore completed. |
+| `bucket_rpo_within` | `bucket:string, minutes:integer>=0` | Requires or asserts that snapshot age is within a requested RPO window. |
+| `bucket_rto_within` | `bucket:string, minutes:integer>=0` | Requires or asserts that restore completion is within a requested RTO window. |
+| `bucket_snapshot_available` | `bucket:string` | Requires or asserts that an object bucket has a restore snapshot available. |
+| `bucket_writes_frozen` | `bucket:string` | Requires or asserts that object bucket writes are frozen. |
 | `cache_capacity_at_least` | `cache:string, entries:integer>=0` | Requires or asserts enough cache capacity for the requested warmup. |
 | `cache_entries_at_least` | `cache:string, entries:integer>=0` | Requires or asserts a minimum number of warmed cache entries. |
 | `cache_no_stale_read_risk` | `cache:string` | Requires or asserts no modeled stale-read risk remains after flush and warmup. |

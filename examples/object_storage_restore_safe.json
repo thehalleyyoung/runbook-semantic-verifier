@@ -1,0 +1,76 @@
+{
+  "name": "Safe object storage restore",
+  "description": "Synthetic object-storage restore with write freeze, replication, and RPO/RTO evidence.",
+  "metadata": {
+    "owner": "storage-sre"
+  },
+  "allow_reordering": false,
+  "max_depth": 4,
+  "system": {
+    "regions": {
+      "east": {"healthy": true},
+      "west": {"healthy": true}
+    },
+    "object_buckets": {
+      "artifacts": {
+        "region": "east",
+        "replicated_regions": ["east", "west"],
+        "min_replicated_regions": 2,
+        "writes_frozen": false,
+        "snapshot_available": true,
+        "last_snapshot_minute": 0,
+        "rpo_minutes": 30,
+        "rto_minutes": 120
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "freeze-writes",
+      "action": "freeze_bucket_writes",
+      "params": {"bucket": "artifacts"},
+      "effects": [{"kind": "bucket_writes_frozen", "bucket": "artifacts"}],
+      "effect_annotations": {
+        "effect_types": ["customer_visible_degradation"],
+        "idempotency": "idempotent",
+        "reversibility": "reversible",
+        "retry_safety": "safe",
+        "blast_radius": "artifact uploads paused",
+        "expected_user_impact": "writers queue uploads during restore"
+      }
+    },
+    {
+      "id": "restore-snapshot",
+      "action": "restore_bucket_snapshot",
+      "after": ["freeze-writes"],
+      "params": {"bucket": "artifacts", "snapshot_age_minutes": 10, "duration_minutes": 45},
+      "requires": [
+        {"kind": "bucket_writes_frozen", "bucket": "artifacts"},
+        {"kind": "bucket_snapshot_available", "bucket": "artifacts"}
+      ],
+      "effects": [{"kind": "bucket_restore_completed", "bucket": "artifacts"}],
+      "effect_annotations": {
+        "effect_types": ["irreversible_state_change"],
+        "idempotency": "unknown",
+        "reversibility": "irreversible",
+        "retry_safety": "unknown",
+        "blast_radius": "single object bucket",
+        "expected_user_impact": "objects restored to selected snapshot"
+      }
+    },
+    {
+      "id": "verify-west-replica",
+      "action": "replicate_bucket",
+      "after": ["restore-snapshot"],
+      "params": {"bucket": "artifacts", "region": "west"},
+      "requires": [{"kind": "region_healthy", "region": "west"}],
+      "effects": [{"kind": "bucket_replicated_to", "bucket": "artifacts", "region": "west"}]
+    },
+    {
+      "id": "resume-writes",
+      "action": "resume_bucket_writes",
+      "after": ["verify-west-replica"],
+      "params": {"bucket": "artifacts"}
+    }
+  ]
+}

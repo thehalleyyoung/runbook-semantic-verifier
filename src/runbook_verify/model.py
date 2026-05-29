@@ -67,6 +67,21 @@ class Cache:
 
 
 @dataclass(frozen=True)
+class ObjectBucket:
+    name: str
+    region: str
+    replicated_regions: frozenset[str] = frozenset()
+    min_replicated_regions: int = 1
+    writes_frozen: bool = False
+    snapshot_available: bool = False
+    last_snapshot_minute: int = 0
+    rpo_minutes: int = 60
+    rto_minutes: int = 240
+    restore_completed: bool = False
+    last_restore_minute: int | None = None
+
+
+@dataclass(frozen=True)
 class Alert:
     name: str
     active: bool = True
@@ -137,6 +152,7 @@ class SystemState:
     databases: dict[str, Database]
     queues: dict[str, Queue]
     caches: dict[str, Cache]
+    object_buckets: dict[str, ObjectBucket]
     alerts: dict[str, Alert]
     flags: dict[str, FeatureFlag]
     deployments: dict[str, Deployment]
@@ -180,6 +196,19 @@ class SystemState:
             c.stale_read_risk,
             c.write_frozen,
         ) for n, c in self.caches.items()))
+        object_buckets = tuple(sorted((
+            n,
+            b.region,
+            tuple(sorted(b.replicated_regions)),
+            b.min_replicated_regions,
+            b.writes_frozen,
+            b.snapshot_available,
+            b.last_snapshot_minute,
+            b.rpo_minutes,
+            b.rto_minutes,
+            b.restore_completed,
+            b.last_restore_minute,
+        ) for n, b in self.object_buckets.items()))
         traffic_routes = tuple(sorted((
             n, route.service, tuple(sorted(route.weights.items())), tuple(sorted(route.drained_regions))
         ) for n, route in self.traffic_routes.items()))
@@ -196,7 +225,7 @@ class SystemState:
         credentials = tuple(sorted((
             n, credential.owner, credential.revoked, credential.rotation_due_minute
         ) for n, credential in self.credentials.items()))
-        return (self.clock_minute, regions, services, databases, queues, caches, alerts, flags, deployments, traffic_routes, dns_records, credentials)
+        return (self.clock_minute, regions, services, databases, queues, caches, object_buckets, alerts, flags, deployments, traffic_routes, dns_records, credentials)
 
 
 @dataclass(frozen=True)

@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **74/100** items in the local roadmap are complete. The
+Current roadmap status: **79/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces,
@@ -14,12 +14,13 @@ runbook edits, named configuration profiles for production/advisory/docs-only/be
 inventory-refinement checks for stale service, owner, alert, dependency, and
 replica-count assumptions,
 queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
-cache flush/warmup/cold-start/capacity semantics, credential
+cache flush/warmup/cold-start/capacity semantics, object-storage
+restore/failover semantics with RPO/RTO and multi-region durability checks, credential
 rotation/revocation semantics, high-risk effect annotations with auditable
 waivers, and checked-in
 historical/current public case-study evidence. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
 Benchmark reports now also carry validity-threat categories, workflow-baseline
-comparisons, semantic-diff remediation pairs, oracle-review labels, reproducible
+comparisons, seeded/reproducible exploration metadata, semantic-diff remediation pairs, oracle-review labels, reproducible
 report-generation commands, contribution rules, and adoption-oriented risk/action
 summaries. The public docs now include an adoption/governance pack with CI and
 pre-commit templates, remediation playbooks, onboarding and migration guides,
@@ -37,6 +38,10 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_safe.js
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_unsafe.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/cache_flush_safe.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/cache_flush_unsafe.json --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/object_storage_restore_safe.json
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/object_storage_restore_unsafe.json --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli types examples/object_storage_restore_safe.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli invariants --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format alloy
 PYTHONPATH=src python3 -m runbook_verify.cli proof-obligations examples/safe_runbook.json --format markdown
@@ -92,7 +97,8 @@ Executable examples use JSON so the repository runs with the Python standard lib
 
 Top-level fields:
 
-- `system`: regions, services/replicas, databases, queues, caches, alerts, feature flags, deployments, traffic routes, DNS records, and credentials.
+- `system`: regions, services/replicas, databases, queues, caches, object buckets,
+  alerts, feature flags, deployments, traffic routes, DNS records, and credentials.
 - `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, `effects`, and high-risk `effect_annotations`.
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
@@ -136,7 +142,8 @@ Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,
 `finish_migration`, `pause_queue`, `resume_queue`, `replay_messages`,
 `drain_dead_letter_queue`, `rebalance_consumers`, `freeze_cache_writes`,
-`resume_cache_writes`, `flush_cache`, `warm_cache`, `wait`, and
+`resume_cache_writes`, `flush_cache`, `warm_cache`, `freeze_bucket_writes`,
+`resume_bucket_writes`, `replicate_bucket`, `restore_bucket_snapshot`, `wait`, and
 `mark_region_health`, plus traffic actions `shift_traffic`,
 `failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`, and
 DNS actions `update_dns_record`, `mark_dns_health_check`, and
@@ -168,6 +175,9 @@ The prototype checks pragmatic cloud-operations hazards:
 - no destructive shared-cache flush without write freeze, no resuming traffic or
   writes before modeled cache warmup reaches threshold, no warmup beyond modeled
   cache capacity, and no stale-read-risk state left after a flush;
+- no object-storage restore without frozen writes and an available snapshot; no
+  restore outside modeled RPO/RTO bounds; and no object bucket below its modeled
+  replicated-region or healthy-target-region durability assumptions;
 - credential revocation/rotation actions update modeled credential activity, and
   high-risk actions warn when required destructive/idempotency/retry-safety
   annotations are missing or inconsistent unless covered by an active waiver;
@@ -182,6 +192,8 @@ src/runbook_verify/
   actions.py    operational semantics for runbook actions
   contracts.py  denotational action contracts, Hoare triples, weakest preconditions
   checker.py    bounded state-space explorer and safety checker
+  type_system.py typed entity inventory for models, owners, waits, routes, and stores
+  temporal_invariants.py catalog of LTL-style invariant templates exposed by CLI
   explanation.py finding ids plus rule/source/state-delta explanations
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
   exporter.py   TLA+/Alloy starter exporters and proof-obligation reports
@@ -205,9 +217,13 @@ tests/          parser, checker, CLI, exporter, and example tests
 ```
 
 The checker is deliberately small: it models a runbook as a finite set of steps,
-enumerates all dependency-respecting traces up to `max_depth`, applies action
-semantics to immutable system states, deduplicates canonical states, and records
-safety violations with shortest traces and remediation hints.
+enumerates dependency-respecting traces up to `max_depth` using explicit FIFO or
+dependency fairness, breadth-first, depth-first, shortest-counterexample, or
+seeded randomized bounded strategies, applies action semantics to immutable
+system states, deduplicates canonical states, and records safety violations with
+traces and remediation hints. State and timeout budgets produce an
+`inconclusive` result instead of silently pretending the transition system was
+exhausted.
 
 `frv check --format json` emits the same counterexamples as structured
 explanation records. Each finding includes the small-step trace, source line,
@@ -628,10 +644,10 @@ declare semantic-diff baselines; the built-in suite checks that the bounded
 GitHub Oct. 21 quorum-guard remediation introduces no counterexamples and
 resolves the expected database/quorum hazards.
 
-The built-in benchmark currently contains twelve runbooks: safe/unsafe
+The built-in benchmark currently contains fourteen runbooks: safe/unsafe
 synthetic regressions, safe/unsafe queue replay mutants, safe/unsafe cache-flush
-mutants, a credential-rotation regression with reviewed revocation effects, one
-real-world-style Kubernetes failover fixture, the GitHub Oct. 21 2018
+mutants, safe/unsafe object-storage restore mutants, a credential-rotation
+regression with reviewed revocation effects, one real-world-style Kubernetes failover fixture, the GitHub Oct. 21 2018
 reconstructed failover case, the Grafana Tempo current public runbook-derived
 replay case, a public DNS-failover-pattern reconstruction, and a public Redis
 runbook-template-derived cache-flush mutant.
@@ -673,7 +689,8 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
 - The benchmark corpus is small: it includes synthetic examples plus bounded
   public historical/current fixtures for database failover, queue replay/fallback,
-  DNS failover patterns, and cache-flush warmup/capacity hazards, and should be
+  DNS failover patterns, cache-flush warmup/capacity hazards, and object-storage
+  RPO/RTO/durability hazards, and should be
   expanded before empirical claims. Validity-threat categories and oracle-review
   labels make this limitation explicit in benchmark outputs.
 - The historical GitHub fixture is reconstructed from public facts, not exact

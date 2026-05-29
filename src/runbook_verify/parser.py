@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, OperationDescriptor
-from .model import Alert, Cache, Credential, Database, DNSRecord, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute, Waiver
+from .model import Alert, Cache, Credential, Database, DNSRecord, Deployment, FeatureFlag, ObjectBucket, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute, Waiver
 
 
 @dataclass
@@ -64,6 +64,7 @@ def _normalize_field(field: str | None) -> str | None:
     normalized = normalized.replace("database ", "system.databases.")
     normalized = normalized.replace("queue ", "system.queues.")
     normalized = normalized.replace("cache ", "system.caches.")
+    normalized = normalized.replace("object bucket ", "system.object_buckets.")
     normalized = normalized.replace("alert ", "system.alerts.")
     normalized = normalized.replace("flag ", "system.feature_flags.")
     normalized = normalized.replace("traffic route ", "system.traffic_routes.")
@@ -245,6 +246,36 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             stale_read_risk=bool(cfg.get("stale_read_risk", False)),
             write_frozen=bool(cfg.get("write_frozen", False)),
         )
+    object_buckets: dict[str, ObjectBucket] = {}
+    for name, cfg_any in _require_mapping(raw.get("object_buckets", {}), "system.object_buckets").items():
+        name = str(name)
+        cfg = _require_mapping(cfg_any, f"object bucket {name}")
+        region = str(_require_key(cfg, "region", f"object bucket {name}"))
+        if regions and region not in regions:
+            raise RunbookParseError(f"object bucket {name}.region references unknown region {region!r}", field=f"system.object_buckets.{name}.region")
+        replicated_regions = frozenset(str(item) for item in _require_list(cfg.get("replicated_regions", [region]), f"object bucket {name}.replicated_regions"))
+        unknown_replicas = sorted(r for r in replicated_regions if regions and r not in regions)
+        if unknown_replicas:
+            raise RunbookParseError(f"object bucket {name}.replicated_regions references unknown region(s): {', '.join(unknown_replicas)}", field=f"system.object_buckets.{name}.replicated_regions")
+        min_replicated_regions = _positive_int(cfg.get("min_replicated_regions", 1), f"object bucket {name}.min_replicated_regions")
+        if min_replicated_regions > len(regions or replicated_regions):
+            raise RunbookParseError(
+                f"object bucket {name}.min_replicated_regions={min_replicated_regions} exceeds modeled region count",
+                field=f"system.object_buckets.{name}.min_replicated_regions",
+            )
+        object_buckets[name] = ObjectBucket(
+            name=name,
+            region=region,
+            replicated_regions=replicated_regions,
+            min_replicated_regions=min_replicated_regions,
+            writes_frozen=bool(cfg.get("writes_frozen", False)),
+            snapshot_available=bool(cfg.get("snapshot_available", False)),
+            last_snapshot_minute=_non_negative_int(cfg.get("last_snapshot_minute", 0), f"object bucket {name}.last_snapshot_minute"),
+            rpo_minutes=_non_negative_int(cfg.get("rpo_minutes", 60), f"object bucket {name}.rpo_minutes"),
+            rto_minutes=_non_negative_int(cfg.get("rto_minutes", 240), f"object bucket {name}.rto_minutes"),
+            restore_completed=bool(cfg.get("restore_completed", False)),
+            last_restore_minute=_optional_non_negative_int(cfg.get("last_restore_minute"), f"object bucket {name}.last_restore_minute"),
+        )
     alerts = {name: Alert(name=name, active=bool(_require_mapping(cfg, f"alert {name}").get("active", True)), suppressed_until_minute=_optional_non_negative_int(_require_mapping(cfg, f"alert {name}").get("suppressed_until_minute"), f"alert {name}.suppressed_until_minute")) for name, cfg in _require_mapping(raw.get("alerts", {}), "system.alerts").items()}
     flags = {name: FeatureFlag(name=name, enabled=bool(_require_mapping(cfg, f"flag {name}").get("enabled", False))) for name, cfg in _require_mapping(raw.get("feature_flags", {}), "system.feature_flags").items()}
     deployments = {name: Deployment(service=str(_require_mapping(cfg, f"deployment {name}").get("service", name)), current=str(_require_mapping(cfg, f"deployment {name}").get("current", "current")), previous=_require_mapping(cfg, f"deployment {name}").get("previous")) for name, cfg in _require_mapping(raw.get("deployments", {}), "system.deployments").items()}
@@ -317,7 +348,7 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             revoked=bool(cfg.get("revoked", False)),
             rotation_due_minute=_optional_non_negative_int(rotation_due, f"system.credentials.{name}.rotation_due_minute"),
         )
-    return SystemState(regions=regions, services=services, databases=databases, queues=queues, caches=caches, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, credentials=credentials, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
+    return SystemState(regions=regions, services=services, databases=databases, queues=queues, caches=caches, object_buckets=object_buckets, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, credentials=credentials, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
@@ -377,6 +408,16 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
     safety = dict(_require_mapping(doc.get("safety", {}), "safety"))
     if "max_alert_suppression_minutes" in safety:
         safety["max_alert_suppression_minutes"] = _positive_int(safety["max_alert_suppression_minutes"], "safety.max_alert_suppression_minutes")
+    if "exploration_strategy" in safety and safety["exploration_strategy"] not in {"breadth_first", "depth_first", "shortest_counterexample", "randomized_bounded", "seeded_chaos_style"}:
+        raise RunbookParseError("safety.exploration_strategy must be one of breadth_first, depth_first, shortest_counterexample, randomized_bounded, seeded_chaos_style", field="safety.exploration_strategy")
+    if "exploration_seed" in safety:
+        safety["exploration_seed"] = _non_negative_int(safety["exploration_seed"], "safety.exploration_seed")
+    if "max_states" in safety:
+        safety["max_states"] = _positive_int(safety["max_states"], "safety.max_states")
+    if "timeout_seconds" in safety:
+        safety["timeout_seconds"] = _non_negative_int(safety["timeout_seconds"], "safety.timeout_seconds")
+    if "fairness" in safety and safety["fairness"] not in {"dependency", "fifo"}:
+        raise RunbookParseError("safety.fairness must be one of dependency, fifo", field="safety.fairness")
     return Runbook(
         name=str(doc.get("name", "unnamed runbook")),
         description=str(doc.get("description", "")),
@@ -589,6 +630,8 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
             require_entity("queue", str(params["queue"]), state.queues)
         if "cache" in params:
             require_entity("cache", str(params["cache"]), state.caches)
+        if "bucket" in params:
+            require_entity("object bucket", str(params["bucket"]), state.object_buckets)
         if "route" in params:
             require_entity("traffic route", str(params["route"]), state.traffic_routes)
         if "record" in params:
@@ -617,6 +660,7 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         ("alert", state.alerts, "alert"),
         ("queue", state.queues, "queue"),
         ("cache", state.caches, "cache"),
+        ("bucket", state.object_buckets, "object bucket"),
         ("region", state.regions, "region"),
         ("flag", state.flags, "feature flag"),
         ("route", state.traffic_routes, "traffic route"),

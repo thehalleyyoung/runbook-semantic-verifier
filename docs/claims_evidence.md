@@ -25,8 +25,9 @@ dependency names, and replica counts, reporting stale assumptions as
 `inventory_refinement_precondition` obligations.
 The DSL also models queue replay/DLQ/consumer-group semantics, DNS cutovers with
 TTL and health-check convergence obligations, cache flush/warmup/cold-start/
-capacity semantics, credential rotation/revocation state, reviewed high-risk
-effect annotations, and auditable model waivers.
+capacity semantics, object-storage restore/failover with write-freeze, RPO/RTO,
+and multi-region durability obligations, credential rotation/revocation state,
+reviewed high-risk effect annotations, and auditable model waivers.
 Formal-export evidence now includes docs separating starter specs from hand-strengthened proofs, mechanized-semantics notes, exporter conformance fixtures, formal-methods limitation notes, and a shared SRE/security/PL/formal-methods glossary.
 Action descriptors now carry generated denotational state-transformer text, and
 semantic findings carry Hoare triples, weakest-precondition hints, source lines,
@@ -39,7 +40,7 @@ guidance, and a bounded Redis cache-flush mutant derived from a public Redis
 runbook template.
 Benchmark evidence now includes categorized validity threats, workflow-baseline
 comparisons, semantic-diff remediation baselines, oracle-review label metadata,
-reproducible report-generation commands, and adoption-oriented risk/action
+seeded exploration metadata, reproducible report-generation commands, and adoption-oriented risk/action
 summaries. Public adoption documentation now adds reusable CI/pre-commit
 templates, remediation playbooks, onboarding and migration guides, governance and
 release criteria, an evidence ledger, responsible-claims language, and
@@ -153,6 +154,17 @@ differently named system exists.
 - Cache write freezes, destructive flushes, warmup thresholds, capacity limits,
   and stale-read risk are checked as bounded small-step transitions with
   concrete cold-start and over-capacity counterexamples.
+- Object-storage bucket restores check write-freeze, snapshot availability,
+  snapshot-age RPO, restore-duration RTO, minimum replicated regions, and healthy
+  target/replica regions as bounded small-step obligations.
+- `frv types` emits a typed entity inventory for services, stores, routes,
+  owners, waits, and step metadata; `frv invariants` emits LTL-style templates
+  that document checker property names and scopes. These are documentation and
+  review surfaces over parsed models, not live-discovery or theorem-proving tools.
+- Seeded randomized exploration strategies use deterministic local seeds and
+  report strategy/seed/max-state-budget metadata. They improve regression
+  reproducibility for bounded search, but do not make the checker exhaustive
+  beyond the configured bound and strategy.
 - Credential revocation and rotation update modeled credential activity. Missing
   or inconsistent high-risk effect annotations are reported as advisory warnings
   in `frv check`, audit, JSON, and benchmark performance counters unless an
@@ -199,6 +211,8 @@ differently named system exists.
   documented failover pattern, not a claim about a live deployment.
 - The Redis cache-flush case study is a defensive bounded mutant derived from a
   public runbook template, not a claim about a live deployment.
+- The object-storage restore examples are synthetic safe/unsafe regression
+  fixtures, not public incident evidence or a claim about any live object store.
 - Adoption summaries are reviewer triage metadata. They do not prove operator
   time saved unless a benchmark entry separately records measured user-study or
   oracle-review evidence.
@@ -334,6 +348,10 @@ PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/redis
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/object_storage_restore_safe.json --format json
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/object_storage_restore_unsafe.json --expect-violations --format json
+PYTHONPATH=src python3 -m runbook_verify.cli types examples/object_storage_restore_safe.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli invariants --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli proof-obligations case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli proof-obligations case_studies/current/grafana_tempo/tempo_runbook_current_impact.md --format markdown
 ```
@@ -383,3 +401,7 @@ capacity. The formal-export conformance fixture covers synthetic safe, GitHub
 Oct. 21, Grafana Tempo, and credential-rotation runbooks and asserts preservation
 of action names, dependency edges, state variables, expected safety-property
 labels, and proof-obligation ids.
+The object-storage unsafe fixture reports bounded write-freeze, snapshot, RPO,
+RTO, target-region-health, and replicated-region obligations, while the paired
+safe fixture passes with a typed inventory containing its object bucket and
+region/owner metadata.

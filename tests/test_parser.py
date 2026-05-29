@@ -160,7 +160,9 @@ class ParserValidationTests(unittest.TestCase):
     def test_complete_schema_example_fixture_validates(self):
         runbook = load_runbook(ROOT / "docs" / "schema" / "examples" / "complete_runbook.json")
         self.assertEqual(runbook.name, "Complete documented DSL fixture")
-        self.assertEqual(len(runbook.steps), 9)
+        self.assertEqual(len(runbook.steps), 13)
+        self.assertIn("api-artifacts", runbook.state.object_buckets)
+        self.assertEqual(runbook.safety["fairness"], "dependency")
 
     def test_parses_and_validates_traffic_route_references(self):
         runbook = parse_runbook({
@@ -257,6 +259,28 @@ class ParserValidationTests(unittest.TestCase):
         })
         self.assertEqual(runbook.state.caches["redis"].service, "api")
         self.assertEqual(runbook.state.caches["redis"].capacity_entries, 200)
+
+    def test_parses_and_validates_object_bucket_references(self):
+        runbook = parse_runbook({
+            "system": {
+                "regions": {"east": {}, "west": {}},
+                "object_buckets": {"artifacts": {
+                    "region": "east",
+                    "replicated_regions": ["east"],
+                    "min_replicated_regions": 1,
+                    "snapshot_available": True,
+                    "rpo_minutes": 30,
+                    "rto_minutes": 60,
+                }},
+            },
+            "steps": [{"id": "freeze", "action": "freeze_bucket_writes", "params": {"bucket": "artifacts"}}],
+        })
+        self.assertEqual(runbook.state.object_buckets["artifacts"].region, "east")
+        with self.assertRaisesRegex(RunbookParseError, "unknown object bucket"):
+            parse_runbook({
+                "system": {"regions": {"east": {}}},
+                "steps": [{"id": "restore", "action": "restore_bucket_snapshot", "params": {"bucket": "missing", "snapshot_age_minutes": 1}}],
+            })
 
         with self.assertRaisesRegex(RunbookParseError, "unknown cache"):
             parse_runbook({

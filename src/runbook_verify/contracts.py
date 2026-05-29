@@ -38,6 +38,10 @@ ACTION_DENOTATIONS: dict[str, str] = {
     "resume_cache_writes": "Sets caches[cache].write_frozen := false.",
     "flush_cache": "Sets caches[cache].entries := 0, warm := false, and stale_read_risk := not write_frozen.",
     "warm_cache": "Sets caches[cache].entries := entries, warm according to warmup threshold, and clears stale_read_risk.",
+    "freeze_bucket_writes": "Sets object_buckets[bucket].writes_frozen := true before restore or replication-sensitive maintenance.",
+    "resume_bucket_writes": "Sets object_buckets[bucket].writes_frozen := false after restore and durability checks.",
+    "replicate_bucket": "Adds params.region to object_buckets[bucket].replicated_regions; all non-bucket state is framed.",
+    "restore_bucket_snapshot": "Sets object_buckets[bucket].restore_completed := true, records snapshot age and restore completion minute, and advances the model clock by duration_minutes.",
     "wait": "Advances clock_minute by params.minutes; all modeled entities are framed.",
     "mark_region_health": "Sets regions[region].healthy := healthy.",
     "shift_traffic": "Sets traffic_routes[route].weights[region] := percent and, for two-region routes, assigns the peer region 100 - percent.",
@@ -87,6 +91,13 @@ PROPERTY_CONTRACTS: dict[str, PropertyContract] = {
     "effect_annotation_required": PropertyContract("effect_annotation_required", "high-risk actions declare reviewed effect metadata", "operator action may delete, revoke, drain, replay, degrade users, or make irreversible state changes", "effect annotations make retry/reversal/blast-radius assumptions auditable", "Add effect_annotations with effect_types, idempotency, reversibility, retry_safety, blast_radius, and expected_user_impact."),
     "unsafe_retry_annotation": PropertyContract("unsafe_retry_annotation", "non-idempotent or irreversible actions are not marked retry-safe", "operator retry may repeat destructive effects", "retry policy matches modeled effect risk", "Mark retry_safety=unsafe/unknown or make the action idempotent/reversible with a reviewed guard."),
     "credential_active": PropertyContract("credential_active", "credential is not revoked before dependent use", "credential actions may revoke or rotate credentials", "credential remains active unless explicitly revoked", "Rotate the credential or add a credential_active precondition before dependent operations."),
+    "object_restore_requires_write_freeze": PropertyContract("object_restore_requires_write_freeze", "bucket_writes_frozen(bucket)", "restore_bucket_snapshot may replace object contents", "restore is not racing concurrent bucket writes", "Run freeze_bucket_writes or add a bucket_writes_frozen precondition before restore."),
+    "object_restore_requires_snapshot": PropertyContract("object_restore_requires_snapshot", "bucket_snapshot_available(bucket)", "restore_bucket_snapshot consumes modeled snapshot evidence", "restore has a concrete snapshot source", "Model snapshot availability before restore."),
+    "object_restore_within_rpo": PropertyContract("object_restore_within_rpo", "snapshot_age_minutes <= object_buckets[bucket].rpo_minutes", "restore_bucket_snapshot chooses a recovery point", "recovery point objective is met", "Select a newer snapshot or explicitly waive the RPO obligation."),
+    "object_restore_within_rto": PropertyContract("object_restore_within_rto", "duration_minutes <= object_buckets[bucket].rto_minutes", "restore_bucket_snapshot advances clock by duration", "recovery time objective is met", "Split, accelerate, or waive the restore plan when duration exceeds RTO."),
+    "object_replication_target_region_healthy": PropertyContract("object_replication_target_region_healthy", "target region is healthy", "replicate_bucket adds a replica location", "bucket replicas are only added in healthy regions", "Require region_healthy for the target before replication."),
+    "object_bucket_replication_min_regions": PropertyContract("object_bucket_replication_min_regions", "len(replicated_regions) >= min_replicated_regions", "replication and restore steps may update bucket durability facts", "bucket durability requirement is preserved", "Add or restore enough replicated regions before relying on bucket durability."),
+    "object_bucket_replication_regions_healthy": PropertyContract("object_bucket_replication_regions_healthy", "every replicated bucket region is modeled healthy", "region health and replication steps affect durability", "all bucket replica regions are healthy", "Restore region health or stop counting unhealthy replicas toward durability."),
 }
 
 

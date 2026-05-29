@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
+import random
+import time
 from typing import Any
 
 from .actions import ActionError, apply_action, condition_holds
@@ -47,6 +49,12 @@ class CheckResult:
     max_branch_factor: int = 0
     reductions_applied: int = 0
     symbolic_splits: int = 0
+    exploration_strategy: str = "breadth_first"
+    exploration_seed: int | None = None
+    fairness_model: str = "dependency"
+    timeout_seconds: int | None = None
+    inconclusive: bool = False
+    inconclusive_reason: str | None = None
     proof_obligations_checked: dict[str, int] = field(default_factory=dict)
     proof_obligation_failures: dict[str, int] = field(default_factory=dict)
     semantic_rule_counts: dict[str, int] = field(default_factory=dict)
@@ -75,6 +83,12 @@ class CheckResult:
             "max_branch_factor": self.max_branch_factor,
             "reductions_applied": self.reductions_applied,
             "symbolic_splits": self.symbolic_splits,
+            "exploration_strategy": self.exploration_strategy,
+            "exploration_seed": self.exploration_seed,
+            "fairness_model": self.fairness_model,
+            "timeout_seconds": self.timeout_seconds,
+            "inconclusive": self.inconclusive,
+            "inconclusive_reason": self.inconclusive_reason,
             "minimized_counterexample_trace_length": self.minimized_counterexample_trace_length,
             "proof_obligations_checked": dict(sorted(self.proof_obligations_checked.items())),
             "proof_obligation_failures": dict(sorted(self.proof_obligation_failures.items())),
@@ -91,14 +105,41 @@ class Checker:
         self.runbook = runbook
         self.steps_by_id = {s.id: s for s in runbook.steps}
         self.max_alert_suppression = int(runbook.safety.get("max_alert_suppression_minutes", 240))
+        self.strategy = str(runbook.safety.get("exploration_strategy", "breadth_first"))
+        if self.strategy not in EXPLORATION_STRATEGIES:
+            self.strategy = "breadth_first"
+        seed = runbook.safety.get("exploration_seed")
+        self.seed = int(seed) if isinstance(seed, int) else None
+        self.max_states = runbook.safety.get("max_states")
+        timeout = runbook.safety.get("timeout_seconds")
+        self.timeout_seconds = int(timeout) if isinstance(timeout, int) else None
+        self.fairness_model = str(runbook.safety.get("fairness", "dependency" if runbook.allow_reordering else "fifo"))
+        self._rng = random.Random(self.seed)
 
     def check(self) -> CheckResult:
         result = CheckResult(safe=True)
+        result.exploration_strategy = self.strategy
+        result.exploration_seed = self.seed
+        result.fairness_model = self.fairness_model
+        result.timeout_seconds = self.timeout_seconds
+        deadline = time.monotonic() + self.timeout_seconds if isinstance(self.timeout_seconds, int) else None
         initial = (self.runbook.state, frozenset(), tuple(), tuple())
         queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]] = deque([initial])
         seen = set()
         while queue:
-            state, done, trace, semantic_trace = queue.popleft()
+            if deadline is not None and time.monotonic() >= deadline:
+                result.max_depth_reached = True
+                result.inconclusive = True
+                result.inconclusive_reason = f"timeout_seconds={self.timeout_seconds} reached before exhausting the transition system"
+                _record_rule(result, EXPLORE_BUDGET_REACHED)
+                break
+            if isinstance(self.max_states, int) and result.states_explored >= self.max_states:
+                result.max_depth_reached = True
+                result.inconclusive = True
+                result.inconclusive_reason = f"max_states={self.max_states} reached before exhausting the transition system"
+                _record_rule(result, EXPLORE_BUDGET_REACHED)
+                break
+            state, done, trace, semantic_trace = self._pop_frontier(queue)
             key = (state.fingerprint(), done)
             if key in seen:
                 continue
@@ -112,7 +153,7 @@ class Checker:
                 else:
                     _record_rule(result, EXPLORE_TERMINAL)
                 continue
-            enabled = self._enabled_steps(done)
+            enabled = self._ordered_enabled_steps(self._enabled_steps(done))
             result.branch_points += 1
             result.branch_factor_total += len(enabled)
             result.max_branch_factor = max(result.max_branch_factor, len(enabled))
@@ -161,7 +202,7 @@ class Checker:
                         if violation.small_step_rule:
                             _record_rule(result, violation.small_step_rule)
                     result.safe = False
-                queue.append((next_state, done | {step.id}, trace + (step.id,), next_semantic_trace))
+                self._push_frontier(queue, (next_state, done | {step.id}, trace + (step.id,), next_semantic_trace))
         result.violations = _dedupe_violations(result.violations)
         result.annotation_warnings = _dedupe_violations(result.annotation_warnings)
         return result
@@ -173,6 +214,21 @@ class Checker:
             step = self.runbook.steps[len(done)]
             return [step] if all(dep in done for dep in step.after) else []
         return [step for step in self.runbook.steps if step.id not in done and all(dep in done for dep in step.after)]
+
+    def _pop_frontier(self, queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]]) -> tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]:
+        if self.strategy in {"depth_first", "seeded_chaos_style"}:
+            return queue.pop()
+        return queue.popleft()
+
+    def _push_frontier(self, queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]], item: tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]) -> None:
+        queue.append(item)
+
+    def _ordered_enabled_steps(self, enabled: list[Step]) -> list[Step]:
+        if self.strategy in {"randomized_bounded", "seeded_chaos_style"}:
+            shuffled = list(enabled)
+            self._rng.shuffle(shuffled)
+            return shuffled
+        return enabled
 
     def _pre_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
         violations: list[Violation] = []
@@ -234,6 +290,22 @@ class Checker:
                 violations.append(_violation("cache_warmup_before_traffic", f"cache {cache.name} warmup entries={entries}, requires at least {cache.warmup_entries}", trace + (step.id,), step.id))
             if entries > cache.capacity_entries:
                 violations.append(_violation("cache_warmup_within_capacity", f"cache {cache.name} warmup entries={entries} exceed capacity={cache.capacity_entries}", trace + (step.id,), step.id))
+        if step.action == "restore_bucket_snapshot":
+            bucket = state.object_buckets[str(step.params["bucket"])]
+            age = int(step.params["snapshot_age_minutes"])
+            duration = int(step.params.get("duration_minutes", 0))
+            if not bucket.writes_frozen:
+                violations.append(_violation("object_restore_requires_write_freeze", f"bucket {bucket.name} writes are not frozen before snapshot restore", trace + (step.id,), step.id))
+            if not bucket.snapshot_available:
+                violations.append(_violation("object_restore_requires_snapshot", f"bucket {bucket.name} has no available restore snapshot modeled", trace + (step.id,), step.id))
+            if age > bucket.rpo_minutes:
+                violations.append(_violation("object_restore_within_rpo", f"bucket {bucket.name} snapshot age={age} minutes exceeds RPO={bucket.rpo_minutes}", trace + (step.id,), step.id))
+            if duration > bucket.rto_minutes:
+                violations.append(_violation("object_restore_within_rto", f"bucket {bucket.name} restore duration={duration} minutes exceeds RTO={bucket.rto_minutes}", trace + (step.id,), step.id))
+        if step.action == "replicate_bucket":
+            target = str(step.params["region"])
+            if target not in state.regions or not state.regions[target].healthy:
+                violations.append(_violation("object_replication_target_region_healthy", f"bucket replication target {target} is unhealthy", trace + (step.id,), step.id))
         if step.action == "drain_load_balancer":
             route = state.traffic_routes[str(step.params["route"])]
             region = str(step.params["region"])
@@ -286,6 +358,12 @@ class Checker:
                 violations.append(_violation("cache_warmup_within_capacity", f"cache {cache.name} entries={cache.entries} exceed capacity={cache.capacity_entries}", trace, step.id))
             if cache.stale_read_risk:
                 violations.append(_violation("no_stale_reads_after_cache_flush", f"cache {cache.name} may serve stale reads after flush without a write freeze/warmup guard", trace, step.id))
+        for bucket in state.object_buckets.values():
+            if len(bucket.replicated_regions) < bucket.min_replicated_regions:
+                violations.append(_violation("object_bucket_replication_min_regions", f"bucket {bucket.name} has {len(bucket.replicated_regions)} replicated region(s); requires {bucket.min_replicated_regions}", trace, step.id))
+            unhealthy_replicas = sorted(region for region in bucket.replicated_regions if region not in state.regions or not state.regions[region].healthy)
+            if unhealthy_replicas:
+                violations.append(_violation("object_bucket_replication_regions_healthy", f"bucket {bucket.name} has unhealthy replicated region(s): {', '.join(unhealthy_replicas)}", trace, step.id))
         for route in state.traffic_routes.values():
             total = sum(route.weights.values())
             if total != 100:
@@ -356,7 +434,7 @@ def _unlabel_rule(rule: str) -> str:
 
 
 def _safety_obligation_count(state: SystemState) -> int:
-    return len(state.services) * 2 + len(state.queues) * 5 + len(state.caches) * 3 + len(state.traffic_routes) + len(state.dns_records) * 3 + len(state.credentials)
+    return len(state.services) * 2 + len(state.queues) * 5 + len(state.caches) * 3 + len(state.object_buckets) * 2 + len(state.traffic_routes) + len(state.dns_records) * 3 + len(state.credentials)
 
 
 HIGH_RISK_EFFECT_TYPES_BY_ACTION = {
@@ -371,6 +449,8 @@ HIGH_RISK_EFFECT_TYPES_BY_ACTION = {
     "run_migration": "manual_sql",
     "rollback_deployment": "customer_visible_degradation",
     "flush_cache": "deletion",
+    "restore_bucket_snapshot": "irreversible_state_change",
+    "freeze_bucket_writes": "customer_visible_degradation",
     "update_dns_record": "customer_visible_degradation",
     "revoke_credential": "credential_revocation",
 }
@@ -458,7 +538,17 @@ REMEDIATIONS = {
     "effect_annotation_required": "Add reviewed effect_annotations with effect_types, idempotency, reversibility, retry_safety, blast_radius, and expected_user_impact.",
     "unsafe_retry_annotation": "Do not mark destructive or non-idempotent operations retry-safe unless the runbook models an idempotency guard and reversible outcome.",
     "credential_active": "Rotate or restore the credential before dependent operations require it.",
+    "object_restore_requires_write_freeze": "Freeze object writes before restoring a bucket snapshot.",
+    "object_restore_requires_snapshot": "Model an available snapshot before invoking restore-from-snapshot.",
+    "object_restore_within_rpo": "Use a snapshot whose age is within the bucket RPO or document/waive the recovery objective.",
+    "object_restore_within_rto": "Keep the modeled restore duration within the bucket RTO or split the procedure with an explicit approval.",
+    "object_replication_target_region_healthy": "Replicate only to a healthy modeled region.",
+    "object_bucket_replication_min_regions": "Add or restore replicated regions before relying on bucket durability.",
+    "object_bucket_replication_regions_healthy": "Restore unhealthy replicated regions or remove them from the durability assumption.",
 }
+
+
+EXPLORATION_STRATEGIES = {"breadth_first", "depth_first", "shortest_counterexample", "randomized_bounded", "seeded_chaos_style"}
 
 
 def _violation(property: str, message: str, trace: tuple[str, ...], step: str | None = None, semantic_trace: tuple[str, ...] | None = None) -> Violation:

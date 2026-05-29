@@ -23,6 +23,8 @@ from .readiness import ReadinessError, ReadinessOptions, build_readiness_report,
 from .repository_scan import RepositoryScanError, ScanOptions, build_repository_scan, render_scan_json, render_scan_markdown
 from .schema import render_json_schema
 from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
+from .temporal_invariants import render_temporal_invariants_json, render_temporal_invariants_markdown
+from .type_system import build_type_inventory, render_type_inventory_json, render_type_inventory_markdown
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -45,6 +47,11 @@ def main(argv: list[str] | None = None) -> int:
     obligations_p.add_argument("runbook")
     obligations_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     obligations_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
+    types_p = sub.add_parser("types", help="emit the lightweight typed entity inventory for a runbook")
+    types_p.add_argument("runbook")
+    types_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    invariants_p = sub.add_parser("invariants", help="list temporal invariant templates used by the checker")
+    invariants_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     sub.add_parser("schema", help="print the JSON Schema for the runbook DSL")
     audit_p = sub.add_parser("audit", help="verify every runbook file in a directory tree")
     audit_p.add_argument("path")
@@ -129,6 +136,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.pass_ else 1
     if args.command == "profiles":
         print(render_profiles_json() if args.format == "json" else render_profiles_markdown(), end="")
+        return 0
+    if args.command == "invariants":
+        print(render_temporal_invariants_json() if args.format == "json" else render_temporal_invariants_markdown(), end="")
+        return 0
+    if args.command == "types":
+        try:
+            report = build_type_inventory(args.runbook)
+        except RunbookParseError as exc:
+            _print_parse_error(exc, "text")
+            return 2
+        print(render_type_inventory_json(report) if args.format == "json" else render_type_inventory_markdown(report), end="")
         return 0
     if args.command == "formal-objects":
         try:

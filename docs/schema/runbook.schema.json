@@ -46,6 +46,116 @@
         {
           "additionalProperties": false,
           "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bucket_replicated_to"
+            },
+            "region": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "bucket",
+            "kind",
+            "region"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bucket_restore_completed"
+            }
+          },
+          "required": [
+            "bucket",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bucket_rpo_within"
+            },
+            "minutes": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "bucket",
+            "kind",
+            "minutes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bucket_rto_within"
+            },
+            "minutes": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "bucket",
+            "kind",
+            "minutes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bucket_snapshot_available"
+            }
+          },
+          "required": [
+            "bucket",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bucket_writes_frozen"
+            }
+          },
+          "required": [
+            "bucket",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "cache": {
               "type": "string"
             },
@@ -995,6 +1105,35 @@
           "if": {
             "properties": {
               "action": {
+                "const": "freeze_bucket_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Freezes object bucket writes before snapshot restore or replication-sensitive maintenance. Denotation: Sets object_buckets[bucket].writes_frozen := true before restore or replication-sensitive maintenance.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "bucket"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "freeze_cache_writes"
               }
             },
@@ -1203,6 +1342,39 @@
           "if": {
             "properties": {
               "action": {
+                "const": "replicate_bucket"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Adds a modeled object-storage replica region after checking target health. Denotation: Adds params.region to object_buckets[bucket].replicated_regions; all non-bucket state is framed.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "bucket",
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "restart_service"
               }
             },
@@ -1222,6 +1394,44 @@
                 },
                 "required": [
                   "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restore_bucket_snapshot"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Restores a bucket from a snapshot, checking write freeze plus RPO/RTO obligations. Denotation: Sets object_buckets[bucket].restore_completed := true, records snapshot age and restore completion minute, and advances the model clock by duration_minutes.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  },
+                  "duration_minutes": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "snapshot_age_minutes": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "bucket",
+                  "snapshot_age_minutes"
                 ],
                 "type": "object"
               }
@@ -1288,6 +1498,35 @@
                 "required": [
                   "replica",
                   "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "resume_bucket_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "$comment": "Re-enables object bucket writes after restore and replication obligations are satisfied. Denotation: Sets object_buckets[bucket].writes_frozen := false after restore and durability checks.",
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "bucket"
                 ],
                 "type": "object"
               }
@@ -1731,15 +1970,19 @@
             "finalize_dns_record",
             "finish_migration",
             "flush_cache",
+            "freeze_bucket_writes",
             "freeze_cache_writes",
             "mark_dns_health_check",
             "mark_region_health",
             "pause_queue",
             "rebalance_consumers",
             "replay_messages",
+            "replicate_bucket",
             "restart_service",
+            "restore_bucket_snapshot",
             "restore_load_balancer",
             "restore_replica",
+            "resume_bucket_writes",
             "resume_cache_writes",
             "resume_queue",
             "revoke_credential",
@@ -1981,6 +2224,59 @@
           },
           "type": "object"
         },
+        "object_buckets": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "last_restore_minute": {
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "last_snapshot_minute": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "min_replicated_regions": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "region": {
+                "type": "string"
+              },
+              "replicated_regions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "restore_completed": {
+                "type": "boolean"
+              },
+              "rpo_minutes": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "rto_minutes": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "snapshot_available": {
+                "type": "boolean"
+              },
+              "writes_frozen": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "region"
+            ],
+            "type": "object"
+          },
+          "type": "object"
+        },
         "queues": {
           "additionalProperties": {
             "additionalProperties": false,
@@ -2211,8 +2507,36 @@
     "safety": {
       "additionalProperties": true,
       "properties": {
+        "exploration_seed": {
+          "type": "integer"
+        },
+        "exploration_strategy": {
+          "enum": [
+            "breadth_first",
+            "depth_first",
+            "shortest_counterexample",
+            "randomized_bounded",
+            "seeded_chaos_style"
+          ],
+          "type": "string"
+        },
+        "fairness": {
+          "enum": [
+            "dependency",
+            "fifo"
+          ],
+          "type": "string"
+        },
         "max_alert_suppression_minutes": {
           "minimum": 1,
+          "type": "integer"
+        },
+        "max_states": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "minimum": 0,
           "type": "integer"
         }
       },

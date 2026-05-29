@@ -1,0 +1,36 @@
+{
+  "name": "Unsafe object storage restore",
+  "description": "Synthetic object-storage restore mutant missing freeze, snapshot freshness, RTO, and durable replication.",
+  "allow_reordering": true,
+  "max_depth": 2,
+  "system": {
+    "regions": {
+      "east": {"healthy": true},
+      "west": {"healthy": false}
+    },
+    "object_buckets": {
+      "artifacts": {
+        "region": "east",
+        "replicated_regions": ["east"],
+        "min_replicated_regions": 2,
+        "writes_frozen": false,
+        "snapshot_available": false,
+        "last_snapshot_minute": 0,
+        "rpo_minutes": 30,
+        "rto_minutes": 60
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "restore-stale-snapshot",
+      "action": "restore_bucket_snapshot",
+      "params": {"bucket": "artifacts", "snapshot_age_minutes": 90, "duration_minutes": 120}
+    },
+    {
+      "id": "replicate-west",
+      "action": "replicate_bucket",
+      "params": {"bucket": "artifacts", "region": "west"}
+    }
+  ]
+}

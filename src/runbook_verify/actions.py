@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from .descriptors import ACTION_SCHEMAS, CONDITION_SCHEMAS
-from .model import Alert, Cache, Credential, Database, DNSRecord, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Cache, Credential, Database, DNSRecord, Deployment, FeatureFlag, ObjectBucket, Queue, Replica, Service, Step, SystemState, TrafficRoute
 
 
 class ActionError(ValueError):
@@ -18,6 +18,7 @@ def _copy_state(state: SystemState, **updates: Any) -> SystemState:
         "databases": state.databases,
         "queues": state.queues,
         "caches": state.caches,
+        "object_buckets": state.object_buckets,
         "alerts": state.alerts,
         "flags": state.flags,
         "deployments": state.deployments,
@@ -63,6 +64,13 @@ def _cache(state: SystemState, name: str) -> Cache:
         return state.caches[name]
     except KeyError as exc:
         raise ActionError(f"unknown cache {name!r}") from exc
+
+
+def _bucket(state: SystemState, name: str) -> ObjectBucket:
+    try:
+        return state.object_buckets[name]
+    except KeyError as exc:
+        raise ActionError(f"unknown object bucket {name!r}") from exc
 
 
 def _route(state: SystemState, name: str) -> TrafficRoute:
@@ -246,6 +254,37 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         caches = dict(state.caches)
         caches[cache.name] = replace(cache, entries=entries, warm=entries >= cache.warmup_entries, stale_read_risk=False)
         return _copy_state(state, caches=caches)
+    if action == "freeze_bucket_writes":
+        bucket = _bucket(state, str(p["bucket"]))
+        buckets = dict(state.object_buckets)
+        buckets[bucket.name] = replace(bucket, writes_frozen=True)
+        return _copy_state(state, object_buckets=buckets)
+    if action == "resume_bucket_writes":
+        bucket = _bucket(state, str(p["bucket"]))
+        buckets = dict(state.object_buckets)
+        buckets[bucket.name] = replace(bucket, writes_frozen=False)
+        return _copy_state(state, object_buckets=buckets)
+    if action == "replicate_bucket":
+        bucket = _bucket(state, str(p["bucket"]))
+        region = str(p["region"])
+        if region not in state.regions:
+            raise ActionError(f"unknown region {region!r}")
+        buckets = dict(state.object_buckets)
+        buckets[bucket.name] = replace(bucket, replicated_regions=bucket.replicated_regions | {region})
+        return _copy_state(state, object_buckets=buckets)
+    if action == "restore_bucket_snapshot":
+        bucket = _bucket(state, str(p["bucket"]))
+        age = int(p["snapshot_age_minutes"])
+        duration = int(p.get("duration_minutes", 0))
+        buckets = dict(state.object_buckets)
+        buckets[bucket.name] = replace(
+            bucket,
+            snapshot_available=True,
+            last_snapshot_minute=max(0, state.clock_minute - age),
+            restore_completed=True,
+            last_restore_minute=state.clock_minute + duration,
+        )
+        return _copy_state(state, object_buckets=buckets, clock_minute=state.clock_minute + duration)
     if action == "wait":
         minutes = int(p["minutes"])
         if minutes < 0:
@@ -383,6 +422,20 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
         return _cache(state, str(condition["cache"])).write_frozen
     if kind == "cache_no_stale_read_risk":
         return not _cache(state, str(condition["cache"])).stale_read_risk
+    if kind == "bucket_writes_frozen":
+        return _bucket(state, str(condition["bucket"])).writes_frozen
+    if kind == "bucket_snapshot_available":
+        return _bucket(state, str(condition["bucket"])).snapshot_available
+    if kind == "bucket_replicated_to":
+        return str(condition["region"]) in _bucket(state, str(condition["bucket"])).replicated_regions
+    if kind == "bucket_restore_completed":
+        return _bucket(state, str(condition["bucket"])).restore_completed
+    if kind == "bucket_rpo_within":
+        bucket = _bucket(state, str(condition["bucket"]))
+        return state.clock_minute - bucket.last_snapshot_minute <= int(condition["minutes"])
+    if kind == "bucket_rto_within":
+        bucket = _bucket(state, str(condition["bucket"]))
+        return bucket.last_restore_minute is not None and bucket.last_restore_minute <= state.clock_minute + int(condition["minutes"])
     if kind == "service_deployment_is":
         return _service(state, str(condition["service"])).deployment == str(condition["deployment"])
     if kind == "replica_not_drained":

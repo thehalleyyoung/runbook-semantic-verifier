@@ -309,6 +309,69 @@ class CheckerExplanationTests(unittest.TestCase):
         result = Checker(runbook).check()
         self.assertTrue(result.safe, result.violations)
 
+    def test_safe_object_storage_restore_checks_rpo_rto_and_replication(self):
+        result = Checker(load_runbook(ROOT / "examples" / "object_storage_restore_safe.json")).check()
+        self.assertTrue(result.safe, result.violations)
+        self.assertIn("exploration_strategy", result.performance_counters())
+
+    def test_unsafe_object_storage_restore_reports_durability_and_recovery_objectives(self):
+        result = Checker(load_runbook(ROOT / "examples" / "object_storage_restore_unsafe.json")).check()
+        props = {v.property for v in result.violations}
+        self.assertIn("object_restore_requires_write_freeze", props)
+        self.assertIn("object_restore_requires_snapshot", props)
+        self.assertIn("object_restore_within_rpo", props)
+        self.assertIn("object_restore_within_rto", props)
+        self.assertIn("object_bucket_replication_min_regions", props)
+        self.assertIn("object_replication_target_region_healthy", props)
+
+    def test_reproducible_exploration_strategies_are_recorded_and_seeded(self):
+        runbook = parse_runbook({
+            "allow_reordering": True,
+            "max_depth": 2,
+            "safety": {"exploration_strategy": "randomized_bounded", "exploration_seed": 7},
+            "system": {"regions": {"a": {}}, "services": {"api": {"min_available": 0, "replicas": []}}},
+            "steps": [
+                {"id": "wait-a", "action": "wait", "params": {"minutes": 1}},
+                {"id": "wait-b", "action": "wait", "params": {"minutes": 2}},
+            ],
+        })
+        first = Checker(runbook).check().performance_counters()
+        second = Checker(runbook).check().performance_counters()
+        self.assertEqual(first["exploration_strategy"], "randomized_bounded")
+        self.assertEqual(first["exploration_seed"], 7)
+        self.assertEqual(first["semantic_rule_counts"], second["semantic_rule_counts"])
+
+    def test_bounded_model_checking_reports_inconclusive_state_budget(self):
+        runbook = parse_runbook({
+            "allow_reordering": True,
+            "safety": {"max_states": 1, "fairness": "dependency"},
+            "system": {"regions": {"a": {}}, "services": {"api": {"min_available": 0, "replicas": []}}},
+            "steps": [
+                {"id": "wait-a", "action": "wait", "params": {"minutes": 1}},
+                {"id": "wait-b", "action": "wait", "params": {"minutes": 2}},
+            ],
+        })
+        result = Checker(runbook).check()
+        self.assertTrue(result.inconclusive)
+        self.assertIn("max_states", result.inconclusive_reason)
+        self.assertEqual(result.performance_counters()["fairness_model"], "dependency")
+
+    def test_bounded_model_checking_reports_inconclusive_timeout_budget(self):
+        runbook = parse_runbook({
+            "allow_reordering": True,
+            "safety": {"timeout_seconds": 0},
+            "system": {"regions": {"a": {}}, "services": {"api": {"min_available": 0, "replicas": []}}},
+            "steps": [
+                {"id": "wait-a", "action": "wait", "params": {"minutes": 1}},
+                {"id": "wait-b", "action": "wait", "params": {"minutes": 2}},
+            ],
+        })
+        result = Checker(runbook).check()
+        counters = result.performance_counters()
+        self.assertTrue(result.inconclusive)
+        self.assertIn("timeout_seconds=0", result.inconclusive_reason)
+        self.assertEqual(counters["timeout_seconds"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -456,6 +456,77 @@
         "cold_start_capacity",
         "stale_read_risk"
       ]
+    },
+    {
+      "path": "../examples/object_storage_restore_safe.json",
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored safe object-storage restore regression fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": true,
+        "violation_properties": [],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic object-storage fixture."
+      },
+      "validity_threats": [
+        "Small synthetic state space; not a production object store incident."
+      ],
+      "semantic_features": [
+        "object_storage_restore",
+        "rpo",
+        "rto",
+        "write_freeze",
+        "replication_durability"
+      ]
+    },
+    {
+      "path": "../examples/object_storage_restore_unsafe.json",
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored unsafe object-storage restore mutant fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "object_bucket_replication_min_regions",
+          "object_replication_target_region_healthy",
+          "object_restore_requires_snapshot",
+          "object_restore_requires_write_freeze",
+          "object_restore_within_rpo",
+          "object_restore_within_rto"
+        ],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic unsafe object-storage fixture."
+      },
+      "validity_threats": [
+        "Designed mutant fixture; expected hazards are intentionally seeded."
+      ],
+      "semantic_features": [
+        "object_storage_restore",
+        "rpo",
+        "rto",
+        "write_freeze",
+        "replication_durability"
+      ]
     }
   ]
 }

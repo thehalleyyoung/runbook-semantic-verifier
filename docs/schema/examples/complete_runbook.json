@@ -22,9 +22,14 @@
     "source": "synthetic schema example"
   },
   "allow_reordering": true,
-  "max_depth": 9,
+  "max_depth": 13,
   "safety": {
-    "max_alert_suppression_minutes": 30
+    "max_alert_suppression_minutes": 30,
+    "exploration_strategy": "breadth_first",
+    "exploration_seed": 0,
+    "max_states": 1000,
+    "timeout_seconds": 30,
+    "fairness": "dependency"
   },
   "system": {
     "clock_minute": 0,
@@ -80,6 +85,18 @@
         "capacity_entries": 1200,
         "warm": true,
         "write_frozen": false
+      }
+    },
+    "object_buckets": {
+      "api-artifacts": {
+        "region": "us-east",
+        "replicated_regions": ["us-east", "us-west"],
+        "min_replicated_regions": 2,
+        "writes_frozen": false,
+        "snapshot_available": true,
+        "last_snapshot_minute": 0,
+        "rpo_minutes": 30,
+        "rto_minutes": 120
       }
     },
     "alerts": {
@@ -293,6 +310,92 @@
           "cache": "api-cache"
         }
       ]
+    },
+    {
+      "id": "freeze-api-artifact-writes",
+      "action": "freeze_bucket_writes",
+      "params": {
+        "bucket": "api-artifacts"
+      },
+      "after": ["resume-api-cache-writes"],
+      "effects": [
+        {
+          "kind": "bucket_writes_frozen",
+          "bucket": "api-artifacts"
+        }
+      ],
+      "effect_annotations": {
+        "effect_types": ["customer_visible_degradation"],
+        "idempotency": "idempotent",
+        "reversibility": "reversible",
+        "retry_safety": "safe",
+        "blast_radius": "artifact uploads paused",
+        "expected_user_impact": "writers queue uploads during restore"
+      }
+    },
+    {
+      "id": "restore-api-artifacts",
+      "action": "restore_bucket_snapshot",
+      "params": {
+        "bucket": "api-artifacts",
+        "snapshot_age_minutes": 10,
+        "duration_minutes": 45
+      },
+      "after": ["freeze-api-artifact-writes"],
+      "requires": [
+        {
+          "kind": "bucket_writes_frozen",
+          "bucket": "api-artifacts"
+        },
+        {
+          "kind": "bucket_snapshot_available",
+          "bucket": "api-artifacts"
+        }
+      ],
+      "effects": [
+        {
+          "kind": "bucket_restore_completed",
+          "bucket": "api-artifacts"
+        }
+      ],
+      "effect_annotations": {
+        "effect_types": ["irreversible_state_change"],
+        "idempotency": "unknown",
+        "reversibility": "irreversible",
+        "retry_safety": "unknown",
+        "blast_radius": "api artifact bucket",
+        "expected_user_impact": "objects restored to selected snapshot"
+      }
+    },
+    {
+      "id": "verify-api-artifacts-west",
+      "action": "replicate_bucket",
+      "params": {
+        "bucket": "api-artifacts",
+        "region": "us-west"
+      },
+      "after": ["restore-api-artifacts"],
+      "requires": [
+        {
+          "kind": "region_healthy",
+          "region": "us-west"
+        }
+      ],
+      "effects": [
+        {
+          "kind": "bucket_replicated_to",
+          "bucket": "api-artifacts",
+          "region": "us-west"
+        }
+      ]
+    },
+    {
+      "id": "resume-api-artifact-writes",
+      "action": "resume_bucket_writes",
+      "params": {
+        "bucket": "api-artifacts"
+      },
+      "after": ["verify-api-artifacts-west"]
     }
   ]
 }
