@@ -181,6 +181,34 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         queues = dict(state.queues)
         queues[q.name] = replace(q, paused=False)
         return _copy_state(state, queues=queues)
+    if action == "replay_messages":
+        q = _queue(state, str(p["queue"]))
+        count = int(p["count"])
+        from_dead_letter = bool(p.get("from_dead_letter", False))
+        if from_dead_letter and count > q.dead_letter_depth:
+            raise ActionError(f"queue {q.name!r} dead-letter depth {q.dead_letter_depth} is smaller than replay count {count}")
+        deduped = bool(p.get("dedupe_key")) or bool(p.get("idempotent", False)) or q.dedupe_window_minutes > 0 or count == 0
+        queues = dict(state.queues)
+        queues[q.name] = replace(
+            q,
+            depth=q.depth + count,
+            dead_letter_depth=q.dead_letter_depth - count if from_dead_letter else q.dead_letter_depth,
+            duplicate_risk=q.duplicate_risk or not deduped,
+        )
+        return _copy_state(state, queues=queues)
+    if action == "drain_dead_letter_queue":
+        q = _queue(state, str(p["queue"]))
+        count = int(p["count"])
+        if count > q.dead_letter_depth:
+            raise ActionError(f"queue {q.name!r} dead-letter depth {q.dead_letter_depth} is smaller than drain count {count}")
+        queues = dict(state.queues)
+        queues[q.name] = replace(q, dead_letter_depth=q.dead_letter_depth - count)
+        return _copy_state(state, queues=queues)
+    if action == "rebalance_consumers":
+        q = _queue(state, str(p["queue"]))
+        queues = dict(state.queues)
+        queues[q.name] = replace(q, consumers=int(p["consumers"]), consumer_group_stable=bool(p.get("stable", False)))
+        return _copy_state(state, queues=queues)
     if action == "wait":
         minutes = int(p["minutes"])
         if minutes < 0:
@@ -290,6 +318,14 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
         return _queue(state, str(condition["queue"])).consumers >= int(condition["count"])
     if kind == "queue_resumed":
         return not _queue(state, str(condition["queue"])).paused
+    if kind == "queue_dead_letter_depth_at_most":
+        return _queue(state, str(condition["queue"])).dead_letter_depth <= int(condition["depth"])
+    if kind == "queue_replay_deduplicated":
+        return not _queue(state, str(condition["queue"])).duplicate_risk
+    if kind == "queue_dedupe_window_at_least":
+        return _queue(state, str(condition["queue"])).dedupe_window_minutes >= int(condition["minutes"])
+    if kind == "consumer_group_stable":
+        return _queue(state, str(condition["queue"])).consumer_group_stable
     if kind == "service_deployment_is":
         return _service(state, str(condition["service"])).deployment == str(condition["deployment"])
     if kind == "replica_not_drained":

@@ -13,23 +13,23 @@
       "blocking_prose_findings": 1,
       "expired_waivers": 0,
       "missing_rollback_steps": 0,
-      "open_hazards": 3,
+      "open_hazards": 7,
       "owner": "grafana-tempo-public-fixture",
       "parse_errors": 0,
       "proof_obligations": {
         "checked": {
           "action_defined": 2,
-          "precondition": 1,
-          "promised_effect": 1,
-          "safety_postcondition": 6
+          "precondition": 2,
+          "promised_effect": 0,
+          "safety_postcondition": 14
         },
         "failures": {
-          "precondition": 1,
-          "safety_postcondition": 1
+          "precondition": 2,
+          "safety_postcondition": 4
         }
       },
-      "prose_findings": 3,
-      "recent_remediation": "2026-05-29 open: Derived fixture recorded queue fallback backlog and destructive-deletion precondition findings from public documentation excerpts.",
+      "prose_findings": 4,
+      "recent_remediation": "2026-05-29 open: Derived fixture recorded queue fallback replay, consumer-group stability, and destructive-deletion precondition findings from public documentation excerpts.",
       "regions": [
         "prod"
       ],
@@ -38,12 +38,12 @@
           "date": "2026-05-29",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "status": "open",
-          "summary": "Derived fixture recorded queue fallback backlog and destructive-deletion precondition findings from public documentation excerpts."
+          "summary": "Derived fixture recorded queue fallback replay, consumer-group stability, and destructive-deletion precondition findings from public documentation excerpts."
         }
       ],
       "runbooks": 1,
-      "score": 50,
-      "semantic_counterexamples": 2,
+      "score": 0,
+      "semantic_counterexamples": 6,
       "services": [
         "tempo-query"
       ],
@@ -52,20 +52,60 @@
       "top_hazards": [
         {
           "kind": "semantic",
-          "message": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause",
+          "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-          "property": "no_queue_pause_without_drain_plan",
+          "property": "no_replay_without_dedupe",
           "trace": [
-            "delete-stale-tenant-indexes"
+            "delete-stale-tenant-indexes-trigger-fallback"
           ]
         },
         {
           "kind": "semantic",
-          "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
+          "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-          "property": "no_paused_queue_with_backlog",
+          "property": "no_duplicate_processing_risk",
           "trace": [
-            "delete-stale-tenant-indexes"
+            "delete-stale-tenant-indexes-trigger-fallback"
+          ]
+        },
+        {
+          "kind": "semantic",
+          "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "property": "no_rebalance_to_zero_consumers",
+          "trace": [
+            "delete-stale-tenant-indexes-trigger-fallback",
+            "rebalance-fallback-consumers"
+          ]
+        },
+        {
+          "kind": "semantic",
+          "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "property": "no_duplicate_processing_risk",
+          "trace": [
+            "delete-stale-tenant-indexes-trigger-fallback",
+            "rebalance-fallback-consumers"
+          ]
+        },
+        {
+          "kind": "semantic",
+          "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "property": "queue_backlog_requires_consumers",
+          "trace": [
+            "delete-stale-tenant-indexes-trigger-fallback",
+            "rebalance-fallback-consumers"
+          ]
+        },
+        {
+          "kind": "semantic",
+          "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "property": "no_unstable_consumer_group_with_backlog",
+          "trace": [
+            "delete-stale-tenant-indexes-trigger-fallback",
+            "rebalance-fallback-consumers"
           ]
         },
         {
@@ -88,6 +128,13 @@
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "rule": "destructive-delete-needs-targeting",
           "severity": "warning"
+        },
+        {
+          "kind": "prose",
+          "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "rule": "backfill-needs-queue-capacity",
+          "severity": "warning"
         }
       ],
       "unsafe_runbooks": 1,
@@ -104,12 +151,12 @@
     "waiver_debt": "metadata.waivers entries with active or expired expiry dates; expired waivers are blocking debt"
   },
   "summary": {
-    "open_hazards": 3,
+    "open_hazards": 7,
     "owners": 1,
     "parse_errors": 0,
-    "prose_findings": 3,
+    "prose_findings": 4,
     "runbooks": 1,
-    "semantic_counterexamples": 2,
+    "semantic_counterexamples": 6,
     "stale_assumptions": 0,
     "status": "not_ready",
     "verified_runbooks": 0,

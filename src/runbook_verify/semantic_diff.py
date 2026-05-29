@@ -303,6 +303,10 @@ def _state_signature(state: SystemState) -> dict[str, Any]:
         data[f"queues.{name}.depth"] = queue.depth
         data[f"queues.{name}.consumers"] = queue.consumers
         data[f"queues.{name}.paused"] = queue.paused
+        data[f"queues.{name}.dead_letter_depth"] = queue.dead_letter_depth
+        data[f"queues.{name}.dedupe_window_minutes"] = queue.dedupe_window_minutes
+        data[f"queues.{name}.duplicate_risk"] = queue.duplicate_risk
+        data[f"queues.{name}.consumer_group_stable"] = queue.consumer_group_stable
     for name, alert in state.alerts.items():
         data[f"alerts.{name}.active"] = alert.active
         data[f"alerts.{name}.suppressed_until_minute"] = alert.suppressed_until_minute
@@ -333,6 +337,14 @@ def _state_change_classification(field: str, old: Any, new: Any) -> str:
     if field.endswith(".depth") and isinstance(old, int) and isinstance(new, int) and new < old:
         return "assumption_weakening"
     if field.endswith(".consumers") and isinstance(old, int) and isinstance(new, int) and new > old:
+        return "assumption_weakening"
+    if field.endswith(".dead_letter_depth") and isinstance(old, int) and isinstance(new, int) and new < old:
+        return "assumption_weakening"
+    if field.endswith(".dedupe_window_minutes") and isinstance(old, int) and isinstance(new, int) and new > old:
+        return "assumption_weakening"
+    if field.endswith(".duplicate_risk") and old is True and new is False:
+        return "assumption_weakening"
+    if field.endswith(".consumer_group_stable") and old is False and new is True:
         return "assumption_weakening"
     if field.endswith(".allow_split_brain") and old is False and new is True:
         return "assumption_weakening"

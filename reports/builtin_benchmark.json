@@ -2,45 +2,53 @@
   "aggregate": {
     "pass": true,
     "performance_counters": {
-      "avg_branch_factor": 2.2875,
-      "branch_factor_total": 183,
-      "branch_points": 80,
+      "avg_branch_factor": 2.197674418604651,
+      "branch_factor_total": 189,
+      "branch_points": 86,
       "max_branch_factor": 5,
       "max_depth_reached": false,
       "minimized_counterexample_trace_length": 1,
       "proof_obligation_failures": {
-        "precondition": 95,
-        "safety_postcondition": 73
+        "precondition": 101,
+        "safety_postcondition": 83
       },
       "proof_obligations_checked": {
-        "action_defined": 183,
-        "precondition": 107,
-        "promised_effect": 13,
-        "safety_postcondition": 542
+        "action_defined": 189,
+        "precondition": 115,
+        "promised_effect": 15,
+        "safety_postcondition": 1276
       },
       "reductions_applied": 0,
-      "states_explored": 85,
+      "states_explored": 94,
       "symbolic_splits": 0,
-      "terminal_traces": 5,
-      "transitions_explored": 183
+      "terminal_traces": 8,
+      "transitions_explored": 189
     },
     "prose_findings_by_rule": {
+      "backfill-needs-queue-capacity": 1,
       "data-deletion-needs-restore-precondition": 1,
       "destructive-delete-needs-targeting": 2,
       "failover-needs-health-and-quorum": 3
     },
-    "runbooks": 5,
-    "runtime_seconds": 0.012777041993103921,
-    "states_explored": 85,
-    "traces_explored": 5,
+    "runbooks": 8,
+    "runtime_seconds": 0.010677041980670765,
+    "states_explored": 94,
+    "traces_explored": 8,
     "violations_by_property": {
       "bounded_alert_suppression": 20,
+      "dns_health_check_converged_before_cutover": 1,
+      "dns_no_split_brain_during_ttl": 1,
+      "dns_requires_regional_capacity": 3,
+      "dns_ttl_elapsed_before_finalize": 1,
       "no_draining_all_replicas": 36,
+      "no_duplicate_processing_risk": 4,
       "no_failover_to_unhealthy_region": 16,
-      "no_paused_queue_with_backlog": 1,
-      "no_queue_pause_without_drain_plan": 1,
+      "no_rebalance_to_zero_consumers": 2,
+      "no_replay_without_dedupe": 2,
       "no_rollback_during_incompatible_migration": 16,
+      "no_unstable_consumer_group_with_backlog": 2,
       "precondition": 1,
+      "queue_backlog_requires_consumers": 2,
       "quorum_before_data_loss_action": 21,
       "service_min_available": 56
     }
@@ -100,7 +108,7 @@
           "action_defined": 84,
           "precondition": 12,
           "promised_effect": 12,
-          "safety_postcondition": 252
+          "safety_postcondition": 588
         },
         "reductions_applied": 0,
         "states_explored": 36,
@@ -109,7 +117,7 @@
         "transitions_explored": 84
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.003177125006914139,
+      "runtime_seconds": 0.0017142090073321015,
       "safe": true,
       "states_explored": 36,
       "traces_explored": 1,
@@ -183,7 +191,7 @@
           "action_defined": 80,
           "precondition": 80,
           "promised_effect": 0,
-          "safety_postcondition": 240
+          "safety_postcondition": 560
         },
         "reductions_applied": 0,
         "states_explored": 32,
@@ -192,7 +200,7 @@
         "transitions_explored": 80
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.002943458006484434,
+      "runtime_seconds": 0.0016721669817343354,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -203,6 +211,161 @@
         "no_rollback_during_incompatible_migration": 16,
         "quorum_before_data_loss_action": 16,
         "service_min_available": 44
+      }
+    },
+    {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": true,
+          "violation_properties": []
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored safe queue replay regression fixture."
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic safe queue replay fixture.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "message_replay",
+          "dead_letter_queue",
+          "dedupe_key",
+          "consumer_group_rebalance"
+        ],
+        "validity_threats": [
+          "Small synthetic state space; not a production incident."
+        ]
+      },
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [],
+        "expected_safe": true,
+        "expected_violation_properties": []
+      },
+      "name": "Safe deduplicated dead-letter replay",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_safe.json",
+      "performance_counters": {
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 2,
+          "promised_effect": 3,
+          "safety_postcondition": 10
+        },
+        "reductions_applied": 0,
+        "states_explored": 3,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 2
+      },
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.002838540996890515,
+      "safe": true,
+      "states_explored": 3,
+      "traces_explored": 1,
+      "violations_by_property": {}
+    },
+    {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": false,
+          "violation_properties": [
+            "no_duplicate_processing_risk",
+            "no_rebalance_to_zero_consumers",
+            "no_replay_without_dedupe",
+            "no_unstable_consumer_group_with_backlog",
+            "queue_backlog_requires_consumers"
+          ]
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored unsafe queue replay mutant fixture."
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic unsafe replay fixture.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "message_replay",
+          "dead_letter_queue",
+          "dedupe_key",
+          "consumer_group_rebalance"
+        ],
+        "validity_threats": [
+          "Designed mutant fixture; expected hazards are intentionally seeded."
+        ]
+      },
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "no_duplicate_processing_risk",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_unstable_consumer_group_with_backlog",
+          "queue_backlog_requires_consumers"
+        ]
+      },
+      "name": "Unsafe duplicate-prone queue replay",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_unsafe.json",
+      "performance_counters": {
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 2,
+          "safety_postcondition": 4
+        },
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 2,
+          "promised_effect": 0,
+          "safety_postcondition": 10
+        },
+        "reductions_applied": 0,
+        "states_explored": 3,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 2
+      },
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.0014592079969588667,
+      "safe": false,
+      "states_explored": 3,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "no_duplicate_processing_risk": 2,
+        "no_rebalance_to_zero_consumers": 1,
+        "no_replay_without_dedupe": 1,
+        "no_unstable_consumer_group_with_backlog": 1,
+        "queue_backlog_requires_consumers": 1
       }
     },
     {
@@ -279,7 +442,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.004687459004344419,
+      "runtime_seconds": 0.0008316250168718398,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -353,7 +516,7 @@
           "action_defined": 5,
           "precondition": 2,
           "promised_effect": 0,
-          "safety_postcondition": 20
+          "safety_postcondition": 60
         },
         "reductions_applied": 0,
         "states_explored": 6,
@@ -364,7 +527,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0011718750174622983,
+      "runtime_seconds": 0.0007705420139245689,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -383,8 +546,11 @@
           ],
           "safe": false,
           "violation_properties": [
-            "no_paused_queue_with_backlog",
-            "no_queue_pause_without_drain_plan"
+            "no_duplicate_processing_risk",
+            "no_rebalance_to_zero_consumers",
+            "no_replay_without_dedupe",
+            "no_unstable_consumer_group_with_backlog",
+            "queue_backlog_requires_consumers"
           ]
         },
         "license": {
@@ -406,13 +572,16 @@
         "semantic_features": [
           "public_current_case",
           "markdown_prose_lint",
-          "queue_pause",
+          "message_replay",
+          "dead_letter_queue",
+          "dedupe_key",
+          "consumer_group_rebalance",
           "benchmark_expected_prose_rules"
         ],
         "validity_threats": [
           "Public runbook excerpts are incomplete",
           "Executable model is derived, not maintainer-authored",
-          "Result is advisory and bounded to modeled queue fallback behavior."
+          "Result is advisory and bounded to modeled queue fallback replay and consumer-group behavior."
         ]
       },
       "errors": [],
@@ -423,8 +592,11 @@
         ],
         "expected_safe": false,
         "expected_violation_properties": [
-          "no_paused_queue_with_backlog",
-          "no_queue_pause_without_drain_plan"
+          "no_duplicate_processing_risk",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_unstable_consumer_group_with_backlog",
+          "queue_backlog_requires_consumers"
         ]
       },
       "name": "Grafana Tempo current public runbook derived safety model",
@@ -438,14 +610,14 @@
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
         "proof_obligation_failures": {
-          "precondition": 1,
-          "safety_postcondition": 1
+          "precondition": 2,
+          "safety_postcondition": 4
         },
         "proof_obligations_checked": {
           "action_defined": 2,
-          "precondition": 1,
-          "promised_effect": 1,
-          "safety_postcondition": 6
+          "precondition": 2,
+          "promised_effect": 0,
+          "safety_postcondition": 14
         },
         "reductions_applied": 0,
         "states_explored": 3,
@@ -454,16 +626,109 @@
         "transitions_explored": 2
       },
       "prose_findings_by_rule": {
+        "backfill-needs-queue-capacity": 1,
         "data-deletion-needs-restore-precondition": 1,
         "destructive-delete-needs-targeting": 2
       },
-      "runtime_seconds": 0.000725042016711086,
+      "runtime_seconds": 0.0007904999947641045,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
       "violations_by_property": {
-        "no_paused_queue_with_backlog": 1,
-        "no_queue_pause_without_drain_plan": 1
+        "no_duplicate_processing_risk": 2,
+        "no_rebalance_to_zero_consumers": 1,
+        "no_replay_without_dedupe": 1,
+        "no_unstable_consumer_group_with_backlog": 1,
+        "queue_backlog_requires_consumers": 1
+      }
+    },
+    {
+      "benchmark_metadata": {
+        "abstraction_level": "derived-public-runbook",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": false,
+          "violation_properties": [
+            "dns_health_check_converged_before_cutover",
+            "dns_no_split_brain_during_ttl",
+            "dns_requires_regional_capacity",
+            "dns_ttl_elapsed_before_finalize"
+          ]
+        },
+        "license": {
+          "notes": "Benchmark stores original model/prose with link to public source; no project code copied.",
+          "status": "public-license"
+        },
+        "provenance": {
+          "kind": "public-current",
+          "notes": "Independently authored bounded model from public DNS failover guidance discussing health checks and TTL behavior.",
+          "retrieved": "2026-05-29",
+          "source_url": "https://github.com/Hotpirsch/dnsswitch"
+        },
+        "responsible_disclosure": {
+          "notes": "Defensive model of a documented DNS failover pattern; not an undisclosed vulnerability claim.",
+          "status": "public-information"
+        },
+        "semantic_features": [
+          "public_current_case",
+          "dns_failover",
+          "ttl_window",
+          "health_check_convergence",
+          "split_brain"
+        ],
+        "validity_threats": [
+          "Derived from public documentation rather than an operator's private runbook",
+          "DNS client caching behavior is abstracted to a bounded TTL window",
+          "Service state is intentionally small."
+        ]
+      },
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "dns_health_check_converged_before_cutover",
+          "dns_no_split_brain_during_ttl",
+          "dns_requires_regional_capacity",
+          "dns_ttl_elapsed_before_finalize"
+        ]
+      },
+      "name": "Reconstructed public DNS failover with missing TTL guards",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "performance_counters": {
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 3,
+          "safety_postcondition": 3
+        },
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 3,
+          "promised_effect": 0,
+          "safety_postcondition": 10
+        },
+        "reductions_applied": 0,
+        "states_explored": 3,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 2
+      },
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.0005122919974382967,
+      "safe": false,
+      "states_explored": 3,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "dns_health_check_converged_before_cutover": 1,
+        "dns_no_split_brain_during_ttl": 1,
+        "dns_requires_regional_capacity": 3,
+        "dns_ttl_elapsed_before_finalize": 1
       }
     }
   ]

@@ -2,11 +2,12 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **28/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **29/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
-scorecards, property-coverage reports, DNS cutover semantics, and checked-in
-historical/current public case-study evidence.
+scorecards, property-coverage reports, queue replay/DLQ/consumer-group
+semantics, DNS cutover semantics, and checked-in historical/current public
+case-study evidence.
 
 ## Quickstart
 
@@ -15,6 +16,8 @@ cd /Users/halleyyoung/Documents/repo/formal-runbook-verification-repo
 python3 -m unittest discover -s tests
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_safe.json
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_unsafe.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
@@ -94,7 +97,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_jso
 Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,
 `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,
-`finish_migration`, `pause_queue`, `resume_queue`, `wait`, and
+`finish_migration`, `pause_queue`, `resume_queue`, `replay_messages`,
+`drain_dead_letter_queue`, `rebalance_consumers`, `wait`, and
 `mark_region_health`, plus traffic actions `shift_traffic`,
 `failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`, and
 DNS actions `update_dns_record`, `mark_dns_health_check`, and
@@ -111,6 +115,10 @@ The prototype checks pragmatic cloud-operations hazards:
 - no data-loss-risk database action before quorum confirmation;
 - no failover to an unhealthy target region;
 - no pausing a backlog-heavy queue without a drain/consumer plan;
+- no replaying messages without a dedupe key, idempotency proof, or positive
+  dedupe window; no draining/replaying from an empty or undersized DLQ; no
+  backlog left with zero consumers or an unstable consumer group; and no
+  duplicate-processing risk after unsafe replay;
 - no weighted traffic to unhealthy regions, drained load balancers, or regions
   lacking available service capacity, and route weights must remain normalized
   to 100%;
@@ -196,8 +204,9 @@ PYTHONPATH=src python3 -m runbook_verify.cli readiness \
 
 The checked-in outputs `reports/current_impact_readiness.md` and
 `reports/current_impact_readiness.json` report `not_ready` for the derived Tempo
-fixture because the model still has two bounded queue counterexamples and three
-unverified destructive/data-deletion prose claims.
+fixture because the model has six bounded queue replay/consumer-group
+counterexamples and four unverified destructive/data-deletion/backfill prose
+claims.
 
 `frv owner-scorecard` groups the same bounded semantic and prose-audit evidence
 by owner metadata (`metadata.owners`, `metadata.owner`, `metadata.team`, or
@@ -213,9 +222,9 @@ PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard \
 
 The checked-in outputs `reports/current_impact_owner_scorecard.md` and
 `reports/current_impact_owner_scorecard.json` assign the derived Tempo fixture to
-`grafana-tempo-public-fixture`, report `not_ready`, and show two bounded queue
-counterexamples plus one blocking data-deletion prose obligation as owner-visible
-remediation debt.
+`grafana-tempo-public-fixture`, report `not_ready`, and show six bounded queue
+counterexamples plus destructive-data/backfill prose obligations as
+owner-visible remediation debt.
 
 `frv coverage` maps each current invariant template to the services, databases,
 queues, alerts, DNS records, credentials (currently no credential state in the
@@ -229,8 +238,9 @@ PYTHONPATH=src python3 -m runbook_verify.cli coverage \
 The checked-in outputs `reports/current_impact_coverage.md` and
 `reports/current_impact_coverage.json` show that the Tempo-derived fixture's
 `tempo-query` service, `tenant-index-fallback-scan` queue, `prod` region, owner,
-and executable DSL section are covered by five invariant/proof-obligation
-templates, while three destructive-data prose obligations remain coverage gaps.
+and executable DSL section are covered by eleven invariant/proof-obligation
+templates, while four destructive-data/backfill prose obligations remain
+coverage gaps.
 
 The checked-in DNS case-study reports (`reports/dnsswitch_dns_audit.md`,
 `reports/dnsswitch_dns_audit.json`, and `reports/dnsswitch_dns_coverage.md`)
@@ -238,7 +248,9 @@ show the same report surfaces on a bounded DNS failover fixture.
 
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, credential handling, customer-notification gaps, rollback ambiguity,
-alert suppression, failover, draining, and unmodeled escalation paths. Severity
+alert suppression, failover, draining, and unmodeled escalation paths. Backfill
+or replay prose is tied to executable backlog, consumer, and deduplication
+obligations. Severity
 levels are `audit-only`, `warning`, `error`, and `responsible-disclosure`, with
 `info` reserved for future advisory checks.
 
@@ -247,9 +259,12 @@ levels are `audit-only`, `warning`, `error`, and `responsible-disclosure`, with
 `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` analyzes
 short, attributed excerpts from Grafana Tempo's public runbook at commit
 `ef18cc176e44dea795543f50cb2341f5ea9e7827` (retrieved 2026-05-29). The prose
-linter flags destructive `forget/remove/delete` and data-deletion operations
-that lack executable blast-radius/capacity or restore-path preconditions, and
-the derived executable model reports a queue fallback/backlog hazard. The
+linter flags destructive `forget/remove/delete`, data-deletion, and replay or
+backfill operations that lack executable blast-radius/capacity, restore-path,
+consumer, or deduplication preconditions. The derived executable model reports
+bounded queue fallback replay hazards: replay without dedupe, duplicate
+processing risk, rebalancing to zero consumers, and an unstable consumer group
+with backlog. The
 combined audit report is checked in as `reports/current_impact_audit.md` and
 `reports/current_impact_audit.json`, with code-scanning/CI equivalents in
 `reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
@@ -345,6 +360,12 @@ public benchmark contract documented by `docs/schema/benchmark.schema.json` and
 abstraction level, expected result, responsible-disclosure status, validity
 threats, and semantic feature coverage.
 
+The built-in benchmark currently contains eight runbooks: safe/unsafe synthetic
+regressions, safe/unsafe queue replay mutants, one real-world-style Kubernetes
+failover fixture, the GitHub Oct. 21 2018 reconstructed failover case, the
+Grafana Tempo current public runbook-derived replay case, and a public
+DNS-failover-pattern reconstruction.
+
 ```json
 {
   "benchmark_schema_version": "1.0",
@@ -379,8 +400,8 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - Concurrency is represented as permissible step reordering, not real-time interleavings.
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
 - The benchmark corpus is small: it includes synthetic examples plus bounded
-  public historical/current fixtures for database failover, queue fallback, and
-  DNS failover patterns, and should be expanded before empirical claims.
+  public historical/current fixtures for database failover, queue replay/fallback,
+  and DNS failover patterns, and should be expanded before empirical claims.
 - The historical GitHub fixture is reconstructed from public facts, not exact
   internal runbook text.
 - The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.

@@ -32,6 +32,41 @@ RULE_EXPLANATIONS: dict[str, dict[str, object]] = {
         "weakest_precondition_hint": "A terminal paused queue is safe only when backlog is bounded or alternate consumers remain active.",
         "remediation_examples": ["Resume the queue after the maintenance step.", "Drain backlog before pausing consumers."],
     },
+    "no_replay_without_dedupe": {
+        "small_step_rule": "ActionGuard.MessageReplayDeduplication",
+        "weakest_precondition_hint": "Before replaying messages, the pre-state or action parameters must prove a dedupe key, idempotent handler, or bounded dedupe window.",
+        "remediation_examples": ["Set `dedupe_key` on `replay_messages`.", "Add a positive `dedupe_window_minutes` queue assumption.", "Use `idempotent: true` only when the replay handler is documented idempotent."],
+    },
+    "no_duplicate_processing_risk": {
+        "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
+        "weakest_precondition_hint": "A replay step may not leave the queue in a duplicate-risk state unless deduplication/idempotency was modeled.",
+        "remediation_examples": ["Replay from the dead-letter queue with a stable dedupe key.", "Drain or quarantine duplicate-risk messages before resuming consumers."],
+    },
+    "dead_letter_replay_has_messages": {
+        "small_step_rule": "ActionGuard.DeadLetterReplayBound",
+        "weakest_precondition_hint": "The requested replay count must be bounded by the modeled dead-letter backlog.",
+        "remediation_examples": ["Lower `count` to the modeled `dead_letter_depth`.", "Refresh the queue inventory before replay."],
+    },
+    "dead_letter_drain_has_messages": {
+        "small_step_rule": "ActionGuard.DeadLetterDrainBound",
+        "weakest_precondition_hint": "The requested drain count must be bounded by the modeled dead-letter backlog.",
+        "remediation_examples": ["Lower `count` to the modeled `dead_letter_depth`.", "Inspect the DLQ before running the drain step."],
+    },
+    "no_rebalance_to_zero_consumers": {
+        "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
+        "weakest_precondition_hint": "A queue with backlog requires a positive post-rebalance consumer count.",
+        "remediation_examples": ["Use `rebalance_consumers` with `consumers` greater than zero.", "Drain the queue before scaling consumers to zero."],
+    },
+    "queue_backlog_requires_consumers": {
+        "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
+        "weakest_precondition_hint": "Every reachable queue state with backlog must retain at least one active consumer.",
+        "remediation_examples": ["Restore consumers before replay.", "Pause replay until consumer capacity is available."],
+    },
+    "no_unstable_consumer_group_with_backlog": {
+        "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
+        "weakest_precondition_hint": "Consumer-group rebalancing must converge before the runbook leaves backlog to be processed.",
+        "remediation_examples": ["Set `stable: true` only after a modeled wait/health check.", "Add a `consumer_group_stable` effect to the stabilization step."],
+    },
     "quorum_before_data_loss_action": {
         "small_step_rule": "ActionGuard.DatabaseFailoverQuorum",
         "weakest_precondition_hint": "A data-loss-risk failover requires database quorum/data-safety confirmation in the pre-state.",
@@ -287,7 +322,18 @@ def _state_projection(state: SystemState) -> dict[str, Any]:
             for name, svc in state.services.items()
         },
         "databases": {name: {"primary_region": db.primary_region, "quorum_confirmed": db.quorum_confirmed, "migration_in_progress": db.migration_in_progress, "migration_compatible": db.migration_compatible} for name, db in state.databases.items()},
-        "queues": {name: {"depth": q.depth, "consumers": q.consumers, "paused": q.paused} for name, q in state.queues.items()},
+        "queues": {
+            name: {
+                "depth": q.depth,
+                "consumers": q.consumers,
+                "paused": q.paused,
+                "dead_letter_depth": q.dead_letter_depth,
+                "dedupe_window_minutes": q.dedupe_window_minutes,
+                "duplicate_risk": q.duplicate_risk,
+                "consumer_group_stable": q.consumer_group_stable,
+            }
+            for name, q in state.queues.items()
+        },
         "alerts": {name: {"active": alert.active, "suppressed_until_minute": alert.suppressed_until_minute} for name, alert in state.alerts.items()},
         "traffic_routes": {name: {"weights": route.weights, "drained_regions": sorted(route.drained_regions)} for name, route in state.traffic_routes.items()},
     }

@@ -28,13 +28,13 @@ class ReadinessTests(unittest.TestCase):
 
         self.assertEqual(report["summary"]["status"], "not_ready")
         self.assertEqual(report["summary"]["runbooks_considered"], 1)
-        self.assertEqual(report["summary"]["semantic_counterexamples"], 2)
+        self.assertEqual(report["summary"]["semantic_counterexamples"], 6)
         self.assertEqual(report["summary"]["stale_preconditions"], 0)
         self.assertEqual(report["summary"]["benchmark_expectation_mismatches"], 0)
         self.assertIn("tempo-query", report["modeled_entities"]["services"])
         self.assertIn("prod", report["modeled_entities"]["regions"])
         properties = {item["property"] for item in report["highest_risk_counterexamples"]}
-        self.assertIn("no_queue_pause_without_drain_plan", properties)
+        self.assertIn("no_replay_without_dedupe", properties)
         rules = {item["rule"] for item in report["unverified_prose_claims"]}
         self.assertIn("data-deletion-needs-restore-precondition", rules)
         self.assertGreater(report["proof_obligations"]["checked"]["safety_postcondition"], 0)

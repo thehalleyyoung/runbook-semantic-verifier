@@ -6,12 +6,13 @@
       "alerts": [],
       "credentials": [],
       "databases": [],
-      "formal_obligation": "Hoare-style local assertion over step pre/postconditions",
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
       "owners": [
         "grafana-tempo-public-fixture"
       ],
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "property": "declared_effect",
+      "property": "dead_letter_drain_has_messages",
       "queues": [
         "tenant-index-fallback-scan"
       ],
@@ -20,9 +21,15 @@
       "services": [],
       "steps": [
         {
-          "action": "resume_queue",
-          "id": "resume-fallback-scans",
-          "line": 99,
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
           "section": "Defensive interpretation"
         }
       ]
@@ -31,6 +38,39 @@
       "alerts": [],
       "credentials": [],
       "databases": [],
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "dead_letter_replay_has_messages",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
       "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
       "owners": [
         "grafana-tempo-public-fixture"
@@ -51,6 +91,39 @@
       "alerts": [],
       "credentials": [],
       "databases": [],
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_duplicate_processing_risk",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
       "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
       "owners": [
         "grafana-tempo-public-fixture"
@@ -65,15 +138,15 @@
       "services": [],
       "steps": [
         {
-          "action": "pause_queue",
-          "id": "delete-stale-tenant-indexes",
-          "line": 93,
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
           "section": "Defensive interpretation"
         },
         {
-          "action": "resume_queue",
-          "id": "resume-fallback-scans",
-          "line": 99,
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
           "section": "Defensive interpretation"
         }
       ]
@@ -82,6 +155,7 @@
       "alerts": [],
       "credentials": [],
       "databases": [],
+      "dns_records": [],
       "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
       "owners": [
         "grafana-tempo-public-fixture"
@@ -96,15 +170,15 @@
       "services": [],
       "steps": [
         {
-          "action": "pause_queue",
-          "id": "delete-stale-tenant-indexes",
-          "line": 93,
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
           "section": "Defensive interpretation"
         },
         {
-          "action": "resume_queue",
-          "id": "resume-fallback-scans",
-          "line": 99,
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
           "section": "Defensive interpretation"
         }
       ]
@@ -113,6 +187,135 @@
       "alerts": [],
       "credentials": [],
       "databases": [],
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_rebalance_to_zero_consumers",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_replay_without_dedupe",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_unstable_consumer_group_with_backlog",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "queue_backlog_requires_consumers",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "replay_messages",
+          "id": "delete-stale-tenant-indexes-trigger-fallback",
+          "line": 104,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "rebalance_consumers",
+          "id": "rebalance-fallback-consumers",
+          "line": 113,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
       "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
       "owners": [
         "grafana-tempo-public-fixture"
@@ -135,6 +338,7 @@
       "alerts": [],
       "credentials": [],
       "databases": [],
+      "dns_records": [],
       "name": "Grafana Tempo current public runbook derived safety model",
       "owners": [
         "grafana-tempo-public-fixture"
@@ -156,23 +360,25 @@
     "covered_alerts": 0,
     "covered_credentials": 0,
     "covered_databases": 0,
+    "covered_dns_records": 0,
     "covered_queues": 1,
     "covered_regions": 1,
     "covered_services": 1,
     "credentials": 0,
     "databases": 0,
+    "dns_records": 0,
     "owners": [
       "grafana-tempo-public-fixture"
     ],
     "parse_errors": 0,
     "path": "case_studies/current/grafana_tempo",
-    "properties": 5,
+    "properties": 11,
     "queues": 1,
     "regions": 1,
     "runbooks": 1,
     "services": 1,
-    "uncovered_entities": 3,
-    "unverified_prose_obligations": 3
+    "uncovered_entities": 4,
+    "unverified_prose_obligations": 4
   },
   "uncovered_entities": [
     {
@@ -194,6 +400,13 @@
       "line": 20,
       "message": "Markdown section has unverified obligation blast_radius_limited_or_explicit_limitation",
       "name": "destructive-delete-needs-targeting",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+    },
+    {
+      "kind": "prose_obligation",
+      "line": 26,
+      "message": "Markdown section has unverified obligation queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
+      "name": "backfill-needs-queue-capacity",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
     }
   ],
@@ -226,6 +439,16 @@
       "rule": "destructive-delete-needs-targeting",
       "section": "Public prose excerpts analyzed",
       "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning"
+    },
+    {
+      "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
+      "line": 26,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
+      "rule": "backfill-needs-queue-capacity",
+      "section": "Defensive interpretation",
+      "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
       "severity": "warning"
     }
   ]

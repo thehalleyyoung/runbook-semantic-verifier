@@ -1,37 +1,42 @@
 {
-  "action": "pause_queue",
+  "action": "replay_messages",
   "action_error": null,
   "causal_dependencies": {
     "declared_after": [],
     "prior_trace_steps": []
   },
   "id": "finding-001",
-  "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
-  "remediation": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+  "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+  "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
   "remediation_examples": [
-    "Resume the queue after the maintenance step.",
-    "Drain backlog before pausing consumers."
+    "Replay from the dead-letter queue with a stable dedupe key.",
+    "Drain or quarantine duplicate-risk messages before resuming consumers."
   ],
-  "rule": "no_paused_queue_with_backlog",
-  "semantic_obligation": "no_paused_queue_with_backlog",
+  "rule": "no_duplicate_processing_risk",
+  "semantic_obligation": "no_duplicate_processing_risk",
   "severity": "error",
-  "small_step_rule": "PostInvariant.QueueBacklogProgress",
+  "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
   "source": {
-    "excerpt": "\"id\": \"delete-stale-tenant-indexes\",",
-    "line": 93,
+    "excerpt": "\"id\": \"delete-stale-tenant-indexes-trigger-fallback\",",
+    "line": 104,
     "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
   },
   "state_delta": [
     {
+      "after": "36000",
+      "before": "18000",
+      "field": "queues.tenant-index-fallback-scan.depth"
+    },
+    {
       "after": "True",
       "before": "False",
-      "field": "queues.tenant-index-fallback-scan.paused"
+      "field": "queues.tenant-index-fallback-scan.duplicate_risk"
     }
   ],
-  "step": "delete-stale-tenant-indexes",
+  "step": "delete-stale-tenant-indexes-trigger-fallback",
   "trace": [
-    "delete-stale-tenant-indexes"
+    "delete-stale-tenant-indexes-trigger-fallback"
   ],
   "type": "semantic",
-  "weakest_precondition_hint": "A terminal paused queue is safe only when backlog is bounded or alternate consumers remain active."
+  "weakest_precondition_hint": "A replay step may not leave the queue in a duplicate-risk state unless deduplication/idempotency was modeled."
 }

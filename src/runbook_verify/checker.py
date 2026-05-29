@@ -155,6 +155,24 @@ class Checker:
             q = state.queues[str(step.params["queue"])]
             if q.depth > 0 and q.consumers <= 1:
                 violations.append(_violation("no_queue_pause_without_drain_plan", f"queue {q.name} has depth={q.depth} and consumers={q.consumers} before pause", trace + (step.id,), step.id))
+        if step.action == "replay_messages":
+            q = state.queues[str(step.params["queue"])]
+            count = int(step.params["count"])
+            if bool(step.params.get("from_dead_letter", False)) and count > q.dead_letter_depth:
+                violations.append(_violation("dead_letter_replay_has_messages", f"queue {q.name} has dead-letter depth={q.dead_letter_depth}, smaller than replay count={count}", trace + (step.id,), step.id))
+            deduped = bool(step.params.get("dedupe_key")) or bool(step.params.get("idempotent", False)) or q.dedupe_window_minutes > 0 or count == 0
+            if not deduped:
+                violations.append(_violation("no_replay_without_dedupe", f"queue {q.name} replay count={count} lacks dedupe_key, idempotency proof, or dedupe window", trace + (step.id,), step.id))
+        if step.action == "drain_dead_letter_queue":
+            q = state.queues[str(step.params["queue"])]
+            count = int(step.params["count"])
+            if count > q.dead_letter_depth:
+                violations.append(_violation("dead_letter_drain_has_messages", f"queue {q.name} has dead-letter depth={q.dead_letter_depth}, smaller than drain count={count}", trace + (step.id,), step.id))
+        if step.action == "rebalance_consumers":
+            q = state.queues[str(step.params["queue"])]
+            target = int(step.params["consumers"])
+            if q.depth > 0 and target <= 0:
+                violations.append(_violation("no_rebalance_to_zero_consumers", f"queue {q.name} has depth={q.depth} before rebalance to {target} consumers", trace + (step.id,), step.id))
         if step.action == "drain_load_balancer":
             route = state.traffic_routes[str(step.params["route"])]
             region = str(step.params["region"])
@@ -194,6 +212,12 @@ class Checker:
         for q in state.queues.values():
             if q.paused and q.depth > 0 and q.consumers <= 1:
                 violations.append(_violation("no_paused_queue_with_backlog", f"queue {q.name} is paused with depth={q.depth} and consumers={q.consumers}", trace, step.id))
+            if q.duplicate_risk:
+                violations.append(_violation("no_duplicate_processing_risk", f"queue {q.name} has replayed messages without modeled deduplication", trace, step.id))
+            if q.depth > 0 and q.consumers <= 0:
+                violations.append(_violation("queue_backlog_requires_consumers", f"queue {q.name} has depth={q.depth} with no active consumers", trace, step.id))
+            if q.depth > 0 and not q.consumer_group_stable:
+                violations.append(_violation("no_unstable_consumer_group_with_backlog", f"queue {q.name} has depth={q.depth} while consumer group rebalance is not stable", trace, step.id))
         for route in state.traffic_routes.values():
             total = sum(route.weights.values())
             if total != 100:
@@ -245,7 +269,7 @@ def _record_obligations(result: CheckResult, group: str, checked: int, failures:
 
 
 def _safety_obligation_count(state: SystemState) -> int:
-    return len(state.services) * 2 + len(state.queues) + len(state.traffic_routes) + len(state.dns_records) * 3
+    return len(state.services) * 2 + len(state.queues) * 5 + len(state.traffic_routes) + len(state.dns_records) * 3
 
 
 def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
@@ -270,6 +294,13 @@ REMEDIATIONS = {
     "effect": "Repair action parameters or expected effects so the promised postcondition holds.",
     "no_queue_pause_without_drain_plan": "Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.",
     "no_paused_queue_with_backlog": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+    "no_replay_without_dedupe": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
+    "dead_letter_replay_has_messages": "Limit replay count to the current dead-letter backlog or add a prior dead-letter drain/triage step.",
+    "dead_letter_drain_has_messages": "Limit dead-letter drain count to the current dead-letter backlog.",
+    "no_duplicate_processing_risk": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+    "queue_backlog_requires_consumers": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
+    "no_rebalance_to_zero_consumers": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
+    "no_unstable_consumer_group_with_backlog": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
     "traffic_weights_sum_to_100": "Keep route weights normalized to 100%; use failover_traffic or paired shift_traffic steps.",
     "no_traffic_to_unhealthy_region": "Require region_healthy and restore regional health before shifting or failing over traffic.",
     "no_traffic_to_drained_load_balancer": "Restore the regional load balancer or shift traffic away before relying on that route.",

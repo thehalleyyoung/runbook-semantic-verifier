@@ -233,6 +233,20 @@ class ParserValidationTests(unittest.TestCase):
                 "steps": [],
             })
 
+    def test_parses_queue_replay_state_and_references(self):
+        runbook = parse_runbook({
+            "system": {"queues": {"jobs": {"dead_letter_depth": 2, "dedupe_window_minutes": 30, "duplicate_risk": False, "consumer_group_stable": True}}},
+            "steps": [{"id": "replay", "action": "replay_messages", "params": {"queue": "jobs", "count": 1, "from_dead_letter": True, "dedupe_key": "message_id"}}],
+        })
+        self.assertEqual(runbook.state.queues["jobs"].dead_letter_depth, 2)
+        self.assertEqual(runbook.steps[0].params["dedupe_key"], "message_id")
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown queue"):
+            parse_runbook({
+                "system": {"queues": {}},
+                "steps": [{"id": "replay", "action": "replay_messages", "params": {"queue": "missing", "count": 1}}],
+            })
+
 
 if __name__ == "__main__":
     unittest.main()

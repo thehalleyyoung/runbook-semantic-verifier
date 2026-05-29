@@ -46,6 +46,22 @@
         {
           "additionalProperties": false,
           "properties": {
+            "kind": {
+              "const": "consumer_group_stable"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "database": {
               "type": "string"
             },
@@ -199,6 +215,48 @@
               "type": "integer"
             },
             "kind": {
+              "const": "queue_dead_letter_depth_at_most"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "depth",
+            "kind",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "queue_dedupe_window_at_least"
+            },
+            "minutes": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "minutes",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "depth": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
               "const": "queue_depth_at_most"
             },
             "queue": {
@@ -228,6 +286,22 @@
           },
           "required": [
             "count",
+            "kind",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "queue_replay_deduplicated"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
             "kind",
             "queue"
           ],
@@ -431,6 +505,39 @@
                 },
                 "required": [
                   "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_dead_letter_queue"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "count",
+                  "queue"
                 ],
                 "type": "object"
               }
@@ -747,6 +854,84 @@
                   }
                 },
                 "required": [
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rebalance_consumers"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "consumers": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "queue": {
+                    "type": "string"
+                  },
+                  "stable": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "consumers",
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "replay_messages"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "dedupe_key": {
+                    "type": "string"
+                  },
+                  "from_dead_letter": {
+                    "type": "boolean"
+                  },
+                  "idempotent": {
+                    "type": "boolean"
+                  },
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "count",
                   "queue"
                 ],
                 "type": "object"
@@ -1144,6 +1329,7 @@
         "action": {
           "enum": [
             "confirm_quorum",
+            "drain_dead_letter_queue",
             "drain_load_balancer",
             "drain_region",
             "drain_replica",
@@ -1154,6 +1340,8 @@
             "mark_dns_health_check",
             "mark_region_health",
             "pause_queue",
+            "rebalance_consumers",
+            "replay_messages",
             "restart_service",
             "restore_load_balancer",
             "restore_replica",
@@ -1337,13 +1525,27 @@
           "additionalProperties": {
             "additionalProperties": false,
             "properties": {
+              "consumer_group_stable": {
+                "type": "boolean"
+              },
               "consumers": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "dead_letter_depth": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "dedupe_window_minutes": {
                 "minimum": 0,
                 "type": "integer"
               },
               "depth": {
                 "minimum": 0,
                 "type": "integer"
+              },
+              "duplicate_risk": {
+                "type": "boolean"
               },
               "paused": {
                 "type": "boolean"

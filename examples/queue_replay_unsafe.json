@@ -1,0 +1,51 @@
+{
+  "name": "Unsafe duplicate-prone queue replay",
+  "description": "Repository-authored mutant fixture for replaying messages without dedupe and rebalancing consumers away from a backlog.",
+  "metadata": {
+    "labels": {
+      "expected_safe": false,
+      "expected_violation_properties": [
+        "no_duplicate_processing_risk",
+        "no_rebalance_to_zero_consumers",
+        "no_replay_without_dedupe",
+        "no_unstable_consumer_group_with_backlog",
+        "queue_backlog_requires_consumers"
+      ],
+      "expected_prose_rules": []
+    }
+  },
+  "allow_reordering": false,
+  "max_depth": 2,
+  "system": {
+    "queues": {
+      "payments-events": {
+        "depth": 500,
+        "consumers": 1,
+        "paused": false,
+        "dead_letter_depth": 40,
+        "dedupe_window_minutes": 0,
+        "consumer_group_stable": true
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "replay-without-dedupe",
+      "action": "replay_messages",
+      "params": {
+        "queue": "payments-events",
+        "count": 40,
+        "from_dead_letter": true
+      }
+    },
+    {
+      "id": "rebalance-away-consumers",
+      "action": "rebalance_consumers",
+      "after": ["replay-without-dedupe"],
+      "params": {
+        "queue": "payments-events",
+        "consumers": 0
+      }
+    }
+  ]
+}

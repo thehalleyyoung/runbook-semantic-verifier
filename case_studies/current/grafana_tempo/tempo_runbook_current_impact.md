@@ -23,7 +23,8 @@ validated by maintainers before operational use.
 
 The public runbook appropriately warns operators to isolate tenants before broad
 changes. The executable model below asks whether a derived procedure has enough
-machine-checkable guardrails for capacity and fallback/backlog safety. The result
+machine-checkable guardrails for deduplicated fallback replay, consumer-group
+stability, and backlog safety. The result
 is a reproducible finding about missing executable preconditions in this artifact,
 not an undisclosed vulnerability claim about Grafana Tempo.
 
@@ -51,14 +52,17 @@ not an undisclosed vulnerability claim about Grafana Tempo.
       {
         "date": "2026-05-29",
         "status": "open",
-        "summary": "Derived fixture recorded queue fallback backlog and destructive-deletion precondition findings from public documentation excerpts."
+        "summary": "Derived fixture recorded queue fallback replay, consumer-group stability, and destructive-deletion precondition findings from public documentation excerpts."
       }
     ],
     "labels": {
       "expected_safe": false,
       "expected_violation_properties": [
-        "no_queue_pause_without_drain_plan",
-        "no_paused_queue_with_backlog"
+        "no_replay_without_dedupe",
+        "no_duplicate_processing_risk",
+        "no_rebalance_to_zero_consumers",
+        "queue_backlog_requires_consumers",
+        "no_unstable_consumer_group_with_backlog"
       ],
       "expected_prose_rules": [
         "data-deletion-needs-restore-precondition",
@@ -82,7 +86,14 @@ not an undisclosed vulnerability claim about Grafana Tempo.
     },
     "databases": {},
     "queues": {
-      "tenant-index-fallback-scan": { "depth": 18000, "consumers": 1, "paused": false }
+      "tenant-index-fallback-scan": {
+        "depth": 18000,
+        "consumers": 1,
+        "paused": false,
+        "dead_letter_depth": 2500,
+        "dedupe_window_minutes": 0,
+        "consumer_group_stable": true
+      }
     },
     "alerts": {},
     "feature_flags": {},
@@ -90,17 +101,22 @@ not an undisclosed vulnerability claim about Grafana Tempo.
   },
   "steps": [
     {
-      "id": "delete-stale-tenant-indexes",
-      "action": "pause_queue",
-      "params": { "queue": "tenant-index-fallback-scan" },
+      "id": "delete-stale-tenant-indexes-trigger-fallback",
+      "action": "replay_messages",
+      "params": {
+        "queue": "tenant-index-fallback-scan",
+        "count": 18000
+      },
       "requires": []
     },
     {
-      "id": "resume-fallback-scans",
-      "action": "resume_queue",
-      "after": ["delete-stale-tenant-indexes"],
-      "params": { "queue": "tenant-index-fallback-scan" },
-      "effects": [{ "kind": "queue_resumed", "queue": "tenant-index-fallback-scan" }]
+      "id": "rebalance-fallback-consumers",
+      "action": "rebalance_consumers",
+      "after": ["delete-stale-tenant-indexes-trigger-fallback"],
+      "params": {
+        "queue": "tenant-index-fallback-scan",
+        "consumers": 0
+      }
     }
   ]
 }

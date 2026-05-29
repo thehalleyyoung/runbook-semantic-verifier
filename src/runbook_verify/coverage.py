@@ -180,6 +180,13 @@ def _properties_for(runbook: Runbook) -> list[str]:
         "bounded_alert_suppression",
         "no_queue_pause_without_drain_plan",
         "no_paused_queue_with_backlog",
+        "no_replay_without_dedupe",
+        "dead_letter_replay_has_messages",
+        "dead_letter_drain_has_messages",
+        "no_duplicate_processing_risk",
+        "queue_backlog_requires_consumers",
+        "no_rebalance_to_zero_consumers",
+        "no_unstable_consumer_group_with_backlog",
         "traffic_weights_sum_to_100",
         "no_traffic_to_unhealthy_region",
         "no_traffic_to_drained_load_balancer",
@@ -199,7 +206,7 @@ def _properties_for(runbook: Runbook) -> list[str]:
     if not runbook.state.dns_records and not any("record" in step.params or step.action in {"update_dns_record", "mark_dns_health_check", "finalize_dns_record"} for step in runbook.steps):
         properties -= {"dns_target_region_healthy", "dns_health_check_converged_before_cutover", "dns_requires_regional_capacity", "dns_ttl_elapsed_before_finalize", "dns_ttl_elapsed_before_recursion", "dns_no_split_brain_during_ttl"}
     if not runbook.state.queues and not any("queue" in step.params for step in runbook.steps):
-        properties -= {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog"}
+        properties -= {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog", "no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}
     if not runbook.state.alerts and not any("alert" in step.params for step in runbook.steps):
         properties -= {"bounded_alert_suppression"}
     if not runbook.state.databases and not any("database" in step.params for step in runbook.steps):
@@ -239,7 +246,7 @@ def _steps_for_property(runbook: Runbook, prop: str) -> list[Step]:
         return [step for step in runbook.steps if step.action in {"failover_database", "confirm_quorum", "mark_region_health"} or "database" in step.params]
     if prop == "bounded_alert_suppression":
         return [step for step in runbook.steps if step.action == "suppress_alert" or "alert" in step.params]
-    if prop in {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog"}:
+    if prop in {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog", "no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}:
         return [step for step in runbook.steps if "queue" in step.params]
     if prop.startswith("traffic_") or prop in {"no_traffic_to_unhealthy_region", "no_traffic_to_drained_load_balancer", "no_draining_load_balancer_with_traffic"}:
         return [step for step in runbook.steps if "route" in step.params or step.action in {"shift_traffic", "failover_traffic", "drain_load_balancer", "restore_load_balancer"}]
@@ -284,7 +291,7 @@ def _databases_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> s
 
 def _queues_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set[str]:
     names: set[str] = set()
-    if prop in {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog"}:
+    if prop in {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog", "no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}:
         names.update(runbook.state.queues)
     for step in steps:
         if "queue" in step.params:
@@ -345,6 +352,8 @@ def _formal_obligation(prop: str) -> str:
         return "safety invariant checked before the action transition"
     if prop.startswith("dns_"):
         return "DNS temporal safety invariant over health-check convergence, TTL propagation, and split-brain windows"
+    if prop in {"no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}:
+        return "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress"
     return "temporal safety invariant checked over bounded small-step traces"
 
 

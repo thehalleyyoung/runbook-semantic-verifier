@@ -6,8 +6,9 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes incident-readiness, owner-scorecard, and
-property-coverage reports. The DSL also models DNS cutovers with TTL and
-health-check convergence obligations. The historical fixture reconstructs the GitHub
+property-coverage reports. The DSL also models queue replay/DLQ/consumer-group
+semantics and DNS cutovers with TTL and health-check convergence obligations.
+The historical fixture reconstructs the GitHub
 October 21, 2018 MySQL failover incident from public postmortem facts. The
 current case studies analyze short attributed excerpts from Grafana Tempo's
 public runbook and a bounded DNS failover pattern derived from public
@@ -50,6 +51,9 @@ differently named system exists.
   modeled services, databases, queues, alerts, DNS records, credentials (none in the current
   DSL), owners, regions, source steps, and Markdown sections; unverified prose
   obligations are reported as coverage gaps, not as verified properties.
+- Queue replay, DLQ draining, deduplication guards, and consumer-group
+  rebalancing are checked as bounded small-step transitions with concrete
+  duplicate-processing and backlog counterexamples.
 
 ## What is not proven
 
@@ -141,21 +145,23 @@ PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018
 Expected result: tests pass; benchmark `aggregate.pass` is `true`; the GitHub
 case-study runbook reports `precondition` and
 `quorum_before_data_loss_action` violations; the current-impact benchmark reports
-`destructive-delete-needs-targeting`, `no_queue_pause_without_drain_plan`, and
-`no_paused_queue_with_backlog`; the GitHub semantic diff reports zero introduced
-counterexamples and resolves the modeled `precondition` and
-`quorum_before_data_loss_action` traces. The current-impact readiness report is
-`not_ready` with two bounded queue counterexamples, three unverified prose
-claims, no stale preconditions as of 2026-05-29, and aggregated
-proof-obligation counters.
+`destructive-delete-needs-targeting`, `data-deletion-needs-restore-precondition`,
+`backfill-needs-queue-capacity`, `no_replay_without_dedupe`,
+`no_duplicate_processing_risk`, `no_rebalance_to_zero_consumers`,
+`queue_backlog_requires_consumers`, and `no_unstable_consumer_group_with_backlog`;
+the GitHub semantic diff reports zero introduced counterexamples and resolves the
+modeled `precondition` and `quorum_before_data_loss_action` traces. The
+current-impact readiness report is `not_ready` with six bounded queue
+counterexamples, four unverified prose claims, no stale preconditions as of
+2026-05-29, and aggregated proof-obligation counters.
 The current-impact owner scorecard reports one checked-in fixture owner,
-`grafana-tempo-public-fixture`, with zero verified runbooks, two bounded queue
-counterexamples, one blocking prose obligation, no stale assumptions, and no
-waiver debt as of 2026-05-29.
-The current-impact coverage report maps five invariant/proof-obligation
+`grafana-tempo-public-fixture`, with zero verified runbooks, six bounded queue
+counterexamples, destructive-data/backfill prose obligations, no stale
+assumptions, and no waiver debt as of 2026-05-29.
+The current-impact coverage report maps eleven invariant/proof-obligation
 templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
 queue, `prod` region, owner metadata, and executable Markdown section, and
-keeps three destructive-data prose obligations as explicit coverage gaps.
+keeps four destructive-data/backfill prose obligations as explicit coverage gaps.
 The DNS case-study check reports bounded `dns_health_check_converged_before_cutover`,
 `dns_requires_regional_capacity`, `dns_no_split_brain_during_ttl`, and
 `dns_ttl_elapsed_before_finalize` counterexamples.

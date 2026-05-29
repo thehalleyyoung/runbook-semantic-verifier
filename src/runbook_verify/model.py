@@ -48,6 +48,10 @@ class Queue:
     depth: int = 0
     consumers: int = 1
     paused: bool = False
+    dead_letter_depth: int = 0
+    dedupe_window_minutes: int = 0
+    duplicate_risk: bool = False
+    consumer_group_stable: bool = True
 
 
 @dataclass(frozen=True)
@@ -123,7 +127,16 @@ class SystemState:
         flags = tuple(sorted((n, f.enabled) for n, f in self.flags.items()))
         deployments = tuple(sorted((n, d.current, d.previous) for n, d in self.deployments.items()))
         regions = tuple(sorted((n, r.healthy) for n, r in self.regions.items()))
-        queues = tuple(sorted((n, q.depth, q.consumers, q.paused) for n, q in self.queues.items()))
+        queues = tuple(sorted((
+            n,
+            q.depth,
+            q.consumers,
+            q.paused,
+            q.dead_letter_depth,
+            q.dedupe_window_minutes,
+            q.duplicate_risk,
+            q.consumer_group_stable,
+        ) for n, q in self.queues.items()))
         traffic_routes = tuple(sorted((
             n, route.service, tuple(sorted(route.weights.items())), tuple(sorted(route.drained_regions))
         ) for n, route in self.traffic_routes.items()))

@@ -31,7 +31,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [ ] Extend Markdown source mapping to multiline DSL blocks, nested preconditions, and effect diagnostics so formal counterexamples point to the prose operators must edit.
 - [ ] Add first-class semantics for cache flush, cache warmup, stale-read risk, and cold-start capacity, with safe and unsafe Markdown examples.
 - [ ] Add first-class semantics for object-storage replication, bucket write freezes, restore-from-snapshot actions, and RPO/RTO obligations.
-- [ ] Add first-class semantics for message replay, dead-letter queues, deduplication keys, and consumer-group rebalancing, with duplicate-processing benchmarks.
+- [x] Add first-class semantics for message replay, dead-letter queues, deduplication keys, and consumer-group rebalancing, with duplicate-processing benchmarks.
 - [x] Add first-class semantics for DNS changes, TTL wait windows, health-check convergence, and split-brain routing hazards, producing operator-readable traces.
 
 ## Phase 3 — Types, effects, contracts, and semantic refinement

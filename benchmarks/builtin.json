@@ -34,6 +34,36 @@
       "semantic_features": ["service_capacity", "database_quorum", "alert_suppression", "feature_flags", "deployment_rollback"]
     },
     {
+      "path": "../examples/queue_replay_safe.json",
+      "provenance": { "kind": "synthetic", "notes": "Repository-authored safe queue replay regression fixture." },
+      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "abstraction_level": "toy",
+      "expected_result": { "safe": true, "violation_properties": [], "prose_rules": [] },
+      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic safe queue replay fixture." },
+      "validity_threats": ["Small synthetic state space; not a production incident."],
+      "semantic_features": ["message_replay", "dead_letter_queue", "dedupe_key", "consumer_group_rebalance"]
+    },
+    {
+      "path": "../examples/queue_replay_unsafe.json",
+      "provenance": { "kind": "synthetic", "notes": "Repository-authored unsafe queue replay mutant fixture." },
+      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "no_duplicate_processing_risk",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_unstable_consumer_group_with_backlog",
+          "queue_backlog_requires_consumers"
+        ],
+        "prose_rules": []
+      },
+      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic unsafe replay fixture." },
+      "validity_threats": ["Designed mutant fixture; expected hazards are intentionally seeded."],
+      "semantic_features": ["message_replay", "dead_letter_queue", "dedupe_key", "consumer_group_rebalance"]
+    },
+    {
       "path": "../examples/real_world/kubernetes_region_failover.md",
       "provenance": { "kind": "real-world-style", "notes": "Repository-authored Markdown fixture modeled on common Kubernetes regional failover runbook patterns." },
       "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
@@ -75,12 +105,12 @@
       "abstraction_level": "derived-public-runbook",
       "expected_result": {
         "safe": false,
-        "violation_properties": ["no_paused_queue_with_backlog", "no_queue_pause_without_drain_plan"],
+        "violation_properties": ["no_duplicate_processing_risk", "no_rebalance_to_zero_consumers", "no_replay_without_dedupe", "no_unstable_consumer_group_with_backlog", "queue_backlog_requires_consumers"],
         "prose_rules": ["data-deletion-needs-restore-precondition", "destructive-delete-needs-targeting"]
       },
       "responsible_disclosure": { "status": "public-information", "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim." },
-      "validity_threats": ["Public runbook excerpts are incomplete", "Executable model is derived, not maintainer-authored", "Result is advisory and bounded to modeled queue fallback behavior."],
-      "semantic_features": ["public_current_case", "markdown_prose_lint", "queue_pause", "benchmark_expected_prose_rules"]
+      "validity_threats": ["Public runbook excerpts are incomplete", "Executable model is derived, not maintainer-authored", "Result is advisory and bounded to modeled queue fallback replay and consumer-group behavior."],
+      "semantic_features": ["public_current_case", "markdown_prose_lint", "message_replay", "dead_letter_queue", "dedupe_key", "consumer_group_rebalance", "benchmark_expected_prose_rules"]
     },
     {
       "path": "../case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",

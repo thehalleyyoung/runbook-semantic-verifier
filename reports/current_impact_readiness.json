@@ -9,8 +9,11 @@
         ],
         "expected_safe": false,
         "expected_violation_properties": [
-          "no_paused_queue_with_backlog",
-          "no_queue_pause_without_drain_plan"
+          "no_duplicate_processing_risk",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_unstable_consumer_group_with_backlog",
+          "queue_backlog_requires_consumers"
         ]
       },
       "pass": true,
@@ -28,29 +31,85 @@
   },
   "highest_risk_counterexamples": [
     {
-      "message": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause",
+      "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "property": "no_queue_pause_without_drain_plan",
-      "remediation": "Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.",
+      "property": "no_replay_without_dedupe",
+      "remediation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
-      "semantic_obligation": "no_queue_pause_without_drain_plan",
+      "semantic_obligation": "no_replay_without_dedupe",
       "severity": "error",
-      "step": "delete-stale-tenant-indexes",
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
       "trace": [
-        "delete-stale-tenant-indexes"
+        "delete-stale-tenant-indexes-trigger-fallback"
       ]
     },
     {
-      "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
+      "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "property": "no_paused_queue_with_backlog",
-      "remediation": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+      "property": "no_duplicate_processing_risk",
+      "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
-      "semantic_obligation": "no_paused_queue_with_backlog",
+      "semantic_obligation": "no_duplicate_processing_risk",
       "severity": "error",
-      "step": "delete-stale-tenant-indexes",
+      "step": "delete-stale-tenant-indexes-trigger-fallback",
       "trace": [
-        "delete-stale-tenant-indexes"
+        "delete-stale-tenant-indexes-trigger-fallback"
+      ]
+    },
+    {
+      "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_rebalance_to_zero_consumers",
+      "remediation": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "no_rebalance_to_zero_consumers",
+      "severity": "error",
+      "step": "rebalance-fallback-consumers",
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ]
+    },
+    {
+      "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_duplicate_processing_risk",
+      "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "no_duplicate_processing_risk",
+      "severity": "error",
+      "step": "rebalance-fallback-consumers",
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ]
+    },
+    {
+      "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "queue_backlog_requires_consumers",
+      "remediation": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "queue_backlog_requires_consumers",
+      "severity": "error",
+      "step": "rebalance-fallback-consumers",
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
+      ]
+    },
+    {
+      "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_unstable_consumer_group_with_backlog",
+      "remediation": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "no_unstable_consumer_group_with_backlog",
+      "severity": "error",
+      "step": "rebalance-fallback-consumers",
+      "trace": [
+        "delete-stale-tenant-indexes-trigger-fallback",
+        "rebalance-fallback-consumers"
       ]
     }
   ],
@@ -68,13 +127,13 @@
   "proof_obligations": {
     "checked": {
       "action_defined": 2,
-      "precondition": 1,
-      "promised_effect": 1,
-      "safety_postcondition": 6
+      "precondition": 2,
+      "promised_effect": 0,
+      "safety_postcondition": 14
     },
     "failures": {
-      "precondition": 1,
-      "safety_postcondition": 1
+      "precondition": 2,
+      "safety_postcondition": 4
     }
   },
   "runbooks": [
@@ -86,8 +145,11 @@
         ],
         "expected_safe": false,
         "expected_violation_properties": [
-          "no_paused_queue_with_backlog",
-          "no_queue_pause_without_drain_plan"
+          "no_duplicate_processing_risk",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_unstable_consumer_group_with_backlog",
+          "queue_backlog_requires_consumers"
         ]
       },
       "max_depth_reached": false,
@@ -111,14 +173,14 @@
     "coverage_findings": 0,
     "missing_rollback_steps": 0,
     "parse_errors": 0,
-    "readiness_score": 40,
+    "readiness_score": 0,
     "runbooks_considered": 1,
     "safe_runbooks": 0,
-    "semantic_counterexamples": 2,
+    "semantic_counterexamples": 6,
     "stale_preconditions": 0,
     "status": "not_ready",
     "unsafe_runbooks": 1,
-    "unverified_prose_claims": 3
+    "unverified_prose_claims": 4
   },
   "unverified_prose_claims": [
     {
@@ -149,6 +211,16 @@
       "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
       "rule": "destructive-delete-needs-targeting",
       "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning"
+    },
+    {
+      "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
+      "line": 26,
+      "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
+      "rule": "backfill-needs-queue-capacity",
+      "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
       "severity": "warning"
     }
   ]

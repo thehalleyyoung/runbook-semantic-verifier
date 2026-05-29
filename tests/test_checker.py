@@ -144,6 +144,56 @@ class CheckerExplanationTests(unittest.TestCase):
         self.assertIn("dns_ttl_elapsed_before_finalize", props)
         self.assertTrue(any("until minute 5" in v.message for v in result.violations))
 
+    def test_safe_message_replay_uses_dead_letter_bound_dedupe_and_stable_consumers(self):
+        runbook = parse_runbook({
+            "allow_reordering": False,
+            "system": {
+                "queues": {
+                    "jobs": {
+                        "depth": 0,
+                        "consumers": 2,
+                        "dead_letter_depth": 25,
+                        "dedupe_window_minutes": 60,
+                    }
+                }
+            },
+            "steps": [
+                {"id": "replay-dlq", "action": "replay_messages", "params": {"queue": "jobs", "count": 10, "from_dead_letter": True, "dedupe_key": "event_id"}},
+                {"id": "rebalance", "action": "rebalance_consumers", "after": ["replay-dlq"], "params": {"queue": "jobs", "consumers": 3, "stable": True},
+                 "effects": [{"kind": "consumer_group_stable", "queue": "jobs"}, {"kind": "queue_replay_deduplicated", "queue": "jobs"}]},
+            ],
+        })
+        result = Checker(runbook).check()
+        self.assertTrue(result.safe, result.violations)
+
+    def test_unsafe_message_replay_reports_dedupe_dlq_and_consumer_group_hazards(self):
+        runbook = parse_runbook({
+            "allow_reordering": True,
+            "max_depth": 2,
+            "system": {
+                "queues": {
+                    "jobs": {
+                        "depth": 3,
+                        "consumers": 1,
+                        "dead_letter_depth": 5,
+                    }
+                }
+            },
+            "steps": [
+                {"id": "oversized-dlq-replay", "action": "replay_messages", "params": {"queue": "jobs", "count": 7, "from_dead_letter": True}},
+                {"id": "unsafe-replay", "action": "replay_messages", "params": {"queue": "jobs", "count": 4}},
+                {"id": "rebalance-zero", "action": "rebalance_consumers", "after": ["unsafe-replay"], "params": {"queue": "jobs", "consumers": 0}},
+            ],
+        })
+        result = Checker(runbook).check()
+        props = {v.property for v in result.violations}
+        self.assertIn("dead_letter_replay_has_messages", props)
+        self.assertIn("no_replay_without_dedupe", props)
+        self.assertIn("no_duplicate_processing_risk", props)
+        self.assertIn("no_rebalance_to_zero_consumers", props)
+        self.assertIn("queue_backlog_requires_consumers", props)
+        self.assertIn("no_unstable_consumer_group_with_backlog", props)
+
 
 if __name__ == "__main__":
     unittest.main()

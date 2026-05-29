@@ -58,7 +58,7 @@ class MarkdownCaseStudyTests(unittest.TestCase):
         data = json.loads(proc.stdout)
         self.assertGreaterEqual(data["summary"]["findings"], 1)
         self.assertIn("destructive-delete-needs-targeting", data["summary"]["findings_by_rule"])
-        self.assertIn("no_queue_pause_without_drain_plan", data["summary"]["findings_by_rule"])
+        self.assertIn("no_replay_without_dedupe", data["summary"]["findings_by_rule"])
         self.assertGreaterEqual(data["findings"][0]["rank"], data["findings"][-1]["rank"])
         self.assertIn("semantic_obligation", data["findings"][0])
         self.assertEqual(data["findings"][0]["id"], "finding-001")
@@ -144,7 +144,7 @@ class MarkdownCaseStudyTests(unittest.TestCase):
         self.assertEqual(run["tool"]["driver"]["name"], "formal-runbook-verification")
         rule_ids = {rule["id"] for rule in run["tool"]["driver"]["rules"]}
         result_rule_ids = {result["ruleId"] for result in run["results"]}
-        self.assertIn("no_queue_pause_without_drain_plan", result_rule_ids)
+        self.assertIn("no_replay_without_dedupe", result_rule_ids)
         self.assertIn("destructive-delete-needs-targeting", rule_ids)
         self.assertTrue(all(result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for result in run["results"]))
 

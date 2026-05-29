@@ -205,7 +205,19 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             migration_compatible=bool(cfg.get("migration_compatible", True)),
         )
 
-    queues = {name: Queue(name=name, depth=_non_negative_int(_require_mapping(cfg, f"queue {name}").get("depth", 0), f"queue {name}.depth"), consumers=_non_negative_int(_require_mapping(cfg, f"queue {name}").get("consumers", 1), f"queue {name}.consumers"), paused=bool(_require_mapping(cfg, f"queue {name}").get("paused", False))) for name, cfg in _require_mapping(raw.get("queues", {}), "system.queues").items()}
+    queues = {}
+    for name, cfg_any in _require_mapping(raw.get("queues", {}), "system.queues").items():
+        cfg = _require_mapping(cfg_any, f"queue {name}")
+        queues[str(name)] = Queue(
+            name=str(name),
+            depth=_non_negative_int(cfg.get("depth", 0), f"queue {name}.depth"),
+            consumers=_non_negative_int(cfg.get("consumers", 1), f"queue {name}.consumers"),
+            paused=bool(cfg.get("paused", False)),
+            dead_letter_depth=_non_negative_int(cfg.get("dead_letter_depth", 0), f"queue {name}.dead_letter_depth"),
+            dedupe_window_minutes=_non_negative_int(cfg.get("dedupe_window_minutes", 0), f"queue {name}.dedupe_window_minutes"),
+            duplicate_risk=bool(cfg.get("duplicate_risk", False)),
+            consumer_group_stable=bool(cfg.get("consumer_group_stable", True)),
+        )
     alerts = {name: Alert(name=name, active=bool(_require_mapping(cfg, f"alert {name}").get("active", True)), suppressed_until_minute=_optional_non_negative_int(_require_mapping(cfg, f"alert {name}").get("suppressed_until_minute"), f"alert {name}.suppressed_until_minute")) for name, cfg in _require_mapping(raw.get("alerts", {}), "system.alerts").items()}
     flags = {name: FeatureFlag(name=name, enabled=bool(_require_mapping(cfg, f"flag {name}").get("enabled", False))) for name, cfg in _require_mapping(raw.get("feature_flags", {}), "system.feature_flags").items()}
     deployments = {name: Deployment(service=str(_require_mapping(cfg, f"deployment {name}").get("service", name)), current=str(_require_mapping(cfg, f"deployment {name}").get("current", "current")), previous=_require_mapping(cfg, f"deployment {name}").get("previous")) for name, cfg in _require_mapping(raw.get("deployments", {}), "system.deployments").items()}

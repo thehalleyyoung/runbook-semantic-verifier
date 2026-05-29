@@ -5,6 +5,7 @@ This table is generated from the typed action descriptors used by parser validat
 | Action | Parameters | Semantics |
 | --- | --- | --- |
 | `confirm_quorum` | `database:string` | Marks database quorum/data-safety confirmation complete. |
+| `drain_dead_letter_queue` | `queue:string, count:integer>=0` | Removes messages from a queue's dead-letter backlog after modeled triage. |
 | `drain_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer drained; traffic must already be shifted away. |
 | `drain_region` | `region:string, services?:string[]` | Drains replicas in a region, optionally limited to named services. |
 | `drain_replica` | `service:string, replica:string` | Marks one service replica drained and unavailable. |
@@ -15,6 +16,8 @@ This table is generated from the typed action descriptors used by parser validat
 | `mark_dns_health_check` | `record:string, region:string, converged:boolean` | Records whether DNS health checks have converged for a record's regional endpoint. |
 | `mark_region_health` | `region:string, healthy:boolean` | Sets a region health flag used by failover checks. |
 | `pause_queue` | `queue:string` | Pauses queue consumption/processing. |
+| `rebalance_consumers` | `queue:string, consumers:integer>=0, stable?:boolean` | Changes consumer-group capacity and records whether the group has reached a stable post-rebalance assignment. |
+| `replay_messages` | `queue:string, count:integer>=0, from_dead_letter?:boolean, dedupe_key?:string, idempotent?:boolean` | Replays messages into a queue, optionally from the dead-letter queue, and records duplicate-processing risk unless a dedupe key, idempotency proof, or dedupe window is present. |
 | `restart_service` | `service:string` | Reasserts the modeled service without changing capacity. |
 | `restore_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer active again. |
 | `restore_replica` | `service:string, replica:string` | Marks one drained service replica available again. |
@@ -34,6 +37,7 @@ This table is generated from the typed action descriptors used by parser validat
 | --- | --- | --- |
 | `alert_active` | `alert:string, active:boolean` | Requires or asserts an alert activity value. |
 | `alert_suppressed_for_at_most` | `alert:string, minutes:integer>=0` | Requires or asserts bounded alert suppression duration. |
+| `consumer_group_stable` | `queue:string` | Requires or asserts that consumer-group rebalancing has converged. |
 | `database_primary_region` | `database:string, region:string` | Requires or asserts a database primary region. |
 | `database_quorum_confirmed` | `database:string` | Requires or asserts confirmed database quorum. |
 | `dns_health_check_converged` | `record:string, region:string` | Requires or asserts health-check convergence before DNS cutover. |
@@ -42,8 +46,11 @@ This table is generated from the typed action descriptors used by parser validat
 | `dns_ttl_elapsed` | `record:string` | Requires or asserts that the record's TTL propagation window has elapsed. |
 | `flag_enabled` | `flag:string, enabled:boolean` | Requires or asserts a feature flag value. |
 | `load_balancer_active` | `route:string, region:string` | Requires or asserts that a route's regional load balancer is not drained. |
+| `queue_dead_letter_depth_at_most` | `queue:string, depth:integer>=0` | Requires or asserts bounded dead-letter queue backlog. |
+| `queue_dedupe_window_at_least` | `queue:string, minutes:integer>=0` | Requires or asserts that the queue has a deduplication window long enough for replay. |
 | `queue_depth_at_most` | `queue:string, depth:integer>=0` | Requires or asserts bounded queue depth. |
 | `queue_has_consumers` | `queue:string, count:integer>=0` | Requires or asserts minimum queue consumers. |
+| `queue_replay_deduplicated` | `queue:string` | Requires or asserts that replay has no modeled duplicate-processing risk. |
 | `queue_resumed` | `queue:string` | Requires or asserts an unpaused queue. |
 | `region_healthy` | `region:string` | Requires or asserts a healthy region. |
 | `replica_not_drained` | `service:string, replica:string` | Requires or asserts a replica is not drained. |

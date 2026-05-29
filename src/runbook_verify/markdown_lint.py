@@ -99,10 +99,10 @@ RULES: tuple[PhraseRule, ...] = (
         "warning",
         re.compile(r"\b(backfill|replay|reprocess|bulk\s+load)\b", re.I),
         None,
-        ("queue_depth_at_most", "queue_has_consumers"),
-        "no_queue_pause_without_drain_plan; no_paused_queue_with_backlog",
+        ("queue_depth_at_most", "queue_has_consumers", "queue_replay_deduplicated"),
+        "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
         "Prose mentions backfill/replay work without executable queue/backlog capacity guards.",
-        "Add queue_depth_at_most and queue_has_consumers preconditions, or document an explicit limitation.",
+        "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
     ),
     PhraseRule(
         "credential-handling-needs-rotation-model",

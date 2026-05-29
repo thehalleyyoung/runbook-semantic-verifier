@@ -1,0 +1,57 @@
+{
+  "name": "Safe deduplicated dead-letter replay",
+  "description": "Repository-authored queue replay fixture with bounded dead-letter count, dedupe key, and stable consumers.",
+  "metadata": {
+    "labels": {
+      "expected_safe": true,
+      "expected_violation_properties": [],
+      "expected_prose_rules": []
+    }
+  },
+  "allow_reordering": false,
+  "system": {
+    "queues": {
+      "payments-events": {
+        "depth": 0,
+        "consumers": 4,
+        "paused": false,
+        "dead_letter_depth": 20,
+        "dedupe_window_minutes": 60,
+        "consumer_group_stable": true
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "replay-dead-letter-batch",
+      "action": "replay_messages",
+      "params": {
+        "queue": "payments-events",
+        "count": 10,
+        "from_dead_letter": true,
+        "dedupe_key": "message_id"
+      },
+      "requires": [
+        { "kind": "queue_dead_letter_depth_at_most", "queue": "payments-events", "depth": 20 },
+        { "kind": "queue_dedupe_window_at_least", "queue": "payments-events", "minutes": 30 }
+      ],
+      "effects": [
+        { "kind": "queue_replay_deduplicated", "queue": "payments-events" }
+      ]
+    },
+    {
+      "id": "confirm-consumer-stability",
+      "action": "rebalance_consumers",
+      "after": ["replay-dead-letter-batch"],
+      "params": {
+        "queue": "payments-events",
+        "consumers": 4,
+        "stable": true
+      },
+      "effects": [
+        { "kind": "consumer_group_stable", "queue": "payments-events" },
+        { "kind": "queue_has_consumers", "queue": "payments-events", "count": 2 }
+      ]
+    }
+  ]
+}

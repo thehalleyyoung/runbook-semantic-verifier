@@ -27,11 +27,11 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(report["summary"]["covered_queues"], 1)
         self.assertIn("grafana-tempo-public-fixture", report["summary"]["owners"])
         by_property = {item["property"]: item for item in report["properties"]}
-        self.assertIn("no_queue_pause_without_drain_plan", by_property)
-        self.assertEqual(by_property["no_queue_pause_without_drain_plan"]["queues"], ["tenant-index-fallback-scan"])
-        sections = {step["section"] for step in by_property["no_queue_pause_without_drain_plan"]["steps"]}
+        self.assertIn("no_replay_without_dedupe", by_property)
+        self.assertEqual(by_property["no_replay_without_dedupe"]["queues"], ["tenant-index-fallback-scan"])
+        sections = {step["section"] for step in by_property["no_replay_without_dedupe"]["steps"]}
         self.assertIn("Defensive interpretation", sections)
-        self.assertIn("Hoare-style", by_property["declared_effect"]["formal_obligation"])
+        self.assertIn("deduplication", by_property["no_replay_without_dedupe"]["formal_obligation"])
         prose_rules = {item["rule"] for item in report["unverified_prose_obligations"]}
         self.assertIn("data-deletion-needs-restore-precondition", prose_rules)
 
@@ -45,7 +45,7 @@ class CoverageTests(unittest.TestCase):
         markdown = self._run("coverage", "case_studies/current/grafana_tempo", "--format", "markdown")
         self.assertEqual(markdown.returncode, 0, markdown.stdout + markdown.stderr)
         self.assertIn("# Property coverage report", markdown.stdout)
-        self.assertIn("no_queue_pause_without_drain_plan", markdown.stdout)
+        self.assertIn("no_replay_without_dedupe", markdown.stdout)
 
 
 if __name__ == "__main__":

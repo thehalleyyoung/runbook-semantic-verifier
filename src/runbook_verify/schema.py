@@ -110,6 +110,10 @@ def _system_schema() -> dict[str, Any]:
                         "depth": {"type": "integer", "minimum": 0},
                         "consumers": {"type": "integer", "minimum": 0},
                         "paused": {"type": "boolean"},
+                        "dead_letter_depth": {"type": "integer", "minimum": 0},
+                        "dedupe_window_minutes": {"type": "integer", "minimum": 0},
+                        "duplicate_risk": {"type": "boolean"},
+                        "consumer_group_stable": {"type": "boolean"},
                     },
                 },
             },
@@ -252,7 +256,7 @@ def _field_schema(field: FieldDescriptor | str) -> dict[str, Any]:
         if name == "percent":
             schema["maximum"] = 100
         return schema
-    if name in {"enabled", "healthy", "active", "data_loss_risk", "compatible", "in_progress", "converged", "allow_split_brain"}:
+    if name in {"enabled", "healthy", "active", "data_loss_risk", "compatible", "in_progress", "converged", "allow_split_brain", "from_dead_letter", "idempotent", "stable"}:
         return {"type": "boolean"}
     if name == "services":
         return {"type": "array", "items": {"type": "string"}}

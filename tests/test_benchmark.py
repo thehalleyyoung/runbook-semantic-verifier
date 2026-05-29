@@ -97,7 +97,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(item["benchmark_metadata"]["provenance"]["kind"], "public-current")
         self.assertEqual(item["benchmark_metadata"]["abstraction_level"], "derived-public-runbook")
         self.assertIn("Public runbook excerpts are incomplete", item["benchmark_metadata"]["validity_threats"])
-        self.assertIn("no_paused_queue_with_backlog", item["expected_labels"]["expected_violation_properties"])
+        self.assertIn("no_replay_without_dedupe", item["expected_labels"]["expected_violation_properties"])
 
 
 if __name__ == "__main__":

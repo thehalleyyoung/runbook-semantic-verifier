@@ -1,25 +1,26 @@
 # Finding explanation: finding-001
 
 - Type: `semantic`
-- Rule: `no_paused_queue_with_backlog`
-- Small-step rule: `PostInvariant.QueueBacklogProgress`
-- Obligation: `no_paused_queue_with_backlog`
-- Location: `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:93`
-- Message: queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1
-- Weakest-precondition hint: A terminal paused queue is safe only when backlog is bounded or alternate consumers remain active.
-- Remediation: Resume the queue or prove backlog is drained and alternate consumers are active.
+- Rule: `no_duplicate_processing_risk`
+- Small-step rule: `PostInvariant.NoDuplicateReplayProcessing`
+- Obligation: `no_duplicate_processing_risk`
+- Location: `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:104`
+- Message: queue tenant-index-fallback-scan has replayed messages without modeled deduplication
+- Weakest-precondition hint: A replay step may not leave the queue in a duplicate-risk state unless deduplication/idempotency was modeled.
+- Remediation: Stop replay or add deduplication/idempotency guards before messages can be processed twice.
 
 ## Trace
 
-delete-stale-tenant-indexes
+delete-stale-tenant-indexes-trigger-fallback
 
 ## State delta
 
 | Field | Before | After |
 | --- | --- | --- |
-| `queues.tenant-index-fallback-scan.paused` | `False` | `True` |
+| `queues.tenant-index-fallback-scan.depth` | `18000` | `36000` |
+| `queues.tenant-index-fallback-scan.duplicate_risk` | `False` | `True` |
 
 ## Remediation examples
 
-- Resume the queue after the maintenance step.
-- Drain backlog before pausing consumers.
+- Replay from the dead-letter queue with a stable dedupe key.
+- Drain or quarantine duplicate-risk messages before resuming consumers.
