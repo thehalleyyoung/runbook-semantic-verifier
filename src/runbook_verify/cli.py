@@ -16,6 +16,7 @@ from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdow
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
 from .parser import RunbookParseError, load_runbook
 from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
+from .repository_scan import RepositoryScanError, ScanOptions, build_repository_scan, render_scan_json, render_scan_markdown
 from .schema import render_json_schema
 from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
 
@@ -76,6 +77,11 @@ def main(argv: list[str] | None = None) -> int:
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     lint_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when prose findings are found")
     lint_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command when --expect-findings is not set")
+    scan_p = sub.add_parser("scan", help="rank Markdown/wiki runbooks by dangerous-effect vocabulary and model-first priority")
+    scan_p.add_argument("path")
+    scan_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    scan_p.add_argument("--min-score", type=int, default=1, help="minimum scan score to include")
+    scan_p.add_argument("--include-low-priority", action="store_true", help="include Markdown files with score below --min-score")
     args = parser.parse_args(argv)
 
     if args.command == "audit":
@@ -94,6 +100,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.expect_findings:
             return 0 if findings else 1
         return 1 if has_findings_at_or_above(findings, args.fail_on) else 0
+    if args.command == "scan":
+        try:
+            report = build_repository_scan(args.path, ScanOptions(min_score=args.min_score, include_low_priority=args.include_low_priority))
+        except RepositoryScanError as exc:
+            print(f"scan error: {exc}", file=sys.stderr)
+            return 2
+        print(render_scan_json(report) if args.format == "json" else render_scan_markdown(report), end="")
+        return 0
     if args.command == "explain":
         try:
             explanation = explain_finding(args.path, args.finding_id)

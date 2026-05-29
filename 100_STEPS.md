@@ -79,7 +79,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [x] Make prose lint findings severity-aware (`info`, `warning`, `error`, `audit-only`, `responsible-disclosure`) with CI policies that teams can tune.
 - [ ] Add prose suppressions requiring owner, expiry, reason, and link to a modeled invariant, waiver, or explicit limitation.
 - [ ] Add Markdown autofix suggestions for missing executable blocks, stale owners, missing preconditions, ambiguous operator instructions, and unsafe copy-paste shell snippets.
-- [ ] Add wiki/repository scanning that discovers runbook-like Markdown files, ranks them by dangerous-effect vocabulary, and recommends which documents need executable models first.
+- [x] Add wiki/repository scanning that discovers runbook-like Markdown files, ranks them by dangerous-effect vocabulary, and recommends which documents need executable models first.
 - [ ] Add CI gates for high-risk operations docs that block newly introduced unsafe deletion, credential, traffic, or data-restoration instructions without owner-approved waivers.
 - [ ] Add pull-request annotations that group findings by semantic obligation and source span so reviewers see why a prose change is blocked.
 - [ ] Add stale-precondition detection by comparing runbook owners, service names, alert names, replica counts, and dependency names against configured inventories.

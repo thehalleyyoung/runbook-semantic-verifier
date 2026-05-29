@@ -2,10 +2,10 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **30/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **31/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
-scorecards, property-coverage reports, queue replay/DLQ/consumer-group
+scorecards, property-coverage reports, repository/wiki runbook-priority scans, queue replay/DLQ/consumer-group
 semantics, DNS cutover semantics, cache flush/warmup/cold-start/capacity
 semantics, and checked-in historical/current public case-study evidence.
 
@@ -38,6 +38,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/graf
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
@@ -151,6 +152,7 @@ src/runbook_verify/
   readiness.py  incident-readiness aggregation over checks, audits, freshness
   owner_scorecard.py  owner/team scorecards for hazards, waivers, and remediation history
   coverage.py   property-to-entity/owner/Markdown-section coverage reports
+  repository_scan.py  Markdown/wiki runbook discovery and model-first prioritization
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -174,6 +176,23 @@ PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --ex
 ```
 
 `examples/real_world/kubernetes_region_failover.md` is a case-study fixture modeled on common cloud failover mistakes. The audit confirms three concrete bugs: suppressing an alert for longer than policy allows, draining all available API replicas in a region before replacement capacity exists, and performing a data-loss-risk database failover before quorum confirmation.
+
+`frv scan` ranks repository/wiki Markdown files by dangerous-effect vocabulary,
+uncovered semantic obligations, and whether a fenced executable model is already
+present. This helps teams decide which operational docs need `runbook-json`
+models first before relying on audit/check results:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli scan path/to/runbooks --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format json
+```
+
+The checked-in outputs `reports/current_impact_scan.md` and
+`reports/current_impact_scan.json` rank the Grafana Tempo-derived public fixture
+as `critical` (score 56) because destructive-delete, data-deletion, and
+backfill/replay prose map to uncovered blast-radius, restore-path, queue,
+consumer, and deduplication obligations. The scan is a triage signal, not proof
+of live-service risk.
 
 `frv audit` now combines executable checking with severity-ranked Markdown/wiki
 prose findings. Each prose rule links to a semantic obligation or explicit
@@ -242,7 +261,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli coverage \
   case_studies/current/grafana_tempo --format markdown
 ```
 
-The checked-in outputs `reports/current_impact_coverage.md` and
+The checked-in coverage outputs `reports/current_impact_coverage.md` and
 `reports/current_impact_coverage.json` show that the Tempo-derived fixture's
 `tempo-query` service, `tenant-index-fallback-scan` queue, `prod` region, owner,
 and executable DSL section are covered by eleven invariant/proof-obligation
@@ -286,8 +305,9 @@ combined audit report is checked in as `reports/current_impact_audit.md` and
 `reports/current_impact_audit.json`, with code-scanning/CI equivalents in
 `reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
 the first finding's explain report is checked in as `reports/current_impact_explain.md` and
-`reports/current_impact_explain.json`. The service/region-scoped readiness
-report is checked in as `reports/current_impact_readiness.md` and
+`reports/current_impact_explain.json`. The repository scan outputs are checked in as
+`reports/current_impact_scan.md` and `reports/current_impact_scan.json`. The
+service/region-scoped readiness report is checked in as `reports/current_impact_readiness.md` and
 `reports/current_impact_readiness.json`; the owner-facing scorecard is checked in
 as `reports/current_impact_owner_scorecard.md` and
 `reports/current_impact_owner_scorecard.json`.

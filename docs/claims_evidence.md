@@ -5,8 +5,8 @@
 This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
-case study. The CLI also includes incident-readiness, owner-scorecard, and
-property-coverage reports. The DSL also models queue replay/DLQ/consumer-group
+case study. The CLI also includes repository/wiki runbook-priority scanning,
+incident-readiness, owner-scorecard, and property-coverage reports. The DSL also models queue replay/DLQ/consumer-group
 semantics, DNS cutovers with TTL and health-check convergence obligations, and
 cache flush/warmup/cold-start/capacity semantics.
 The historical fixture reconstructs the GitHub
@@ -49,6 +49,10 @@ differently named system exists.
 - The owner scorecard groups bounded semantic counterexamples, blocking prose
   obligations, stale assumptions, declared waiver debt, proof-obligation
   failures, and remediation history by checked-in owner metadata.
+- The repository scan ranks Markdown runbook-like files by dangerous-effect
+  vocabulary, uncovered semantic obligations, and whether executable models are
+  present, so teams can prioritize prose-to-DSL refinement before stronger
+  checking claims.
 - The coverage report maps each current invariant/proof-obligation template to
   modeled services, databases, queues, alerts, DNS records, credentials (none in the current
   DSL), owners, regions, source steps, and Markdown sections; unverified prose
@@ -105,6 +109,8 @@ differently named system exists.
   - `reports/current_impact.md`
   - `reports/current_impact_lint.json`
   - `reports/current_impact_lint.md`
+  - `reports/current_impact_scan.json`
+  - `reports/current_impact_scan.md`
   - `reports/current_impact_readiness.json`
   - `reports/current_impact_readiness.md`
   - `reports/current_impact_owner_scorecard.json`
@@ -149,6 +155,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json -
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
@@ -174,7 +181,11 @@ The current-impact owner scorecard reports one checked-in fixture owner,
 `grafana-tempo-public-fixture`, with zero verified runbooks, six bounded queue
 counterexamples, destructive-data/backfill prose obligations, no stale
 assumptions, and no waiver debt as of 2026-05-29.
-The current-impact coverage report maps eleven invariant/proof-obligation
+The current-impact repository scan ranks the Grafana Tempo-derived fixture as
+`critical` with score 56 from destructive-delete, data-deletion, and
+backfill/replay dangerous-effect vocabulary plus uncovered blast-radius,
+restore-path, queue, consumer, and deduplication obligations. The
+current-impact coverage report maps eleven invariant/proof-obligation
 templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
 queue, `prod` region, owner metadata, and executable Markdown section, and
 keeps four destructive-data/backfill prose obligations as explicit coverage gaps.
