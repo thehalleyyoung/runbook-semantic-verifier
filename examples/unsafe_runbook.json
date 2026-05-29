@@ -1,0 +1,43 @@
+{
+  "name": "Unsafe emergency rollback and evacuation",
+  "description": "Intentionally flawed runbook used as a benchmark for checker findings.",
+  "allow_reordering": true,
+  "max_depth": 5,
+  "safety": { "max_alert_suppression_minutes": 120 },
+  "system": {
+    "regions": {
+      "us-east": { "healthy": true },
+      "us-west": { "healthy": false }
+    },
+    "services": {
+      "api": {
+        "min_available": 1,
+        "deployment": "v42",
+        "replicas": [
+          { "id": "api-east-1", "region": "us-east", "healthy": true },
+          { "id": "api-east-2", "region": "us-east", "healthy": true }
+        ]
+      }
+    },
+    "databases": {
+      "orders": {
+        "primary_region": "us-east",
+        "healthy_regions": ["us-east"],
+        "quorum_confirmed": false,
+        "migration_in_progress": true,
+        "migration_compatible": false
+      }
+    },
+    "queues": { "orders-events": { "depth": 5000, "consumers": 1 } },
+    "alerts": { "api-latency": { "active": true } },
+    "feature_flags": { "checkout_v2": { "enabled": true } },
+    "deployments": { "api": { "service": "api", "current": "v42", "previous": "v41" } }
+  },
+  "steps": [
+    { "id": "drain-api-1", "action": "drain_replica", "params": { "service": "api", "replica": "api-east-1" } },
+    { "id": "drain-api-2", "action": "drain_replica", "params": { "service": "api", "replica": "api-east-2" } },
+    { "id": "rollback-api", "action": "rollback_deployment", "params": { "service": "api", "to": "v41" } },
+    { "id": "failover-orders-west", "action": "failover_database", "params": { "database": "orders", "target_region": "us-west", "data_loss_risk": true } },
+    { "id": "suppress-api-latency", "action": "suppress_alert", "params": { "alert": "api-latency", "expires_after_minutes": 999 } }
+  ]
+}

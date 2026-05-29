@@ -1,0 +1,73 @@
+{
+  "name": "Safe regional database failover",
+  "description": "Scale API capacity, drain one degraded region, confirm quorum, fail over database, and suppress a noisy alert with a bounded expiry.",
+  "allow_reordering": true,
+  "max_depth": 6,
+  "safety": { "max_alert_suppression_minutes": 120 },
+  "system": {
+    "regions": {
+      "us-east": { "healthy": false },
+      "us-west": { "healthy": true }
+    },
+    "services": {
+      "api": {
+        "min_available": 2,
+        "deployment": "v42",
+        "replicas": [
+          { "id": "api-east-1", "region": "us-east", "healthy": true },
+          { "id": "api-west-1", "region": "us-west", "healthy": true },
+          { "id": "api-west-2", "region": "us-west", "healthy": true }
+        ]
+      }
+    },
+    "databases": {
+      "orders": {
+        "primary_region": "us-east",
+        "healthy_regions": ["us-west"],
+        "quorum_confirmed": false,
+        "migration_in_progress": false,
+        "migration_compatible": true
+      }
+    },
+    "queues": { "orders-events": { "depth": 12, "consumers": 3 } },
+    "alerts": { "api-latency": { "active": true } },
+    "feature_flags": { "checkout_v2": { "enabled": true } },
+    "deployments": { "api": { "service": "api", "current": "v42", "previous": "v41" } }
+  },
+  "steps": [
+    {
+      "id": "scale-api-west",
+      "action": "scale_service",
+      "params": { "service": "api", "replicas": 4, "region": "us-west" },
+      "effects": [{ "kind": "service_available_at_least", "service": "api", "count": 3 }]
+    },
+    {
+      "id": "drain-us-east",
+      "action": "drain_region",
+      "after": ["scale-api-west"],
+      "params": { "region": "us-east", "services": ["api"] }
+    },
+    {
+      "id": "confirm-orders-quorum",
+      "action": "confirm_quorum",
+      "params": { "database": "orders" }
+    },
+    {
+      "id": "failover-orders-west",
+      "action": "failover_database",
+      "after": ["confirm-orders-quorum"],
+      "params": { "database": "orders", "target_region": "us-west", "data_loss_risk": true },
+      "requires": [{ "kind": "database_quorum_confirmed", "database": "orders" }]
+    },
+    {
+      "id": "disable-checkout-v2",
+      "action": "toggle_flag",
+      "params": { "flag": "checkout_v2", "enabled": false }
+    },
+    {
+      "id": "suppress-api-latency",
+      "action": "suppress_alert",
+      "params": { "alert": "api-latency", "expires_after_minutes": 30 }
+    }
+  ]
+}

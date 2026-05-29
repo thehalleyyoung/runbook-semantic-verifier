@@ -1,0 +1,91 @@
+# Formal Runbook Verification for Cloud Incident Response
+
+A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
+
+## Quickstart
+
+```bash
+cd /Users/halleyyoung/Documents/repo/formal-runbook-verification-repo
+python3 -m unittest discover -s tests
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
+```
+
+Optional editable install:
+
+```bash
+python3 -m pip install -e .
+frv check examples/safe_runbook.json
+```
+
+## Example output
+
+The unsafe example intentionally contains: draining all service replicas, failover to an unhealthy region, data-loss-risk failover before quorum confirmation, rollback during an incompatible migration, and an unbounded alert suppression. The checker explores dependency-respecting action orders and reports concrete traces such as:
+
+```text
+[service_min_available] trace=drain-api-1 -> drain-api-2: service api has 0 available replicas; requires 1
+[quorum_before_data_loss_action] trace=failover-orders-west: database orders failover has data-loss risk before quorum confirmation
+```
+
+## DSL
+
+Executable examples use JSON so the repository runs with the Python standard library. YAML files are accepted only when `PyYAML` is installed; otherwise the parser raises a clear error rather than silently falling back.
+
+Top-level fields:
+
+- `system`: regions, services/replicas, databases, queues, alerts, feature flags, deployments.
+- `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, and `effects`.
+- `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
+- `max_depth`: bound for state-space exploration.
+- `safety`: checker configuration such as maximum alert suppression duration.
+
+Supported actions include `restart_service`, `drain_replica`, `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`, `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`, `finish_migration`, `pause_queue`, and `resume_queue`.
+
+## Safety properties
+
+The prototype checks pragmatic cloud-operations hazards:
+
+- no service below `min_available` replicas;
+- no draining all replicas of a service;
+- no rollback during an incompatible schema migration;
+- no alert suppression without a bounded positive expiry;
+- no data-loss-risk database action before quorum confirmation;
+- no failover to an unhealthy target region;
+- declared step preconditions and effects must hold.
+
+## Architecture
+
+```text
+src/runbook_verify/
+  model.py      immutable domain model for systems and runbooks
+  parser.py     JSON loader plus optional YAML support
+  actions.py    operational semantics for runbook actions
+  checker.py    bounded state-space explorer and safety checker
+  exporter.py   TLA+/Alloy-like text exporters
+  cli.py        command-line interface
+examples/       safe and unsafe benchmark runbooks
+tests/          parser, checker, CLI, exporter, and example tests
+```
+
+The checker is deliberately small: it models a runbook as a finite set of steps, enumerates all dependency-respecting traces up to `max_depth`, applies action semantics to immutable system states, and records safety violations with traces.
+
+## Paper angle
+
+A paper titled _Verifying Incident Runbooks for Cloud-Native Systems_ could evaluate how many injected runbook bugs are caught, how much modeling effort is needed, which production hazards are expressible, and whether operators can understand the DSL. The exporter gives a bridge to TLA+/Alloy-style artifacts for formal-methods credibility while the Python checker keeps experiments reproducible locally.
+
+## LLM-process separation note
+
+This repository is intentionally a non-AI artifact. LLMs may help draft prose, generate synthetic runbooks, or propose adversarial scenarios, but verification results come from explicit parsers, operational semantics, and deterministic state-space exploration. Any future `llm-process/` material should document assistance separately from the verifier's trusted core.
+
+## Limitations
+
+- Bounded exploration is not a full temporal model checker.
+- Action semantics are abstract and conservative, not cloud-provider APIs.
+- Concurrency is represented as permissible step reordering, not real-time interleavings.
+- The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
+- The benchmark examples are synthetic and should be expanded before empirical claims.
+
+## License
+
+MIT.
