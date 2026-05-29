@@ -13,6 +13,7 @@ from .explanation import ExplainError, explain_finding, render_explanation_json,
 from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .parser import RunbookParseError, load_runbook
+from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
 from .schema import render_json_schema
 from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
 
@@ -50,6 +51,14 @@ def main(argv: list[str] | None = None) -> int:
     diff_p.add_argument("new")
     diff_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     diff_p.add_argument("--fail-on", choices=["semantic-regression", "none"], default="semantic-regression")
+    readiness_p = sub.add_parser("readiness", help="summarize incident-readiness signals for a runbook path, service, or region")
+    readiness_p.add_argument("path")
+    readiness_p.add_argument("--service", help="limit readiness to executable runbooks covering this service")
+    readiness_p.add_argument("--region", help="limit readiness to executable runbooks covering this region")
+    readiness_p.add_argument("--freshness-days", type=int, default=180, help="maximum allowed age for source metadata or file mtime")
+    readiness_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
+    readiness_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    readiness_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
     lint_p = sub.add_parser("lint-markdown", help="lint Markdown runbook prose for dangerous unmodeled operations")
     lint_p.add_argument("path")
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -91,6 +100,24 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on == "none":
             return 0
         return 0 if result.pass_ else 1
+    if args.command == "readiness":
+        as_of = None
+        if args.as_of:
+            from datetime import date
+            try:
+                as_of = date.fromisoformat(args.as_of)
+            except ValueError as exc:
+                print(f"readiness error: invalid --as-of date {args.as_of!r}: {exc}", file=sys.stderr)
+                return 2
+        try:
+            result = build_readiness_report(args.path, ReadinessOptions(service=args.service, region=args.region, freshness_days=args.freshness_days, as_of=as_of))
+        except ReadinessError as exc:
+            print(f"readiness error: {exc}", file=sys.stderr)
+            return 2
+        print(render_readiness_json(result) if args.format == "json" else render_readiness_markdown(result), end="")
+        if args.fail_on == "none":
+            return 0
+        return 1 if result["summary"]["status"] == "not_ready" else 0
     if args.command == "schema":
         print(render_json_schema(), end="")
         return 0

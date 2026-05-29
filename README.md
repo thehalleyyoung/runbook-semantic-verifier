@@ -20,6 +20,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format junit --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -116,6 +117,7 @@ src/runbook_verify/
   exporter.py   TLA+/Alloy-like text exporters
   benchmark.py  benchmark harness and JSON/Markdown result renderers
   semantic_diff.py PR-oriented semantic diff and counterexample delta
+  readiness.py  incident-readiness aggregation over checks, audits, freshness
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -162,6 +164,23 @@ step when executable, weakest-precondition hint, and bounded remediation
 examples. This is intended for review comments and incident-readiness drills,
 not for claiming unsound proof beyond the modeled DSL abstraction.
 
+`frv readiness` turns validation, bounded checking, Markdown audit, service and
+region coverage, rollback/restore coverage, source freshness, and Hoare-style
+proof-obligation counters into a service- or region-scoped incident-readiness
+report:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli readiness \
+  case_studies/current/grafana_tempo \
+  --service tempo-query --region prod --as-of 2026-05-29 \
+  --format markdown --fail-on none
+```
+
+The checked-in outputs `reports/current_impact_readiness.md` and
+`reports/current_impact_readiness.json` report `not_ready` for the derived Tempo
+fixture because the model still has two bounded queue counterexamples and three
+unverified destructive/data-deletion prose claims.
+
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, credential handling, customer-notification gaps, rollback ambiguity,
 alert suppression, failover, draining, and unmodeled escalation paths. Severity
@@ -180,7 +199,9 @@ combined audit report is checked in as `reports/current_impact_audit.md` and
 `reports/current_impact_audit.json`, with code-scanning/CI equivalents in
 `reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
 the first finding's explain report is checked in as `reports/current_impact_explain.md` and
-`reports/current_impact_explain.json`.
+`reports/current_impact_explain.json`. The service/region-scoped readiness
+report is checked in as `reports/current_impact_readiness.md` and
+`reports/current_impact_readiness.json`.
 
 ## Historical public case study
 

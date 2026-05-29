@@ -1,0 +1,155 @@
+{
+  "benchmark_expectations": [
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [
+          "data-deletion-needs-restore-precondition",
+          "destructive-delete-needs-targeting"
+        ],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "no_paused_queue_with_backlog",
+          "no_queue_pause_without_drain_plan"
+        ]
+      },
+      "pass": true,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+    }
+  ],
+  "coverage_findings": [],
+  "filters": {
+    "region": "prod",
+    "service": "tempo-query"
+  },
+  "freshness": {
+    "as_of": "2026-05-29",
+    "max_age_days": 180
+  },
+  "highest_risk_counterexamples": [
+    {
+      "message": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_queue_pause_without_drain_plan",
+      "remediation": "Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "no_queue_pause_without_drain_plan",
+      "severity": "error",
+      "step": "delete-stale-tenant-indexes",
+      "trace": [
+        "delete-stale-tenant-indexes"
+      ]
+    },
+    {
+      "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_paused_queue_with_backlog",
+      "remediation": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "semantic_obligation": "no_paused_queue_with_backlog",
+      "severity": "error",
+      "step": "delete-stale-tenant-indexes",
+      "trace": [
+        "delete-stale-tenant-indexes"
+      ]
+    }
+  ],
+  "missing_rollback_steps": [],
+  "modeled_entities": {
+    "regions": [
+      "prod"
+    ],
+    "services": [
+      "tempo-query"
+    ]
+  },
+  "parse_errors": [],
+  "path": "case_studies/current/grafana_tempo",
+  "proof_obligations": {
+    "checked": {
+      "action_defined": 2,
+      "precondition": 1,
+      "promised_effect": 1,
+      "safety_postcondition": 6
+    },
+    "failures": {
+      "precondition": 1,
+      "safety_postcondition": 1
+    }
+  },
+  "runbooks": [
+    {
+      "expected_labels": {
+        "expected_prose_rules": [
+          "data-deletion-needs-restore-precondition",
+          "destructive-delete-needs-targeting"
+        ],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "no_paused_queue_with_backlog",
+          "no_queue_pause_without_drain_plan"
+        ]
+      },
+      "max_depth_reached": false,
+      "name": "Grafana Tempo current public runbook derived safety model",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "regions": [
+        "prod"
+      ],
+      "safe": false,
+      "services": [
+        "tempo-query"
+      ],
+      "states_explored": 3,
+      "terminal_traces": 1,
+      "transitions_explored": 2
+    }
+  ],
+  "stale_preconditions": [],
+  "summary": {
+    "benchmark_expectation_mismatches": 0,
+    "coverage_findings": 0,
+    "missing_rollback_steps": 0,
+    "parse_errors": 0,
+    "readiness_score": 40,
+    "runbooks_considered": 1,
+    "safe_runbooks": 0,
+    "semantic_counterexamples": 2,
+    "stale_preconditions": 0,
+    "status": "not_ready",
+    "unsafe_runbooks": 1,
+    "unverified_prose_claims": 3
+  },
+  "unverified_prose_claims": [
+    {
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "line": 20,
+      "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
+      "rule": "data-deletion-needs-restore-precondition",
+      "semantic_obligation": "restore_path_and_blast_radius_limited",
+      "severity": "error"
+    },
+    {
+      "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
+      "line": 18,
+      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning"
+    },
+    {
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "line": 20,
+      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning"
+    }
+  ]
+}

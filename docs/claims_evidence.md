@@ -37,6 +37,9 @@ differently named system exists.
 - The semantic diff reports model-level changes, assumption weakenings,
   proof-obligation deltas, and introduced/resolved/persisting counterexample
   traces between two bounded executable runbook models.
+- The readiness report aggregates validation, bounded checker, Markdown audit,
+  service/region coverage, rollback/restore coverage, source-freshness, and
+  proof-obligation signals for a repository path or scoped service/region.
 
 ## What is not proven
 
@@ -75,6 +78,8 @@ differently named system exists.
   - `reports/current_impact.md`
   - `reports/current_impact_lint.json`
   - `reports/current_impact_lint.md`
+  - `reports/current_impact_readiness.json`
+  - `reports/current_impact_readiness.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -103,6 +108,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 ```
@@ -113,4 +119,7 @@ case-study runbook reports `precondition` and
 `destructive-delete-needs-targeting`, `no_queue_pause_without_drain_plan`, and
 `no_paused_queue_with_backlog`; the GitHub semantic diff reports zero introduced
 counterexamples and resolves the modeled `precondition` and
-`quorum_before_data_loss_action` traces.
+`quorum_before_data_loss_action` traces. The current-impact readiness report is
+`not_ready` with two bounded queue counterexamples, three unverified prose
+claims, no stale preconditions as of 2026-05-29, and aggregated
+proof-obligation counters.

@@ -42,7 +42,7 @@ Operational runbooks are programs over infrastructure state, even when they are 
 - `frv audit`: Markdown/wiki scan for dangerous operations prose, stale assumptions, missing executable blocks, and unsafe suppressions.
 - `frv diff old new`: implemented semantic pull-request review for changed effects, assumptions, verification settings, proof-obligation deltas, and reachable counterexample deltas.
 - `frv explain FINDING`: show the rule, state delta, source lines, weakest-precondition hint, and suggested fix for one diagnostic.
-- `frv readiness`: service or repository incident-readiness report covering verification status, audit severity, stale preconditions, and uncovered critical paths.
+- `frv readiness`: implemented service or repository incident-readiness report covering validation, bounded-checking status, audit severity, stale preconditions, rollback/restore coverage, proof obligations, and uncovered service/region paths.
 - `frv owner-scorecard`: team-facing scorecard for verified runbooks, open hazards, waiver debt, benchmark regressions, and freshness.
 - CI outputs should include JSON, Markdown, SARIF, and JUnit so the same semantic result powers terminals, GitHub annotations, dashboards, and reports.
 
