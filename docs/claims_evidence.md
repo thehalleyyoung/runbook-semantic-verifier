@@ -6,7 +6,7 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes repository/wiki runbook-priority scanning,
-formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
+small-step semantic rule traces, formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
 prose suppressions with owner/expiry/reason/limitation metadata. Markdown
 findings also include manual autofix suggestions for missing executable models,
 missing preconditions/effects, stale owner placeholders, ambiguous operator
@@ -62,8 +62,8 @@ differently named system exists.
   templates; they are not applied automatically and do not prove the suggested
   repair is operationally correct without review.
 - The benchmark records states explored, terminal traces explored, violations by
-  property, prose findings by rule, expected labels when present, runtime, and
-  pass/fail.
+  property, prose findings by rule, semantic rule counters, expected labels when
+  present, runtime, and pass/fail.
 - The semantic diff reports model-level changes, assumption weakenings,
   proof-obligation deltas, and introduced/resolved/persisting counterexample
   traces between two bounded executable runbook models.
@@ -92,6 +92,10 @@ differently named system exists.
   findings. They group findings by semantic obligation and exact modeled source
   span, then render GitHub Actions commands, JSON, or Markdown; they do not add
   new proof beyond the underlying bounded checker and prose audit.
+- Small-step traces map each executable counterexample to the scheduling,
+  operator-choice, action/wait, failure, postcondition, and bounded-exploration
+  rule names documented in `docs/small_step_semantics.md`; they are explanatory
+  witnesses for the bounded DSL execution, not a stronger proof system.
 - Configuration profiles set CLI default exit policies for audit, lint, CI gate,
   readiness, owner-scorecard, and benchmark reproduction workflows. Explicit
   `--fail-on` values override profile defaults, and profiles do not suppress or
@@ -250,7 +254,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
 ```
 
-Expected result: tests pass; benchmark `aggregate.pass` is `true`; the GitHub
+Expected result: tests pass; benchmark `aggregate.pass` is `true` and includes
+`aggregate.performance_counters.semantic_rule_counts`; the GitHub
 case-study runbook reports `precondition` and
 `quorum_before_data_loss_action` violations; the current-impact benchmark reports
 `destructive-delete-needs-targeting`, `data-deletion-needs-restore-precondition`,

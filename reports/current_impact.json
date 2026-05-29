@@ -19,6 +19,16 @@
         "safety_postcondition": 14
       },
       "reductions_applied": 0,
+      "semantic_rule_counts": {
+        "Action.Execute": 2,
+        "ActionGuard.ConsumerRebalanceProgress": 1,
+        "ActionGuard.MessageReplayDeduplication": 1,
+        "Explore.Terminal": 1,
+        "PostInvariant.ConsumerGroupStableForBacklog": 1,
+        "PostInvariant.NoDuplicateReplayProcessing": 2,
+        "PostInvariant.QueueBacklogHasConsumers": 1,
+        "Schedule.SequenceNext": 2
+      },
       "states_explored": 3,
       "symbolic_splits": 0,
       "terminal_traces": 1,
@@ -31,7 +41,7 @@
       "prose-suppression-applied": 1
     },
     "runbooks": 1,
-    "runtime_seconds": 0.001355499989585951,
+    "runtime_seconds": 0.0021034160163253546,
     "states_explored": 3,
     "traces_explored": 1,
     "violations_by_property": {
@@ -43,6 +53,7 @@
     }
   },
   "name": "current public runbook impact benchmark",
+  "profile": null,
   "runbooks": [
     {
       "benchmark_metadata": {
@@ -131,6 +142,16 @@
           "safety_postcondition": 14
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 2,
+          "ActionGuard.ConsumerRebalanceProgress": 1,
+          "ActionGuard.MessageReplayDeduplication": 1,
+          "Explore.Terminal": 1,
+          "PostInvariant.ConsumerGroupStableForBacklog": 1,
+          "PostInvariant.NoDuplicateReplayProcessing": 2,
+          "PostInvariant.QueueBacklogHasConsumers": 1,
+          "Schedule.SequenceNext": 2
+        },
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
@@ -142,7 +163,7 @@
         "destructive-delete-needs-targeting": 1,
         "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.0013383330078795552,
+      "runtime_seconds": 0.0020835000032093376,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,

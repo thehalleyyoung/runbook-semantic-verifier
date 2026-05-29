@@ -180,6 +180,7 @@ def _aggregate_performance_counters(items: list[RunbookBenchmarkResult]) -> dict
         "max_depth_reached": False,
         "proof_obligations_checked": {},
         "proof_obligation_failures": {},
+        "semantic_rule_counts": {},
     }
     min_trace: int | None = None
     for item in items:
@@ -198,11 +199,13 @@ def _aggregate_performance_counters(items: list[RunbookBenchmarkResult]) -> dict
             min_trace = trace_len if min_trace is None else min(min_trace, trace_len)
         _merge_counter_map(counters["proof_obligations_checked"], perf.get("proof_obligations_checked", {}))
         _merge_counter_map(counters["proof_obligation_failures"], perf.get("proof_obligation_failures", {}))
+        _merge_counter_map(counters["semantic_rule_counts"], perf.get("semantic_rule_counts", {}))
     points = counters["branch_points"]
     counters["avg_branch_factor"] = counters["branch_factor_total"] / points if points else 0.0
     counters["minimized_counterexample_trace_length"] = min_trace
     counters["proof_obligations_checked"] = dict(sorted(counters["proof_obligations_checked"].items()))
     counters["proof_obligation_failures"] = dict(sorted(counters["proof_obligation_failures"].items()))
+    counters["semantic_rule_counts"] = dict(sorted(counters["semantic_rule_counts"].items()))
     return counters
 
 

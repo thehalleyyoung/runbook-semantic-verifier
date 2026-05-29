@@ -37,7 +37,12 @@
       "remediation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
       "semantic_obligation": "no_replay_without_dedupe",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.MessageReplayDeduplication",
       "step": "delete-stale-tenant-indexes-trigger-fallback",
       "trace": [
         "delete-stale-tenant-indexes-trigger-fallback"
@@ -50,7 +55,13 @@
       "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
       "semantic_obligation": "no_duplicate_processing_risk",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "PostInvariant.NoDuplicateReplayProcessing(delete-stale-tenant-indexes-trigger-fallback)"
+      ],
       "severity": "error",
+      "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
       "step": "delete-stale-tenant-indexes-trigger-fallback",
       "trace": [
         "delete-stale-tenant-indexes-trigger-fallback"
@@ -63,7 +74,14 @@
       "remediation": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
       "semantic_obligation": "no_rebalance_to_zero_consumers",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "ActionGuard.ConsumerRebalanceProgress(rebalance-fallback-consumers)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
       "step": "rebalance-fallback-consumers",
       "trace": [
         "delete-stale-tenant-indexes-trigger-fallback",
@@ -77,7 +95,15 @@
       "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
       "semantic_obligation": "no_duplicate_processing_risk",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "PostInvariant.NoDuplicateReplayProcessing(rebalance-fallback-consumers)"
+      ],
       "severity": "error",
+      "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
       "step": "rebalance-fallback-consumers",
       "trace": [
         "delete-stale-tenant-indexes-trigger-fallback",
@@ -91,7 +117,15 @@
       "remediation": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
       "semantic_obligation": "queue_backlog_requires_consumers",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "PostInvariant.QueueBacklogHasConsumers(rebalance-fallback-consumers)"
+      ],
       "severity": "error",
+      "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
       "step": "rebalance-fallback-consumers",
       "trace": [
         "delete-stale-tenant-indexes-trigger-fallback",
@@ -105,7 +139,15 @@
       "remediation": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
       "runbook": "Grafana Tempo current public runbook derived safety model",
       "semantic_obligation": "no_unstable_consumer_group_with_backlog",
+      "semantic_trace": [
+        "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+        "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+        "Schedule.SequenceNext(rebalance-fallback-consumers)",
+        "Action.Execute(rebalance-fallback-consumers)",
+        "PostInvariant.ConsumerGroupStableForBacklog(rebalance-fallback-consumers)"
+      ],
       "severity": "error",
+      "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
       "step": "rebalance-fallback-consumers",
       "trace": [
         "delete-stale-tenant-indexes-trigger-fallback",

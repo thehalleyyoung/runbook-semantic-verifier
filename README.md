@@ -2,9 +2,9 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **38/100** items in the local roadmap are complete. The
+Current roadmap status: **39/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
-formal object maps, Markdown audits, semantic diffs, explanations, readiness reports, owner
+small-step semantic rule traces, formal object maps, Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
 CI gates and pull-request annotations for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
@@ -64,11 +64,11 @@ frv check examples/safe_runbook.json
 
 ## Example output
 
-The unsafe example intentionally contains: draining all service replicas, failover to an unhealthy region, data-loss-risk failover before quorum confirmation, rollback during an incompatible migration, and an unbounded alert suppression. The checker explores dependency-respecting action orders and reports concrete traces such as:
+The unsafe example intentionally contains: draining all service replicas, failover to an unhealthy region, data-loss-risk failover before quorum confirmation, rollback during an incompatible migration, and an unbounded alert suppression. The checker explores dependency-respecting action orders and reports concrete traces plus mirrored small-step rule names such as:
 
 ```text
-[service_min_available] trace=drain-api-1 -> drain-api-2: service api has 0 available replicas; requires 1
-[quorum_before_data_loss_action] trace=failover-orders-west: database orders failover has data-loss risk before quorum confirmation
+[service_min_available] rule=ActionPreserves.ServiceAvailability trace=drain-api-1 -> drain-api-2: service api has 0 available replicas; requires 1
+[quorum_before_data_loss_action] rule=ActionGuard.DatabaseFailoverQuorum trace=failover-orders-west: database orders failover has data-loss risk before quorum confirmation
 ```
 
 ## DSL
@@ -98,10 +98,11 @@ can be emitted as structured JSON diagnostics with `path`, `line`, `field`,
 schema` prints the JSON Schema for editor, registry, and CI integration; the
 canonical checked-in artifact lives at `docs/schema/runbook.schema.json`. See
 `docs/schema/examples.md`, `docs/schema/examples/complete_runbook.json`,
-`docs/schema/compatibility_policy.md`, and `docs/action_semantics.md` for a
-commented prose walkthrough, strict JSON fixture covering every supported
-top-level field, schema versioning/deprecation guarantees, and generated
-action/condition semantics tables:
+`docs/schema/compatibility_policy.md`, `docs/action_semantics.md`, and
+`docs/small_step_semantics.md` for a commented prose walkthrough, strict JSON
+fixture covering every supported top-level field, schema versioning/deprecation
+guarantees, generated action/condition semantics tables, and the scheduling /
+action / wait / failure / budget rules mirrored in traces:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema
@@ -226,8 +227,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --fa
 Audit JSON and Markdown reports include deterministic `finding-NNN` ids. `frv
 explain` recomputes the same ordered finding set for a file or directory and
 expands one id into the relevant small-step rule, shortest trace, declared
-causal dependencies, source line/excerpt, state delta before/after the failing
-step when executable, weakest-precondition hint, and bounded remediation
+causal dependencies, mirrored `semantic_trace`, source line/excerpt, state delta
+before/after the failing step when executable, weakest-precondition hint, and bounded remediation
 examples. This is intended for review comments and incident-readiness drills,
 not for claiming unsound proof beyond the modeled DSL abstraction.
 

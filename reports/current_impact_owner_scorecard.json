@@ -55,6 +55,11 @@
           "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "property": "no_replay_without_dedupe",
+          "semantic_trace": [
+            "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+            "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+          ],
+          "small_step_rule": "ActionGuard.MessageReplayDeduplication",
           "trace": [
             "delete-stale-tenant-indexes-trigger-fallback"
           ]
@@ -64,6 +69,12 @@
           "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "property": "no_duplicate_processing_risk",
+          "semantic_trace": [
+            "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+            "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+            "PostInvariant.NoDuplicateReplayProcessing(delete-stale-tenant-indexes-trigger-fallback)"
+          ],
+          "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
           "trace": [
             "delete-stale-tenant-indexes-trigger-fallback"
           ]
@@ -73,6 +84,13 @@
           "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "property": "no_rebalance_to_zero_consumers",
+          "semantic_trace": [
+            "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+            "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+            "Schedule.SequenceNext(rebalance-fallback-consumers)",
+            "ActionGuard.ConsumerRebalanceProgress(rebalance-fallback-consumers)"
+          ],
+          "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
           "trace": [
             "delete-stale-tenant-indexes-trigger-fallback",
             "rebalance-fallback-consumers"
@@ -83,6 +101,14 @@
           "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "property": "no_duplicate_processing_risk",
+          "semantic_trace": [
+            "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+            "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+            "Schedule.SequenceNext(rebalance-fallback-consumers)",
+            "Action.Execute(rebalance-fallback-consumers)",
+            "PostInvariant.NoDuplicateReplayProcessing(rebalance-fallback-consumers)"
+          ],
+          "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
           "trace": [
             "delete-stale-tenant-indexes-trigger-fallback",
             "rebalance-fallback-consumers"
@@ -93,6 +119,14 @@
           "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "property": "queue_backlog_requires_consumers",
+          "semantic_trace": [
+            "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+            "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+            "Schedule.SequenceNext(rebalance-fallback-consumers)",
+            "Action.Execute(rebalance-fallback-consumers)",
+            "PostInvariant.QueueBacklogHasConsumers(rebalance-fallback-consumers)"
+          ],
+          "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
           "trace": [
             "delete-stale-tenant-indexes-trigger-fallback",
             "rebalance-fallback-consumers"
@@ -103,6 +137,14 @@
           "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "property": "no_unstable_consumer_group_with_backlog",
+          "semantic_trace": [
+            "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+            "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+            "Schedule.SequenceNext(rebalance-fallback-consumers)",
+            "Action.Execute(rebalance-fallback-consumers)",
+            "PostInvariant.ConsumerGroupStableForBacklog(rebalance-fallback-consumers)"
+          ],
+          "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
           "trace": [
             "delete-stale-tenant-indexes-trigger-fallback",
             "rebalance-fallback-consumers"

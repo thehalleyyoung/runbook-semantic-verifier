@@ -74,7 +74,7 @@ def build_formal_objects_report(path: str | Path) -> dict[str, Any]:
                     "requires": list(step.requires),
                     "effects": list(step.effects),
                     "source": {"path": step.source_path, "line": step.source_line},
-                    "cli_json_fields": ["audit.findings[].trace", "check violations trace", "readiness.highest_risk_counterexamples[].trace"],
+                    "cli_json_fields": ["audit.findings[].trace", "audit.findings[].semantic_trace", "check violations trace", "readiness.highest_risk_counterexamples[].trace"],
                 }
                 for step in runbook.steps
             ],
@@ -100,6 +100,8 @@ def build_formal_objects_report(path: str | Path) -> dict[str, Any]:
                         "property": violation.property,
                         "step": violation.step,
                         "trace": list(violation.trace),
+                        "small_step_rule": violation.small_step_rule,
+                        "semantic_trace": list(violation.semantic_trace),
                         "message": violation.message,
                         "remediation": violation.remediation,
                     }
@@ -279,8 +281,8 @@ def _object_definitions() -> list[dict[str, Any]]:
         },
         {
             "object": "trace",
-            "mathematical_role": "A dependency-respecting action sequence explored within the runbook's max_depth budget.",
-            "cli_json_fields": ["runbooks[].traces", "runbooks[].hazards.counterexamples[].trace"],
+            "mathematical_role": "A dependency-respecting action sequence plus mirrored small-step rule names explored within the runbook's max_depth budget.",
+            "cli_json_fields": ["runbooks[].traces", "runbooks[].hazards.counterexamples[].trace", "runbooks[].hazards.counterexamples[].semantic_trace"],
         },
         {
             "object": "hazard",

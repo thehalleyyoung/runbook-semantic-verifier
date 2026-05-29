@@ -244,6 +244,8 @@ def _violation_dict(violation: Violation) -> dict[str, Any]:
         "step": violation.step,
         "message": violation.message,
         "trace": list(violation.trace),
+        "small_step_rule": violation.small_step_rule,
+        "semantic_trace": list(violation.semantic_trace),
         "remediation": violation.remediation,
     }
 

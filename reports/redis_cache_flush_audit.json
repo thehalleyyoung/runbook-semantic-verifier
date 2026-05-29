@@ -9,7 +9,12 @@
       "recommendation": "Freeze cache writes or otherwise quiesce repopulation before flushing shared keys.",
       "rule": "cache_flush_requires_write_freeze",
       "semantic_obligation": "cache_flush_requires_write_freeze",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "ActionGuard.CacheFlushWriteFreeze(flush-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.CacheFlushWriteFreeze",
       "step": "flush-redis",
       "trace": [
         "flush-redis"
@@ -25,7 +30,13 @@
       "recommendation": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
       "rule": "cache_warmup_before_traffic",
       "semantic_obligation": "cache_warmup_before_traffic",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "Action.Execute(flush-redis)",
+        "ActionGuard.CacheWarmupBeforeTraffic(flush-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.CacheWarmupBeforeTraffic",
       "step": "flush-redis",
       "trace": [
         "flush-redis"
@@ -41,7 +52,15 @@
       "recommendation": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
       "rule": "cache_warmup_before_traffic",
       "semantic_obligation": "cache_warmup_before_traffic",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "Action.Execute(flush-redis)",
+        "Schedule.DependencyReady(underwarm-redis)",
+        "Schedule.OperatorChoice(underwarm-redis)",
+        "ActionGuard.CacheWarmupBeforeTraffic(underwarm-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.CacheWarmupBeforeTraffic",
       "step": "underwarm-redis",
       "trace": [
         "flush-redis",
@@ -58,7 +77,16 @@
       "recommendation": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
       "rule": "cache_warmup_before_traffic",
       "semantic_obligation": "cache_warmup_before_traffic",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "Action.Execute(flush-redis)",
+        "Schedule.DependencyReady(underwarm-redis)",
+        "Schedule.OperatorChoice(underwarm-redis)",
+        "Action.Execute(underwarm-redis)",
+        "ActionGuard.CacheWarmupBeforeTraffic(underwarm-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.CacheWarmupBeforeTraffic",
       "step": "underwarm-redis",
       "trace": [
         "flush-redis",
@@ -75,7 +103,15 @@
       "recommendation": "Increase cache capacity or lower warmup size before preloading entries.",
       "rule": "cache_warmup_within_capacity",
       "semantic_obligation": "cache_warmup_within_capacity",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "Action.Execute(flush-redis)",
+        "Schedule.DependencyReady(overwarm-redis)",
+        "Schedule.OperatorChoice(overwarm-redis)",
+        "ActionGuard.CacheWarmupCapacity(overwarm-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.CacheWarmupCapacity",
       "step": "overwarm-redis",
       "trace": [
         "flush-redis",
@@ -92,7 +128,16 @@
       "recommendation": "Increase cache capacity or lower warmup size before preloading entries.",
       "rule": "cache_warmup_within_capacity",
       "semantic_obligation": "cache_warmup_within_capacity",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "Action.Execute(flush-redis)",
+        "Schedule.DependencyReady(overwarm-redis)",
+        "Schedule.OperatorChoice(overwarm-redis)",
+        "Action.Execute(overwarm-redis)",
+        "ActionGuard.CacheWarmupCapacity(overwarm-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.CacheWarmupCapacity",
       "step": "overwarm-redis",
       "trace": [
         "flush-redis",
@@ -109,7 +154,13 @@
       "recommendation": "Freeze writes and complete warmup/verification before allowing reads after a destructive cache flush.",
       "rule": "no_stale_reads_after_cache_flush",
       "semantic_obligation": "no_stale_reads_after_cache_flush",
+      "semantic_trace": [
+        "Schedule.DependencyReady(flush-redis)",
+        "Action.Execute(flush-redis)",
+        "PostInvariant.NoStaleReadsAfterCacheFlush(flush-redis)"
+      ],
       "severity": "error",
+      "small_step_rule": "PostInvariant.NoStaleReadsAfterCacheFlush",
       "step": "flush-redis",
       "trace": [
         "flush-redis"
@@ -117,6 +168,15 @@
       "type": "semantic"
     },
     {
+      "autofix_suggestions": [
+        {
+          "applicability": "manual",
+          "kind": "add-preconditions",
+          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+          "replacement": "[\n  {\n    \"cache\": \"TODO-cache\",\n    \"kind\": \"cache_writes_frozen\"\n  },\n  {\n    \"cache\": \"TODO-cache\",\n    \"entries\": 1000,\n    \"kind\": \"cache_capacity_at_least\"\n  },\n  {\n    \"cache\": \"TODO-cache\",\n    \"kind\": \"cache_warm\"\n  }\n]",
+          "title": "Add missing semantic preconditions/effects"
+        }
+      ],
       "excerpt": "# Redis cache flush public-runbook-derived fixture",
       "id": "finding-008",
       "line": 1,
@@ -130,6 +190,15 @@
       "type": "prose"
     },
     {
+      "autofix_suggestions": [
+        {
+          "applicability": "manual",
+          "kind": "add-preconditions",
+          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+          "replacement": "[\n  {\n    \"cache\": \"TODO-cache\",\n    \"kind\": \"cache_writes_frozen\"\n  },\n  {\n    \"cache\": \"TODO-cache\",\n    \"entries\": 1000,\n    \"kind\": \"cache_capacity_at_least\"\n  },\n  {\n    \"cache\": \"TODO-cache\",\n    \"kind\": \"cache_warm\"\n  }\n]",
+          "title": "Add missing semantic preconditions/effects"
+        }
+      ],
       "excerpt": "Bounded modeling note: the public template usefully reminds operators to include flush procedures and capacity/scaling sections, but the excerpt does not itself encode write freeze, cache warmup threshold, or cold-start capacity obligations. This defensive fixture models a common unsafe cache-flush mutant so the verifier can check those obligations explicitly. It is not a claim about a live OneUptime deployment.",
       "id": "finding-009",
       "line": 14,
@@ -143,11 +212,22 @@
       "type": "prose"
     }
   ],
+  "profile": null,
   "runbooks": [
     {
       "name": "Redis public runbook derived cache flush mutant",
       "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
       "safe": false,
+      "semantic_rule_counts": {
+        "Action.Execute": 3,
+        "ActionGuard.CacheFlushWriteFreeze": 1,
+        "ActionGuard.CacheWarmupBeforeTraffic": 3,
+        "ActionGuard.CacheWarmupCapacity": 2,
+        "Explore.BudgetReached": 2,
+        "PostInvariant.NoStaleReadsAfterCacheFlush": 1,
+        "Schedule.DependencyReady": 3,
+        "Schedule.OperatorChoice": 2
+      },
       "states_explored": 4,
       "terminal_traces": 2,
       "violations": 7

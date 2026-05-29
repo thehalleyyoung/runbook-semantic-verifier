@@ -247,10 +247,13 @@ def main(argv: list[str] | None = None) -> int:
         result = Checker(runbook).check()
         print(f"Runbook: {runbook.name}")
         print(f"States explored: {result.states_explored}; terminal traces: {result.traces_explored}; max depth reached: {result.max_depth_reached}")
+        print(f"Small-step rules observed: {json.dumps(result.performance_counters()['semantic_rule_counts'], sort_keys=True)}")
         if result.violations:
             print("Violations:")
             for v in result.violations:
-                print(f"- [{v.property}] trace={' -> '.join(v.trace)}: {v.message}")
+                print(f"- [{v.property}] rule={v.small_step_rule} trace={' -> '.join(v.trace)}: {v.message}")
+                if v.semantic_trace:
+                    print(f"  semantic_trace: {' -> '.join(v.semantic_trace)}")
                 if v.remediation:
                     print(f"  remediation: {v.remediation}")
         else:
@@ -311,6 +314,7 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
             "safe": not result.violations,
             "states_explored": result.states_explored,
             "terminal_traces": result.traces_explored,
+            "semantic_rule_counts": result.performance_counters()["semantic_rule_counts"],
             "violations": len(result.violations),
         })
         status = "UNSAFE" if result.violations else "SAFE"
@@ -318,7 +322,7 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
             print(f"{status} {file} states={result.states_explored} terminal_traces={result.traces_explored} violations={len(result.violations)}")
         for violation in result.violations:
             if output_format == "text":
-                print(f"  - [{violation.property}] trace={' -> '.join(violation.trace)}: {violation.message}")
+                print(f"  - [{violation.property}] rule={violation.small_step_rule} trace={' -> '.join(violation.trace)}: {violation.message}")
             audit_findings.append({
                 "type": "semantic",
                 "severity": "error",
@@ -327,8 +331,10 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "line": None,
                 "rule": violation.property,
                 "semantic_obligation": violation.property,
+                "small_step_rule": violation.small_step_rule,
                 "step": violation.step,
                 "trace": list(violation.trace),
+                "semantic_trace": list(violation.semantic_trace),
                 "message": violation.message,
                 "recommendation": violation.remediation,
             })
@@ -433,18 +439,19 @@ def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findin
         "",
     ]
     if runbooks:
-        lines.extend(["| Runbook | Safe | States | Traces | Violations |", "| --- | --- | ---: | ---: | ---: |"])
+        lines.extend(["| Runbook | Safe | States | Traces | Semantic rules | Violations |", "| --- | --- | ---: | ---: | --- | ---: |"])
         for item in runbooks:
-            lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | {item['violations']} |")
+            lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | `{json.dumps(item.get('semantic_rule_counts', {}), sort_keys=True)}` | {item['violations']} |")
         lines.append("")
     if findings:
-        lines.extend(["| ID | Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation | Autofix suggestions |", "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| ID | Rank | Type | Severity | Rule | Small-step rule | Obligation | Location | Message | Recommendation | Autofix suggestions |", "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |"])
         for finding in findings:
             location = f"{finding.get('path')}:{finding.get('line') or ''}"
             message = str(finding.get("message", "")).replace("|", "\\|")
             recommendation = str(finding.get("recommendation", "") or "").replace("|", "\\|")
             suggestions = _autofix_summary(finding).replace("|", "\\|")
-            lines.append(f"| `{finding['id']}` | {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} | {suggestions} |")
+            small_step = str(finding.get("small_step_rule", "") or "").replace("|", "\\|")
+            lines.append(f"| `{finding['id']}` | {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{small_step}` | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} | {suggestions} |")
     return "\n".join(lines) + "\n"
 
 
@@ -492,6 +499,8 @@ def _render_audit_sarif(report: dict[str, object]) -> str:
                 "findingId": str(finding.get("id", "")),
                 "findingType": str(finding.get("type", "")),
                 "semanticObligation": str(finding.get("semantic_obligation", "")),
+                "smallStepRule": str(finding.get("small_step_rule", "")),
+                "semanticTrace": finding.get("semantic_trace", []),
             },
         }
         results.append(result)

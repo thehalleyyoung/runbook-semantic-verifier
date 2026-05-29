@@ -1,11 +1,21 @@
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .actions import ActionError, apply_action, condition_holds
 from .model import Runbook, Step, SystemState
+from .semantics import (
+    ACTION_EXECUTE,
+    ACTION_WAIT,
+    EXPLORE_BUDGET_REACHED,
+    EXPLORE_TERMINAL,
+    action_rule,
+    label_rule,
+    scheduling_rules,
+    small_step_rule,
+)
 
 
 @dataclass(frozen=True)
@@ -15,6 +25,8 @@ class Violation:
     trace: tuple[str, ...]
     step: str | None = None
     remediation: str | None = None
+    small_step_rule: str | None = None
+    semantic_trace: tuple[str, ...] = ()
 
 
 @dataclass
@@ -32,6 +44,7 @@ class CheckResult:
     symbolic_splits: int = 0
     proof_obligations_checked: dict[str, int] = field(default_factory=dict)
     proof_obligation_failures: dict[str, int] = field(default_factory=dict)
+    semantic_rule_counts: dict[str, int] = field(default_factory=dict)
 
     @property
     def avg_branch_factor(self) -> float:
@@ -58,6 +71,7 @@ class CheckResult:
             "minimized_counterexample_trace_length": self.minimized_counterexample_trace_length,
             "proof_obligations_checked": dict(sorted(self.proof_obligations_checked.items())),
             "proof_obligation_failures": dict(sorted(self.proof_obligation_failures.items())),
+            "semantic_rule_counts": dict(sorted(self.semantic_rule_counts.items())),
         }
 
 
@@ -71,11 +85,11 @@ class Checker:
 
     def check(self) -> CheckResult:
         result = CheckResult(safe=True)
-        initial = (self.runbook.state, frozenset(), tuple())
-        queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...]]] = deque([initial])
+        initial = (self.runbook.state, frozenset(), tuple(), tuple())
+        queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]] = deque([initial])
         seen = set()
         while queue:
-            state, done, trace = queue.popleft()
+            state, done, trace, semantic_trace = queue.popleft()
             key = (state.fingerprint(), done)
             if key in seen:
                 continue
@@ -85,6 +99,9 @@ class Checker:
                 result.traces_explored += 1
                 if len(trace) >= self.runbook.max_depth and len(done) < len(self.runbook.steps):
                     result.max_depth_reached = True
+                    _record_rule(result, EXPLORE_BUDGET_REACHED)
+                else:
+                    _record_rule(result, EXPLORE_TERMINAL)
                 continue
             enabled = self._enabled_steps(done)
             result.branch_points += 1
@@ -92,27 +109,41 @@ class Checker:
             result.max_branch_factor = max(result.max_branch_factor, len(enabled))
             for step in enabled:
                 result.transitions_explored += 1
-                pre = self._pre_action_violations(state, step, trace)
+                schedule_trace = semantic_trace + scheduling_rules(step, len(enabled), self.runbook.allow_reordering)
+                _record_labeled_rules(result, schedule_trace[len(semantic_trace):])
+                pre = self._pre_action_violations(state, step, trace, schedule_trace)
                 _record_obligations(result, "precondition", len(step.requires), pre)
                 if pre:
                     result.violations.extend(pre)
+                    for violation in pre:
+                        if violation.small_step_rule:
+                            _record_rule(result, violation.small_step_rule)
                     result.safe = False
                 try:
                     next_state = apply_action(state, step)
                 except ActionError as exc:
-                    violation = _violation("action_defined", str(exc), trace + (step.id,), step.id)
+                    failure_trace = schedule_trace + (label_rule(small_step_rule("action_defined"), step.id),)
+                    _record_labeled_rules(result, failure_trace[len(schedule_trace):])
+                    violation = _violation("action_defined", str(exc), trace + (step.id,), step.id, failure_trace)
                     _record_obligations(result, "action_defined", 1, [violation])
+                    if violation.small_step_rule:
+                        _record_rule(result, violation.small_step_rule)
                     result.violations.append(violation)
                     result.safe = False
                     continue
                 _record_obligations(result, "action_defined", 1, [])
-                post = self._post_action_violations(next_state, step, trace + (step.id,))
+                next_semantic_trace = schedule_trace + (label_rule(action_rule(step), step.id),)
+                _record_labeled_rules(result, next_semantic_trace[len(schedule_trace):])
+                post = self._post_action_violations(next_state, step, trace + (step.id,), next_semantic_trace)
                 _record_obligations(result, "safety_postcondition", _safety_obligation_count(next_state), post)
                 _record_obligations(result, "promised_effect", len(step.effects), [v for v in post if v.property in {"effect", "effect_defined"}])
                 if post:
                     result.violations.extend(post)
+                    for violation in post:
+                        if violation.small_step_rule:
+                            _record_rule(result, violation.small_step_rule)
                     result.safe = False
-                queue.append((next_state, done | {step.id}, trace + (step.id,)))
+                queue.append((next_state, done | {step.id}, trace + (step.id,), next_semantic_trace))
         result.violations = _dedupe_violations(result.violations)
         return result
 
@@ -124,22 +155,22 @@ class Checker:
             return [step] if all(dep in done for dep in step.after) else []
         return [step for step in self.runbook.steps if step.id not in done and all(dep in done for dep in step.after)]
 
-    def _pre_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...]) -> list[Violation]:
+    def _pre_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
         violations: list[Violation] = []
         for condition in step.requires:
             try:
                 holds = condition_holds(state, condition)
             except ActionError as exc:
-                violations.append(_violation("precondition_defined", str(exc), trace + (step.id,), step.id))
+                violations.append(_violation("precondition_defined", str(exc), trace + (step.id,), step.id, _append_property_rule(semantic_trace, "precondition_defined", step.id)))
                 continue
             if not holds:
-                violations.append(_violation("precondition", f"step {step.id} requires {condition}", trace + (step.id,), step.id))
+                violations.append(_violation("precondition", f"step {step.id} requires {condition}", trace + (step.id,), step.id, _append_property_rule(semantic_trace, "precondition", step.id)))
         if step.action in {"drain_replica", "drain_region", "scale_service"}:
-            violations.extend(self._availability_would_be_violated(state, step, trace))
+            violations.extend(self._availability_would_be_violated(state, step, trace, semantic_trace))
         if step.action == "rollback_deployment":
             for db in state.databases.values():
                 if db.migration_in_progress and not db.migration_compatible:
-                    violations.append(_violation("no_rollback_during_incompatible_migration", f"rollback {step.id} while database {db.name} has incompatible migration in progress", trace + (step.id,), step.id))
+                    violations.append(_violation("no_rollback_during_incompatible_migration", f"rollback {step.id} while database {db.name} has incompatible migration in progress", trace + (step.id,), step.id, _append_property_rule(semantic_trace, "no_rollback_during_incompatible_migration", step.id)))
         if step.action == "failover_database":
             db = state.databases[str(step.params["database"])]
             target = str(step.params["target_region"])
@@ -211,15 +242,15 @@ class Checker:
             record = state.dns_records[str(step.params["record"])]
             if not record.ttl_elapsed(state.clock_minute):
                 violations.append(_violation("dns_ttl_elapsed_before_finalize", f"DNS record {record.name} TTL window has not elapsed before finalize", trace + (step.id,), step.id))
-        return violations
+        return [_with_semantic_prefix(violation, semantic_trace) for violation in violations]
 
-    def _post_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...]) -> list[Violation]:
+    def _post_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
         violations: list[Violation] = []
         for svc in state.services.values():
             if svc.available_count() < svc.min_available:
-                violations.append(_violation("service_min_available", f"service {svc.name} has {svc.available_count()} available replicas; requires {svc.min_available}", trace, step.id))
+                violations.append(_violation("service_min_available", f"service {svc.name} has {svc.available_count()} available replicas; requires {svc.min_available}", trace, step.id, _append_property_rule(semantic_trace, "service_min_available", step.id)))
             if svc.replicas and all(r.drained for r in svc.replicas):
-                violations.append(_violation("no_draining_all_replicas", f"service {svc.name} has all replicas drained", trace, step.id))
+                violations.append(_violation("no_draining_all_replicas", f"service {svc.name} has all replicas drained", trace, step.id, _append_property_rule(semantic_trace, "no_draining_all_replicas", step.id)))
         for q in state.queues.values():
             if q.paused and q.depth > 0 and q.consumers <= 1:
                 violations.append(_violation("no_paused_queue_with_backlog", f"queue {q.name} is paused with depth={q.depth} and consumers={q.consumers}", trace, step.id))
@@ -265,13 +296,13 @@ class Checker:
                 continue
             if not holds:
                 violations.append(_violation("effect", f"step {step.id} promised effect {condition}", trace, step.id))
-        return violations
+        return [_with_semantic_prefix(violation, semantic_trace) for violation in violations]
 
-    def _availability_would_be_violated(self, state: SystemState, step: Step, trace: tuple[str, ...]) -> list[Violation]:
+    def _availability_would_be_violated(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
         try:
             next_state = apply_action(state, step)
         except ActionError as exc:
-            return [_violation("action_defined", str(exc), trace + (step.id,), step.id)]
+            return [_violation("action_defined", str(exc), trace + (step.id,), step.id, _append_property_rule(semantic_trace, "action_defined", step.id))]
         return [
             _violation("service_min_available", f"step {step.id} would leave service {svc.name} with {svc.available_count()} available replicas; requires {svc.min_available}", trace + (step.id,), step.id)
             for svc in next_state.services.values()
@@ -286,6 +317,19 @@ def _record_obligations(result: CheckResult, group: str, checked: int, failures:
         result.proof_obligation_failures[group] = result.proof_obligation_failures.get(group, 0) + len(failures)
 
 
+def _record_rule(result: CheckResult, rule: str) -> None:
+    result.semantic_rule_counts[rule] = result.semantic_rule_counts.get(rule, 0) + 1
+
+
+def _record_labeled_rules(result: CheckResult, rules: tuple[str, ...]) -> None:
+    for rule in rules:
+        _record_rule(result, _unlabel_rule(rule))
+
+
+def _unlabel_rule(rule: str) -> str:
+    return rule.split("(", 1)[0]
+
+
 def _safety_obligation_count(state: SystemState) -> int:
     return len(state.services) * 2 + len(state.queues) * 5 + len(state.caches) * 3 + len(state.traffic_routes) + len(state.dns_records) * 3
 
@@ -294,7 +338,7 @@ def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
     seen: set[tuple[str, str, tuple[str, ...], str | None]] = set()
     unique: list[Violation] = []
     for violation in violations:
-        key = (violation.property, violation.message, violation.trace, violation.step, violation.remediation)
+        key = (violation.property, violation.message, violation.trace, violation.step, violation.remediation, violation.small_step_rule, violation.semantic_trace)
         if key not in seen:
             seen.add(key)
             unique.append(violation)
@@ -337,8 +381,21 @@ REMEDIATIONS = {
 }
 
 
-def _violation(property: str, message: str, trace: tuple[str, ...], step: str | None = None) -> Violation:
-    return Violation(property, message, _minimize_trace(trace, step), step, REMEDIATIONS.get(property))
+def _violation(property: str, message: str, trace: tuple[str, ...], step: str | None = None, semantic_trace: tuple[str, ...] | None = None) -> Violation:
+    rule = small_step_rule(property)
+    if semantic_trace is None:
+        semantic_trace = (label_rule(rule, step),)
+    return Violation(property, message, _minimize_trace(trace, step), step, REMEDIATIONS.get(property), rule, semantic_trace)
+
+
+def _append_property_rule(semantic_trace: tuple[str, ...], property: str, step: str | None) -> tuple[str, ...]:
+    return semantic_trace + (label_rule(small_step_rule(property), step),)
+
+
+def _with_semantic_prefix(violation: Violation, semantic_trace: tuple[str, ...]) -> Violation:
+    if violation.semantic_trace[:len(semantic_trace)] == semantic_trace:
+        return violation
+    return replace(violation, semantic_trace=semantic_trace + violation.semantic_trace)
 
 
 def _service_has_capacity_in_region(state: SystemState, service: str, region: str) -> bool:

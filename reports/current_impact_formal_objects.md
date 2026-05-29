@@ -14,7 +14,7 @@
 | `syntax` | The parsed DSL/Markdown program, including steps, dependency edges, and bounded exploration settings. | `runbooks[].syntax, runbooks[].steps` |
 | `entity_universe` | Finite typed identifiers for infrastructure objects referenced by actions and properties. | `runbooks[].entity_universe, coverage.entities, readiness.modeled_entities` |
 | `store` | Immutable infrastructure state transformed by small-step action semantics. | `runbooks[].store, runbooks[].traces.states_explored` |
-| `trace` | A dependency-respecting action sequence explored within the runbook's max_depth budget. | `runbooks[].traces, runbooks[].hazards.counterexamples[].trace` |
+| `trace` | A dependency-respecting action sequence plus mirrored small-step rule names explored within the runbook's max_depth budget. | `runbooks[].traces, runbooks[].hazards.counterexamples[].trace, runbooks[].hazards.counterexamples[].semantic_trace` |
 | `hazard` | A failed safety, precondition, effect, or action-definedness obligation with a witness trace. | `runbooks[].hazards, readiness.highest_risk_counterexamples, benchmark.results[].observed_violation_properties` |
 | `observation` | A source-addressed prose signal that is not automatically verified by the executable model. | `observations[], audit.markdown_findings[], lint-markdown findings[]` |
 | `diagnostic` | A parser/schema/entity rejection or warning with source and remediation metadata. | `diagnostics.parse, validate diagnostics, audit parse_errors` |

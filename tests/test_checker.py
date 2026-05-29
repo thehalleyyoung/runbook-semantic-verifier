@@ -26,11 +26,33 @@ class CheckerTests(unittest.TestCase):
         self.assertIn("no_failover_to_unhealthy_region", props)
         self.assertIn("quorum_before_data_loss_action", props)
         self.assertIn("bounded_alert_suppression", props)
+        self.assertTrue(all(v.small_step_rule for v in result.violations))
+        self.assertTrue(all(v.semantic_trace for v in result.violations))
 
     def test_dependency_order_prevents_premature_failover(self):
         result = Checker(load_runbook(ROOT / "examples" / "safe_runbook.json")).check()
         traces = [v.trace for v in result.violations]
         self.assertNotIn(("failover-orders-west",), traces)
+
+    def test_small_step_rule_counts_cover_choice_wait_and_budget(self):
+        runbook = parse_runbook({
+            "allow_reordering": True,
+            "max_depth": 1,
+            "system": {
+                "regions": {"east": {"healthy": True}},
+                "services": {"api": {"min_available": 0, "replicas": []}},
+            },
+            "steps": [
+                {"id": "wait-clock", "action": "wait", "params": {"minutes": 5}},
+                {"id": "restart", "action": "restart_service", "params": {"service": "api"}},
+            ],
+        })
+        result = Checker(runbook).check()
+        counters = result.performance_counters()["semantic_rule_counts"]
+        self.assertEqual(counters["Schedule.OperatorChoice"], 2)
+        self.assertEqual(counters["Action.Wait"], 1)
+        self.assertEqual(counters["Action.Execute"], 1)
+        self.assertEqual(counters["Explore.BudgetReached"], 2)
 
 class CheckerExplanationTests(unittest.TestCase):
     def test_queue_pause_hazard_has_remediation(self):

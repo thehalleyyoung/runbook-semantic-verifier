@@ -77,8 +77,8 @@ None.
   "safety_postcondition": {
     "checked": {
       "delta": 0,
-      "new": 20,
-      "old": 20
+      "new": 60,
+      "old": 60
     },
     "failures": {
       "delta": 0,

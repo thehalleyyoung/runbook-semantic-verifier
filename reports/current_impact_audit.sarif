@@ -43,7 +43,13 @@
           "properties": {
             "findingId": "finding-001",
             "findingType": "semantic",
-            "semanticObligation": "no_duplicate_processing_risk"
+            "semanticObligation": "no_duplicate_processing_risk",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "PostInvariant.NoDuplicateReplayProcessing(delete-stale-tenant-indexes-trigger-fallback)"
+            ],
+            "smallStepRule": "PostInvariant.NoDuplicateReplayProcessing"
           },
           "ruleId": "no_duplicate_processing_risk"
         },
@@ -64,7 +70,15 @@
           "properties": {
             "findingId": "finding-002",
             "findingType": "semantic",
-            "semanticObligation": "no_duplicate_processing_risk"
+            "semanticObligation": "no_duplicate_processing_risk",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "Action.Execute(rebalance-fallback-consumers)",
+              "PostInvariant.NoDuplicateReplayProcessing(rebalance-fallback-consumers)"
+            ],
+            "smallStepRule": "PostInvariant.NoDuplicateReplayProcessing"
           },
           "ruleId": "no_duplicate_processing_risk"
         },
@@ -85,7 +99,14 @@
           "properties": {
             "findingId": "finding-003",
             "findingType": "semantic",
-            "semanticObligation": "no_rebalance_to_zero_consumers"
+            "semanticObligation": "no_rebalance_to_zero_consumers",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "ActionGuard.ConsumerRebalanceProgress(rebalance-fallback-consumers)"
+            ],
+            "smallStepRule": "ActionGuard.ConsumerRebalanceProgress"
           },
           "ruleId": "no_rebalance_to_zero_consumers"
         },
@@ -106,7 +127,12 @@
           "properties": {
             "findingId": "finding-004",
             "findingType": "semantic",
-            "semanticObligation": "no_replay_without_dedupe"
+            "semanticObligation": "no_replay_without_dedupe",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+            ],
+            "smallStepRule": "ActionGuard.MessageReplayDeduplication"
           },
           "ruleId": "no_replay_without_dedupe"
         },
@@ -127,7 +153,15 @@
           "properties": {
             "findingId": "finding-005",
             "findingType": "semantic",
-            "semanticObligation": "no_unstable_consumer_group_with_backlog"
+            "semanticObligation": "no_unstable_consumer_group_with_backlog",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "Action.Execute(rebalance-fallback-consumers)",
+              "PostInvariant.ConsumerGroupStableForBacklog(rebalance-fallback-consumers)"
+            ],
+            "smallStepRule": "PostInvariant.ConsumerGroupStableForBacklog"
           },
           "ruleId": "no_unstable_consumer_group_with_backlog"
         },
@@ -148,7 +182,15 @@
           "properties": {
             "findingId": "finding-006",
             "findingType": "semantic",
-            "semanticObligation": "queue_backlog_requires_consumers"
+            "semanticObligation": "queue_backlog_requires_consumers",
+            "semanticTrace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "Action.Execute(rebalance-fallback-consumers)",
+              "PostInvariant.QueueBacklogHasConsumers(rebalance-fallback-consumers)"
+            ],
+            "smallStepRule": "PostInvariant.QueueBacklogHasConsumers"
           },
           "ruleId": "queue_backlog_requires_consumers"
         },
@@ -172,7 +214,9 @@
           "properties": {
             "findingId": "finding-007",
             "findingType": "prose",
-            "semanticObligation": "restore_path_and_blast_radius_limited"
+            "semanticObligation": "restore_path_and_blast_radius_limited",
+            "semanticTrace": [],
+            "smallStepRule": ""
           },
           "ruleId": "data-deletion-needs-restore-precondition"
         },
@@ -196,7 +240,9 @@
           "properties": {
             "findingId": "finding-008",
             "findingType": "prose",
-            "semanticObligation": "blast_radius_limited_or_explicit_limitation"
+            "semanticObligation": "blast_radius_limited_or_explicit_limitation",
+            "semanticTrace": [],
+            "smallStepRule": ""
           },
           "ruleId": "destructive-delete-needs-targeting"
         },
@@ -220,7 +266,9 @@
           "properties": {
             "findingId": "finding-009",
             "findingType": "prose",
-            "semanticObligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk"
+            "semanticObligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
+            "semanticTrace": [],
+            "smallStepRule": ""
           },
           "ruleId": "backfill-needs-queue-capacity"
         },
@@ -244,7 +292,9 @@
           "properties": {
             "findingId": "finding-010",
             "findingType": "prose",
-            "semanticObligation": "limitation:ring-forget-targeting"
+            "semanticObligation": "limitation:ring-forget-targeting",
+            "semanticTrace": [],
+            "smallStepRule": ""
           },
           "ruleId": "prose-suppression-applied"
         }

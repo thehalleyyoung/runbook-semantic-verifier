@@ -35,6 +35,11 @@
       "message": "step orchestrator-failover-to-west requires {'kind': 'database_quorum_confirmed', 'database': 'mysql-metadata'}",
       "property": "precondition",
       "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+      "semantic_trace": [
+        "Schedule.SequenceNext(orchestrator-failover-to-west)",
+        "StepEnabled.Requires(orchestrator-failover-to-west)"
+      ],
+      "small_step_rule": "StepEnabled.Requires",
       "step": "orchestrator-failover-to-west",
       "trace": [
         "orchestrator-failover-to-west"
@@ -44,6 +49,11 @@
       "message": "database mysql-metadata failover has data-loss risk before quorum confirmation",
       "property": "quorum_before_data_loss_action",
       "remediation": "Confirm quorum or explicit data-loss approval before failover.",
+      "semantic_trace": [
+        "Schedule.SequenceNext(orchestrator-failover-to-west)",
+        "ActionGuard.DatabaseFailoverQuorum(orchestrator-failover-to-west)"
+      ],
+      "small_step_rule": "ActionGuard.DatabaseFailoverQuorum",
       "step": "orchestrator-failover-to-west",
       "trace": [
         "orchestrator-failover-to-west"
@@ -90,8 +100,8 @@
     "safety_postcondition": {
       "checked": {
         "delta": 0,
-        "new": 20,
-        "old": 20
+        "new": 60,
+        "old": 60
       },
       "failures": {
         "delta": 0,

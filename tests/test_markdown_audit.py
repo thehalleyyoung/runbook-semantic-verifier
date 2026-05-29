@@ -62,6 +62,10 @@ class MarkdownCaseStudyTests(unittest.TestCase):
         self.assertGreaterEqual(data["findings"][0]["rank"], data["findings"][-1]["rank"])
         self.assertIn("semantic_obligation", data["findings"][0])
         self.assertEqual(data["findings"][0]["id"], "finding-001")
+        semantic = next(finding for finding in data["findings"] if finding["type"] == "semantic")
+        self.assertIn("small_step_rule", semantic)
+        self.assertIn("semantic_trace", semantic)
+        self.assertTrue(any(rule.startswith("Schedule.") for rule in semantic["semantic_trace"]))
 
     def test_explain_cli_expands_historical_finding_with_rule_delta_and_source(self):
         env = os.environ.copy()
@@ -111,6 +115,8 @@ class MarkdownCaseStudyTests(unittest.TestCase):
         self.assertEqual(explanation["id"], semantic_finding["id"])
         self.assertEqual(explanation["rule"], semantic_finding["rule"])
         self.assertIn("small_step_rule", explanation)
+        self.assertIn("semantic_trace", explanation)
+        self.assertTrue(explanation["semantic_trace"])
         self.assertIn("weakest_precondition_hint", explanation)
         self.assertGreaterEqual(len(explanation["state_delta"]), 1)
         self.assertEqual(explanation["source"]["path"], semantic_finding["path"])

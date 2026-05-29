@@ -38,9 +38,10 @@
     {
       "cli_json_fields": [
         "runbooks[].traces",
-        "runbooks[].hazards.counterexamples[].trace"
+        "runbooks[].hazards.counterexamples[].trace",
+        "runbooks[].hazards.counterexamples[].semantic_trace"
       ],
-      "mathematical_role": "A dependency-respecting action sequence explored within the runbook's max_depth budget.",
+      "mathematical_role": "A dependency-respecting action sequence plus mirrored small-step rule names explored within the runbook's max_depth budget.",
       "object": "trace"
     },
     {
@@ -265,6 +266,11 @@
             "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
             "property": "no_replay_without_dedupe",
             "remediation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
+            "semantic_trace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "ActionGuard.MessageReplayDeduplication(delete-stale-tenant-indexes-trigger-fallback)"
+            ],
+            "small_step_rule": "ActionGuard.MessageReplayDeduplication",
             "step": "delete-stale-tenant-indexes-trigger-fallback",
             "trace": [
               "delete-stale-tenant-indexes-trigger-fallback"
@@ -274,6 +280,12 @@
             "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
             "property": "no_duplicate_processing_risk",
             "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+            "semantic_trace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "PostInvariant.NoDuplicateReplayProcessing(delete-stale-tenant-indexes-trigger-fallback)"
+            ],
+            "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
             "step": "delete-stale-tenant-indexes-trigger-fallback",
             "trace": [
               "delete-stale-tenant-indexes-trigger-fallback"
@@ -283,6 +295,13 @@
             "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
             "property": "no_rebalance_to_zero_consumers",
             "remediation": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
+            "semantic_trace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "ActionGuard.ConsumerRebalanceProgress(rebalance-fallback-consumers)"
+            ],
+            "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
             "step": "rebalance-fallback-consumers",
             "trace": [
               "delete-stale-tenant-indexes-trigger-fallback",
@@ -293,6 +312,14 @@
             "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
             "property": "no_duplicate_processing_risk",
             "remediation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+            "semantic_trace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "Action.Execute(rebalance-fallback-consumers)",
+              "PostInvariant.NoDuplicateReplayProcessing(rebalance-fallback-consumers)"
+            ],
+            "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
             "step": "rebalance-fallback-consumers",
             "trace": [
               "delete-stale-tenant-indexes-trigger-fallback",
@@ -303,6 +330,14 @@
             "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
             "property": "queue_backlog_requires_consumers",
             "remediation": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
+            "semantic_trace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "Action.Execute(rebalance-fallback-consumers)",
+              "PostInvariant.QueueBacklogHasConsumers(rebalance-fallback-consumers)"
+            ],
+            "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
             "step": "rebalance-fallback-consumers",
             "trace": [
               "delete-stale-tenant-indexes-trigger-fallback",
@@ -313,6 +348,14 @@
             "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
             "property": "no_unstable_consumer_group_with_backlog",
             "remediation": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
+            "semantic_trace": [
+              "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+              "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+              "Schedule.SequenceNext(rebalance-fallback-consumers)",
+              "Action.Execute(rebalance-fallback-consumers)",
+              "PostInvariant.ConsumerGroupStableForBacklog(rebalance-fallback-consumers)"
+            ],
+            "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
             "step": "rebalance-fallback-consumers",
             "trace": [
               "delete-stale-tenant-indexes-trigger-fallback",
@@ -348,6 +391,7 @@
           "after": [],
           "cli_json_fields": [
             "audit.findings[].trace",
+            "audit.findings[].semantic_trace",
             "check violations trace",
             "readiness.highest_risk_counterexamples[].trace"
           ],
@@ -366,6 +410,7 @@
           ],
           "cli_json_fields": [
             "audit.findings[].trace",
+            "audit.findings[].semantic_trace",
             "check violations trace",
             "readiness.highest_risk_counterexamples[].trace"
           ],

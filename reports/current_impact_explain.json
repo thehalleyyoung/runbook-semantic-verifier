@@ -14,11 +14,16 @@
   ],
   "rule": "no_duplicate_processing_risk",
   "semantic_obligation": "no_duplicate_processing_risk",
+  "semantic_trace": [
+    "Schedule.SequenceNext(delete-stale-tenant-indexes-trigger-fallback)",
+    "Action.Execute(delete-stale-tenant-indexes-trigger-fallback)",
+    "PostInvariant.NoDuplicateReplayProcessing(delete-stale-tenant-indexes-trigger-fallback)"
+  ],
   "severity": "error",
   "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
   "source": {
     "excerpt": "\"id\": \"delete-stale-tenant-indexes-trigger-fallback\",",
-    "line": 104,
+    "line": 105,
     "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
   },
   "state_delta": [

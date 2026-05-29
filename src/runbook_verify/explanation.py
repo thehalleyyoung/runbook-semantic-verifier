@@ -10,105 +10,7 @@ from .markdown_lint import SEVERITY_RANK, lint_markdown_tree
 from .model import Runbook, SystemState
 from .parser import RunbookParseError, is_runbook_document, load_document, parse_runbook
 
-
-RULE_EXPLANATIONS: dict[str, dict[str, object]] = {
-    "precondition": {
-        "small_step_rule": "StepEnabled.Requires",
-        "weakest_precondition_hint": "Before this action is enabled, an earlier step or explicit assumption must establish the failed `requires` condition.",
-        "remediation_examples": ["Add an `after` dependency on the step that proves the condition.", "Add a concrete guard such as `region_healthy`, `database_quorum_confirmed`, or `service_available_at_least`."],
-    },
-    "service_min_available": {
-        "small_step_rule": "ActionPreserves.ServiceAvailability",
-        "weakest_precondition_hint": "The pre-state must contain enough healthy, undrained replicas that the action cannot reduce availability below `min_available`.",
-        "remediation_examples": ["Scale or restore replacement replicas before draining.", "Add `service_available_at_least` preconditions/effects around capacity-changing steps."],
-    },
-    "no_queue_pause_without_drain_plan": {
-        "small_step_rule": "ActionGuard.QueuePause",
-        "weakest_precondition_hint": "Before pausing a queue, prove backlog is drained or enough alternate consumers exist.",
-        "remediation_examples": ["Require `queue_depth_at_most` before pause.", "Require `queue_has_consumers` with enough consumers to process backlog safely."],
-    },
-    "no_paused_queue_with_backlog": {
-        "small_step_rule": "PostInvariant.QueueBacklogProgress",
-        "weakest_precondition_hint": "A terminal paused queue is safe only when backlog is bounded or alternate consumers remain active.",
-        "remediation_examples": ["Resume the queue after the maintenance step.", "Drain backlog before pausing consumers."],
-    },
-    "no_replay_without_dedupe": {
-        "small_step_rule": "ActionGuard.MessageReplayDeduplication",
-        "weakest_precondition_hint": "Before replaying messages, the pre-state or action parameters must prove a dedupe key, idempotent handler, or bounded dedupe window.",
-        "remediation_examples": ["Set `dedupe_key` on `replay_messages`.", "Add a positive `dedupe_window_minutes` queue assumption.", "Use `idempotent: true` only when the replay handler is documented idempotent."],
-    },
-    "no_duplicate_processing_risk": {
-        "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
-        "weakest_precondition_hint": "A replay step may not leave the queue in a duplicate-risk state unless deduplication/idempotency was modeled.",
-        "remediation_examples": ["Replay from the dead-letter queue with a stable dedupe key.", "Drain or quarantine duplicate-risk messages before resuming consumers."],
-    },
-    "dead_letter_replay_has_messages": {
-        "small_step_rule": "ActionGuard.DeadLetterReplayBound",
-        "weakest_precondition_hint": "The requested replay count must be bounded by the modeled dead-letter backlog.",
-        "remediation_examples": ["Lower `count` to the modeled `dead_letter_depth`.", "Refresh the queue inventory before replay."],
-    },
-    "dead_letter_drain_has_messages": {
-        "small_step_rule": "ActionGuard.DeadLetterDrainBound",
-        "weakest_precondition_hint": "The requested drain count must be bounded by the modeled dead-letter backlog.",
-        "remediation_examples": ["Lower `count` to the modeled `dead_letter_depth`.", "Inspect the DLQ before running the drain step."],
-    },
-    "no_rebalance_to_zero_consumers": {
-        "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
-        "weakest_precondition_hint": "A queue with backlog requires a positive post-rebalance consumer count.",
-        "remediation_examples": ["Use `rebalance_consumers` with `consumers` greater than zero.", "Drain the queue before scaling consumers to zero."],
-    },
-    "queue_backlog_requires_consumers": {
-        "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
-        "weakest_precondition_hint": "Every reachable queue state with backlog must retain at least one active consumer.",
-        "remediation_examples": ["Restore consumers before replay.", "Pause replay until consumer capacity is available."],
-    },
-    "no_unstable_consumer_group_with_backlog": {
-        "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
-        "weakest_precondition_hint": "Consumer-group rebalancing must converge before the runbook leaves backlog to be processed.",
-        "remediation_examples": ["Set `stable: true` only after a modeled wait/health check.", "Add a `consumer_group_stable` effect to the stabilization step."],
-    },
-    "quorum_before_data_loss_action": {
-        "small_step_rule": "ActionGuard.DatabaseFailoverQuorum",
-        "weakest_precondition_hint": "A data-loss-risk failover requires database quorum/data-safety confirmation in the pre-state.",
-        "remediation_examples": ["Run `confirm_quorum` before `failover_database`.", "Add a `database_quorum_confirmed` precondition to the failover step."],
-    },
-    "no_failover_to_unhealthy_region": {
-        "small_step_rule": "ActionGuard.DatabaseTargetHealth",
-        "weakest_precondition_hint": "The target region must be modeled healthy and listed among healthy database regions before failover.",
-        "remediation_examples": ["Add a `region_healthy` precondition.", "Restore or choose a healthy target region before failover."],
-    },
-    "bounded_alert_suppression": {
-        "small_step_rule": "ActionGuard.AlertSuppressionBound",
-        "weakest_precondition_hint": "Alert suppression must have a positive finite expiry no greater than the configured safety bound.",
-        "remediation_examples": ["Set `expires_after_minutes` to a bounded value.", "Lower the suppression duration or raise the explicit safety policy with review."],
-    },
-    "no_draining_load_balancer_with_traffic": {
-        "small_step_rule": "ActionGuard.LoadBalancerDrainTraffic",
-        "weakest_precondition_hint": "A regional load balancer may be drained only after weighted traffic to that region is 0%.",
-        "remediation_examples": ["Run `failover_traffic` or `shift_traffic` before `drain_load_balancer`.", "Add `traffic_weight_at_most: 0` as a precondition."],
-    },
-    "no_traffic_to_unhealthy_region": {
-        "small_step_rule": "RouteInvariant.TargetRegionHealthy",
-        "weakest_precondition_hint": "Any region receiving positive traffic must be modeled healthy.",
-        "remediation_examples": ["Require `region_healthy` before shifting traffic.", "Restore regional health or route elsewhere."],
-    },
-    "no_traffic_to_drained_load_balancer": {
-        "small_step_rule": "RouteInvariant.LoadBalancerActive",
-        "weakest_precondition_hint": "Any region receiving positive traffic must have an active, undrained load balancer.",
-        "remediation_examples": ["Restore the load balancer before assigning traffic.", "Shift traffic away before draining the load balancer."],
-    },
-    "traffic_requires_regional_capacity": {
-        "small_step_rule": "RouteInvariant.RegionalServiceCapacity",
-        "weakest_precondition_hint": "A route can send positive traffic to a region only if the service has a healthy undrained replica there.",
-        "remediation_examples": ["Scale service replicas in the target region first.", "Keep traffic on regions with available capacity."],
-    },
-    "traffic_weights_sum_to_100": {
-        "small_step_rule": "RouteInvariant.NormalizedWeights",
-        "weakest_precondition_hint": "Traffic weights form a total distribution and must sum to exactly 100.",
-        "remediation_examples": ["Use `failover_traffic` for single-target routing.", "Pair `shift_traffic` changes so weights remain normalized."],
-    },
-}
-
+from .semantics import RULE_EXPLANATIONS
 
 def _explain_parse_finding(finding: dict[str, Any]) -> dict[str, Any]:
     source = _source_excerpt(str(finding["path"]), finding.get("line"))
@@ -208,6 +110,10 @@ def render_explanation_markdown(explanation: dict[str, Any]) -> str:
     ]
     if explanation.get("trace"):
         lines.extend(["## Trace", "", " -> ".join(explanation["trace"]), ""])
+    if explanation.get("semantic_trace"):
+        lines.extend(["## Small-step trace", ""])
+        lines.extend(f"{idx}. `{rule}`" for idx, rule in enumerate(explanation["semantic_trace"], start=1))
+        lines.append("")
     if explanation.get("state_delta"):
         lines.extend(["## State delta", "", "| Field | Before | After |", "| --- | --- | --- |"])
         for delta in explanation["state_delta"]:
@@ -231,6 +137,8 @@ def _finding_from_violation(path: Path, violation: Violation) -> dict[str, Any]:
         "semantic_obligation": violation.property,
         "step": violation.step,
         "trace": list(violation.trace),
+        "semantic_trace": list(violation.semantic_trace),
+        "small_step_rule": violation.small_step_rule,
         "message": violation.message,
         "recommendation": violation.remediation,
     }
@@ -265,9 +173,10 @@ def _explain_semantic_finding(finding: dict[str, Any], runbook: Runbook) -> dict
         "rule": rule,
         "severity": finding["severity"],
         "semantic_obligation": finding["semantic_obligation"],
-        "small_step_rule": rule_info.get("small_step_rule", f"SafetyInvariant.{rule}"),
+        "small_step_rule": finding.get("small_step_rule") or rule_info.get("small_step_rule", f"SafetyInvariant.{rule}"),
         "message": finding["message"],
         "trace": trace,
+        "semantic_trace": [str(item) for item in finding.get("semantic_trace", [])],
         "step": step_id or None,
         "action": step.action if step else None,
         "causal_dependencies": {

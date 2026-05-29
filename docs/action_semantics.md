@@ -1,6 +1,10 @@
 # Action semantics reference
 
-This table is generated from the typed action descriptors used by parser validation, JSON Schema generation, and formal exporters.
+This table is generated from the typed action descriptors used by parser
+validation, JSON Schema generation, and formal exporters. See
+`docs/small_step_semantics.md` for the operational scheduling, wait, failure,
+and bounded-exploration rules that wrap these action transitions and appear in
+checker traces.
 
 | Action | Parameters | Semantics |
 | --- | --- | --- |

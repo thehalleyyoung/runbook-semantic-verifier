@@ -9,7 +9,12 @@
       "recommendation": "Run or wait for DNS health-check convergence before changing the record.",
       "rule": "dns_health_check_converged_before_cutover",
       "semantic_obligation": "dns_health_check_converged_before_cutover",
+      "semantic_trace": [
+        "Schedule.DependencyReady(cutover-dns-west)",
+        "ActionGuard.DNSHealthCheckConverged(cutover-dns-west)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.DNSHealthCheckConverged",
       "step": "cutover-dns-west",
       "trace": [
         "cutover-dns-west"
@@ -25,7 +30,13 @@
       "recommendation": "Use an active-active-safe record (allow_split_brain=true) or avoid stateful writes until the TTL window elapses.",
       "rule": "dns_no_split_brain_during_ttl",
       "semantic_obligation": "dns_no_split_brain_during_ttl",
+      "semantic_trace": [
+        "Schedule.DependencyReady(cutover-dns-west)",
+        "Action.Execute(cutover-dns-west)",
+        "PostInvariant.DNSNoSplitBrainDuringTTL(cutover-dns-west)"
+      ],
       "severity": "error",
+      "small_step_rule": "PostInvariant.DNSNoSplitBrainDuringTTL",
       "step": "cutover-dns-west",
       "trace": [
         "cutover-dns-west"
@@ -41,7 +52,12 @@
       "recommendation": "Scale or restore service replicas in the DNS target region before cutover.",
       "rule": "dns_requires_regional_capacity",
       "semantic_obligation": "dns_requires_regional_capacity",
+      "semantic_trace": [
+        "Schedule.DependencyReady(cutover-dns-west)",
+        "ActionGuard.DNSRegionalCapacity(cutover-dns-west)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.DNSRegionalCapacity",
       "step": "cutover-dns-west",
       "trace": [
         "cutover-dns-west"
@@ -57,7 +73,13 @@
       "recommendation": "Scale or restore service replicas in the DNS target region before cutover.",
       "rule": "dns_requires_regional_capacity",
       "semantic_obligation": "dns_requires_regional_capacity",
+      "semantic_trace": [
+        "Schedule.DependencyReady(cutover-dns-west)",
+        "Action.Execute(cutover-dns-west)",
+        "ActionGuard.DNSRegionalCapacity(cutover-dns-west)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.DNSRegionalCapacity",
       "step": "cutover-dns-west",
       "trace": [
         "cutover-dns-west"
@@ -73,7 +95,15 @@
       "recommendation": "Scale or restore service replicas in the DNS target region before cutover.",
       "rule": "dns_requires_regional_capacity",
       "semantic_obligation": "dns_requires_regional_capacity",
+      "semantic_trace": [
+        "Schedule.DependencyReady(cutover-dns-west)",
+        "Action.Execute(cutover-dns-west)",
+        "Schedule.DependencyReady(finalize-before-ttl)",
+        "Action.Execute(finalize-before-ttl)",
+        "ActionGuard.DNSRegionalCapacity(finalize-before-ttl)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.DNSRegionalCapacity",
       "step": "finalize-before-ttl",
       "trace": [
         "cutover-dns-west",
@@ -90,7 +120,14 @@
       "recommendation": "Insert a wait step long enough to cover the record TTL before finalizing DNS migration.",
       "rule": "dns_ttl_elapsed_before_finalize",
       "semantic_obligation": "dns_ttl_elapsed_before_finalize",
+      "semantic_trace": [
+        "Schedule.DependencyReady(cutover-dns-west)",
+        "Action.Execute(cutover-dns-west)",
+        "Schedule.DependencyReady(finalize-before-ttl)",
+        "ActionGuard.DNSTTLBeforeFinalize(finalize-before-ttl)"
+      ],
       "severity": "error",
+      "small_step_rule": "ActionGuard.DNSTTLBeforeFinalize",
       "step": "finalize-before-ttl",
       "trace": [
         "cutover-dns-west",
@@ -99,11 +136,21 @@
       "type": "semantic"
     }
   ],
+  "profile": null,
   "runbooks": [
     {
       "name": "Reconstructed public DNS failover with missing TTL guards",
       "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
       "safe": false,
+      "semantic_rule_counts": {
+        "Action.Execute": 2,
+        "ActionGuard.DNSHealthCheckConverged": 1,
+        "ActionGuard.DNSRegionalCapacity": 3,
+        "ActionGuard.DNSTTLBeforeFinalize": 1,
+        "Explore.Terminal": 1,
+        "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
+        "Schedule.DependencyReady": 2
+      },
       "states_explored": 3,
       "terminal_traces": 1,
       "violations": 6

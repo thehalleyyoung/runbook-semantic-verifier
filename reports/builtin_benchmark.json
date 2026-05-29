@@ -19,6 +19,34 @@
         "safety_postcondition": 1326
       },
       "reductions_applied": 0,
+      "semantic_rule_counts": {
+        "Action.Execute": 199,
+        "ActionGuard.AlertSuppressionBound": 20,
+        "ActionGuard.CacheFlushWriteFreeze": 2,
+        "ActionGuard.CacheWarmupBeforeTraffic": 6,
+        "ActionGuard.CacheWarmupCapacity": 4,
+        "ActionGuard.ConsumerRebalanceProgress": 2,
+        "ActionGuard.DNSHealthCheckConverged": 1,
+        "ActionGuard.DNSRegionalCapacity": 3,
+        "ActionGuard.DNSTTLBeforeFinalize": 1,
+        "ActionGuard.DatabaseFailoverQuorum": 21,
+        "ActionGuard.DatabaseTargetHealth": 16,
+        "ActionGuard.MessageReplayDeduplication": 2,
+        "ActionGuard.RollbackMigrationCompatibility": 16,
+        "ActionPreserves.ServiceAvailability": 56,
+        "Explore.BudgetReached": 4,
+        "Explore.Terminal": 9,
+        "PostInvariant.ConsumerGroupStableForBacklog": 2,
+        "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
+        "PostInvariant.NoDuplicateReplayProcessing": 4,
+        "PostInvariant.NoStaleReadsAfterCacheFlush": 2,
+        "PostInvariant.QueueBacklogHasConsumers": 2,
+        "PostInvariant.ServiceHasReplica": 36,
+        "Schedule.DependencyReady": 184,
+        "Schedule.OperatorChoice": 166,
+        "Schedule.SequenceNext": 15,
+        "StepEnabled.Requires": 1
+      },
       "states_explored": 107,
       "symbolic_splits": 0,
       "terminal_traces": 13,
@@ -33,7 +61,7 @@
       "prose-suppression-applied": 1
     },
     "runbooks": 11,
-    "runtime_seconds": 0.009697874978883192,
+    "runtime_seconds": 0.019763999996939674,
     "states_explored": 107,
     "traces_explored": 13,
     "violations_by_property": {
@@ -118,13 +146,19 @@
           "safety_postcondition": 588
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 84,
+          "Explore.Terminal": 1,
+          "Schedule.DependencyReady": 84,
+          "Schedule.OperatorChoice": 78
+        },
         "states_explored": 36,
         "symbolic_splits": 0,
         "terminal_traces": 1,
         "transitions_explored": 84
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.002312833006726578,
+      "runtime_seconds": 0.002908624999690801,
       "safe": true,
       "states_explored": 36,
       "traces_explored": 1,
@@ -201,13 +235,25 @@
           "safety_postcondition": 560
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 80,
+          "ActionGuard.AlertSuppressionBound": 16,
+          "ActionGuard.DatabaseFailoverQuorum": 16,
+          "ActionGuard.DatabaseTargetHealth": 16,
+          "ActionGuard.RollbackMigrationCompatibility": 16,
+          "ActionPreserves.ServiceAvailability": 44,
+          "Explore.Terminal": 1,
+          "PostInvariant.ServiceHasReplica": 28,
+          "Schedule.DependencyReady": 80,
+          "Schedule.OperatorChoice": 75
+        },
         "states_explored": 32,
         "symbolic_splits": 0,
         "terminal_traces": 1,
         "transitions_explored": 80
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0018705420079641044,
+      "runtime_seconds": 0.002916208002716303,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -275,13 +321,18 @@
           "safety_postcondition": 10
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 2,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
         "transitions_explored": 2
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0002979589917231351,
+      "runtime_seconds": 0.001451417017960921,
       "safe": true,
       "states_explored": 3,
       "traces_explored": 1,
@@ -357,13 +408,23 @@
           "safety_postcondition": 10
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 2,
+          "ActionGuard.ConsumerRebalanceProgress": 1,
+          "ActionGuard.MessageReplayDeduplication": 1,
+          "Explore.Terminal": 1,
+          "PostInvariant.ConsumerGroupStableForBacklog": 1,
+          "PostInvariant.NoDuplicateReplayProcessing": 2,
+          "PostInvariant.QueueBacklogHasConsumers": 1,
+          "Schedule.SequenceNext": 2
+        },
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
         "transitions_explored": 2
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.00019716599490493536,
+      "runtime_seconds": 0.001670500001637265,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -430,13 +491,18 @@
           "safety_postcondition": 20
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 4,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 4
+        },
         "states_explored": 5,
         "symbolic_splits": 0,
         "terminal_traces": 1,
         "transitions_explored": 4
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.00027404099819250405,
+      "runtime_seconds": 0.0010786250059027225,
       "safe": true,
       "states_explored": 5,
       "traces_explored": 1,
@@ -511,13 +577,23 @@
           "safety_postcondition": 15
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 3,
+          "ActionGuard.CacheFlushWriteFreeze": 1,
+          "ActionGuard.CacheWarmupBeforeTraffic": 3,
+          "ActionGuard.CacheWarmupCapacity": 2,
+          "Explore.BudgetReached": 2,
+          "PostInvariant.NoStaleReadsAfterCacheFlush": 1,
+          "Schedule.DependencyReady": 3,
+          "Schedule.OperatorChoice": 2
+        },
         "states_explored": 4,
         "symbolic_splits": 0,
         "terminal_traces": 2,
         "transitions_explored": 3
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0002020419924519956,
+      "runtime_seconds": 0.0006827499892096967,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,
@@ -594,6 +670,16 @@
           "safety_postcondition": 24
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 12,
+          "ActionGuard.AlertSuppressionBound": 4,
+          "ActionGuard.DatabaseFailoverQuorum": 4,
+          "ActionPreserves.ServiceAvailability": 12,
+          "Explore.Terminal": 1,
+          "PostInvariant.ServiceHasReplica": 8,
+          "Schedule.DependencyReady": 12,
+          "Schedule.OperatorChoice": 9
+        },
         "states_explored": 8,
         "symbolic_splits": 0,
         "terminal_traces": 1,
@@ -602,7 +688,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.0009350000182166696,
+      "runtime_seconds": 0.0022852920228615403,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -679,6 +765,13 @@
           "safety_postcondition": 60
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 5,
+          "ActionGuard.DatabaseFailoverQuorum": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 5,
+          "StepEnabled.Requires": 1
+        },
         "states_explored": 6,
         "symbolic_splits": 0,
         "terminal_traces": 1,
@@ -687,7 +780,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0009528749797027558,
+      "runtime_seconds": 0.0018210829875897616,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -783,6 +876,16 @@
           "safety_postcondition": 14
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 2,
+          "ActionGuard.ConsumerRebalanceProgress": 1,
+          "ActionGuard.MessageReplayDeduplication": 1,
+          "Explore.Terminal": 1,
+          "PostInvariant.ConsumerGroupStableForBacklog": 1,
+          "PostInvariant.NoDuplicateReplayProcessing": 2,
+          "PostInvariant.QueueBacklogHasConsumers": 1,
+          "Schedule.SequenceNext": 2
+        },
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
@@ -794,7 +897,7 @@
         "destructive-delete-needs-targeting": 1,
         "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.0011581660073716193,
+      "runtime_seconds": 0.001932083978317678,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -878,13 +981,22 @@
           "safety_postcondition": 10
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 2,
+          "ActionGuard.DNSHealthCheckConverged": 1,
+          "ActionGuard.DNSRegionalCapacity": 3,
+          "ActionGuard.DNSTTLBeforeFinalize": 1,
+          "Explore.Terminal": 1,
+          "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
+          "Schedule.DependencyReady": 2
+        },
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
         "transitions_explored": 2
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0006317499792203307,
+      "runtime_seconds": 0.0014418750070035458,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -972,6 +1084,16 @@
           "safety_postcondition": 15
         },
         "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 3,
+          "ActionGuard.CacheFlushWriteFreeze": 1,
+          "ActionGuard.CacheWarmupBeforeTraffic": 3,
+          "ActionGuard.CacheWarmupCapacity": 2,
+          "Explore.BudgetReached": 2,
+          "PostInvariant.NoStaleReadsAfterCacheFlush": 1,
+          "Schedule.DependencyReady": 3,
+          "Schedule.OperatorChoice": 2
+        },
         "states_explored": 4,
         "symbolic_splits": 0,
         "terminal_traces": 2,
@@ -980,7 +1102,7 @@
       "prose_findings_by_rule": {
         "cache-flush-needs-warmup-capacity": 2
       },
-      "runtime_seconds": 0.0007490840216632932,
+      "runtime_seconds": 0.001409500022418797,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,

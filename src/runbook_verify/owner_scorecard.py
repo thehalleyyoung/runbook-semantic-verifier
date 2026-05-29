@@ -420,7 +420,7 @@ def _top_hazards(acc: _OwnerAccumulator) -> list[dict[str, Any]]:
     for error in acc.parse_errors:
         hazards.append({"kind": "parse", "path": error["path"], "rule": "parse_error", "message": error["message"]})
     for assessment, violation in acc.semantic_findings:
-        hazards.append({"kind": "semantic", "path": str(assessment.path), "property": violation.property, "message": violation.message, "trace": list(violation.trace)})
+        hazards.append({"kind": "semantic", "path": str(assessment.path), "property": violation.property, "small_step_rule": violation.small_step_rule, "message": violation.message, "trace": list(violation.trace), "semantic_trace": list(violation.semantic_trace)})
     for finding in acc.prose_findings:
         hazards.append({"kind": "prose", "path": finding.path, "rule": finding.rule, "message": finding.message, "severity": finding.severity})
     for item in acc.missing_rollback:
