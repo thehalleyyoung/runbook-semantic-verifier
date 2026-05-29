@@ -10,7 +10,10 @@ incident-readiness, owner-scorecard, property-coverage reports, and auditable
 prose suppressions with owner/expiry/reason/limitation metadata. Markdown
 findings also include manual autofix suggestions for missing executable models,
 missing preconditions/effects, stale owner placeholders, ambiguous operator
-instructions, and unsafe copy-paste shell snippets. The DSL also models queue
+instructions, and unsafe copy-paste shell snippets. `frv ci-gate` turns those
+findings into a baseline-aware CI policy for newly introduced high-risk deletion,
+credential, traffic/capacity, failover, SQL, cache, and data-restoration prose.
+The DSL also models queue
 replay/DLQ/consumer-group semantics, DNS cutovers with TTL and health-check
 convergence obligations, and cache flush/warmup/cold-start/capacity semantics.
 The historical fixture reconstructs the GitHub
@@ -64,6 +67,10 @@ differently named system exists.
   vocabulary, uncovered semantic obligations, and whether executable models are
   present, so teams can prioritize prose-to-DSL refinement before stronger
   checking claims.
+- The CI gate compares high-risk Markdown findings against an optional baseline
+  and blocks only new unsafe operations prose unless the finding is represented
+  by an auditable owner/expiry/reason waiver or explicit limitation. It is a
+  document-review gate, not proof that waived operations are safe.
 - The coverage report maps each current invariant/proof-obligation template to
   modeled services, databases, queues, alerts, DNS records, credentials (none in the current
   DSL), owners, regions, source steps, and Markdown sections; unverified prose
@@ -139,6 +146,8 @@ differently named system exists.
   - `reports/current_impact.md`
   - `reports/current_impact_lint.json`
   - `reports/current_impact_lint.md`
+  - `reports/current_impact_ci_gate.json`
+  - `reports/current_impact_ci_gate.md`
   - `reports/current_impact_scan.json`
   - `reports/current_impact_scan.md`
   - `reports/current_impact_readiness.json`
@@ -186,6 +195,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json -
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
 PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
@@ -218,6 +228,10 @@ The current-impact repository scan ranks the Grafana Tempo-derived fixture as
 backfill/replay dangerous-effect vocabulary plus uncovered blast-radius,
 restore-path, queue, consumer, deduplication, and explicit-limitation
 obligations. The
+current-impact CI gate reports two blocking high-risk prose findings for the
+unsuppressed destructive/data-deletion line and one owner-approved waiver for the
+ring-forget excerpt retained as an explicit limitation.
+The
 current-impact coverage report maps eleven invariant/proof-obligation
 templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
 queue, `prod` region, owner metadata, and executable Markdown section, and

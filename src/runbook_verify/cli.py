@@ -9,6 +9,7 @@ from xml.sax.saxutils import escape
 
 from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
+from .ci_gate import build_ci_gate_report, render_ci_gate_json, render_ci_gate_markdown
 from .coverage import CoverageError, build_coverage_report, render_coverage_json, render_coverage_markdown
 from .explanation import ExplainError, explain_finding, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla
@@ -82,6 +83,11 @@ def main(argv: list[str] | None = None) -> int:
     scan_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     scan_p.add_argument("--min-score", type=int, default=1, help="minimum scan score to include")
     scan_p.add_argument("--include-low-priority", action="store_true", help="include Markdown files with score below --min-score")
+    gate_p = sub.add_parser("ci-gate", help="block new high-risk operations prose unless owner-approved waivers exist")
+    gate_p.add_argument("path", help="changed runbook file or directory to gate")
+    gate_p.add_argument("--baseline", help="optional baseline path; matching high-risk findings are treated as existing debt")
+    gate_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    gate_p.add_argument("--expect-blocks", action="store_true", help="exit 0 only when the gate finds blocking high-risk changes")
     args = parser.parse_args(argv)
 
     if args.command == "audit":
@@ -108,6 +114,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(render_scan_json(report) if args.format == "json" else render_scan_markdown(report), end="")
         return 0
+    if args.command == "ci-gate":
+        report = build_ci_gate_report(args.path, args.baseline)
+        print(render_ci_gate_json(report) if args.format == "json" else render_ci_gate_markdown(report), end="")
+        if args.expect_blocks:
+            return 0 if report.summary["blocking_findings"] else 1
+        return 0 if report.pass_ else 1
     if args.command == "explain":
         try:
             explanation = explain_finding(args.path, args.finding_id)

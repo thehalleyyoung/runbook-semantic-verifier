@@ -137,6 +137,16 @@ RULES: tuple[PhraseRule, ...] = (
         "Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic.",
     ),
     PhraseRule(
+        "data-restore-needs-rpo-rto-guard",
+        "error",
+        re.compile(r"\b(restore|recover|roll\s*forward)\b.{0,80}\b(backup|snapshot|dump|bucket|object|database|table|tenant data)\b|\b(backup|snapshot|dump)\b.{0,80}\b(restore|recover|roll\s*forward)\b", re.I),
+        None,
+        ("database_quorum_confirmed",),
+        "restore_path_rpo_rto_and_quorum_guard",
+        "Prose describes data restoration without executable quorum, RPO/RTO, or rollback readiness guards.",
+        "Model the restore as bounded steps guarded by backup freshness, quorum/data-integrity confirmation, RPO/RTO budget, and rollback/read-only preconditions.",
+    ),
+    PhraseRule(
         "credential-handling-needs-rotation-model",
         "responsible-disclosure",
         re.compile(r"\b(revoke|rotate|delete|reset|share|copy)\b.{0,60}\b(token|secret|credential|key|password|cert(?:ificate)?)s?\b", re.I),

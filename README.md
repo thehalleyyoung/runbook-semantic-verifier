@@ -2,11 +2,11 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **33/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **34/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
-auditable prose suppressions, Markdown autofix suggestions for reviewable
+CI gates for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
 cache flush/warmup/cold-start/capacity semantics, and checked-in
 historical/current public case-study evidence.
@@ -41,6 +41,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/curren
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
@@ -155,6 +156,7 @@ src/runbook_verify/
   owner_scorecard.py  owner/team scorecards for hazards, waivers, and remediation history
   coverage.py   property-to-entity/owner/Markdown-section coverage reports
   repository_scan.py  Markdown/wiki runbook discovery and model-first prioritization
+  ci_gate.py    CI gate for new high-risk operations prose and owner-approved waivers
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -217,6 +219,24 @@ causal dependencies, source line/excerpt, state delta before/after the failing
 step when executable, weakest-precondition hint, and bounded remediation
 examples. This is intended for review comments and incident-readiness drills,
 not for claiming unsound proof beyond the modeled DSL abstraction.
+
+`frv ci-gate` is the CI-facing policy layer for high-risk operations docs. With a
+`--baseline`, matching prose findings are treated as existing debt while new
+unsafe deletion, credential, traffic/capacity, failover, manual SQL, cache, and
+data-restoration instructions block unless the linter sees an auditable
+owner/expiry/reason waiver. Without a baseline, all high-risk findings are
+treated as new:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate path/to/changed/runbooks --baseline path/to/main/runbooks
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
+```
+
+The checked-in `reports/current_impact_ci_gate.md` and
+`reports/current_impact_ci_gate.json` validate the gate on the Tempo-derived
+public fixture: two destructive/data-restoration findings block, while the
+ring-forget excerpt is reported as owner-approved waiver evidence rather than
+silently skipped.
 
 `frv readiness` turns validation, bounded checking, Markdown audit, service and
 region coverage, rollback/restore coverage, source freshness, and Hoare-style
@@ -284,7 +304,8 @@ procedures and capacity operations. The model intentionally reports missing
 write-freeze, insufficient warmup, over-capacity warmup, and stale-read-risk
 obligations; it is not a claim about a live deployment.
 
-Expanded prose rules cover destructive data deletion, manual SQL, backfills or
+Expanded prose rules cover destructive data deletion, data restore from backups
+or snapshots, manual SQL, backfills or
 replays, cache flush/invalidation, credential handling, customer-notification
 gaps, rollback ambiguity, alert suppression, failover, draining, unmodeled
 escalation paths, ambiguous operator instructions, stale owner placeholders, and
@@ -329,6 +350,8 @@ reviewable artifacts rather than silent skips. The
 combined audit report is checked in as `reports/current_impact_audit.md` and
 `reports/current_impact_audit.json`, with code-scanning/CI equivalents in
 `reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
+the high-risk prose gate outputs are checked in as
+`reports/current_impact_ci_gate.md` and `reports/current_impact_ci_gate.json`;
 the first finding's explain report is checked in as `reports/current_impact_explain.md` and
 `reports/current_impact_explain.json`. The repository scan outputs are checked in as
 `reports/current_impact_scan.md` and `reports/current_impact_scan.json`. The

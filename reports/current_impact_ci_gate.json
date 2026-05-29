@@ -1,0 +1,71 @@
+{
+  "baseline": null,
+  "findings": [
+    {
+      "baseline_state": "new",
+      "category": "data_restoration_guard",
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "id": "ci-gate-001",
+      "line": 21,
+      "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
+      "rule": "data-deletion-needs-restore-precondition",
+      "semantic_obligation": "restore_path_and_blast_radius_limited",
+      "severity": "error",
+      "status": "block",
+      "waiver": null
+    },
+    {
+      "baseline_state": "new",
+      "category": "unsafe_deletion_guard",
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "id": "ci-gate-002",
+      "line": 21,
+      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning",
+      "status": "block",
+      "waiver": null
+    },
+    {
+      "baseline_state": "new",
+      "category": "unsafe_deletion_guard",
+      "excerpt": "frv-suppress rule=destructive-delete-needs-targeting",
+      "id": "ci-gate-003",
+      "line": 19,
+      "message": "Owner-approved waiver suppresses high-risk rule destructive-delete-needs-targeting. Suppressed destructive-delete-needs-targeting at line 19 with owner=grafana-tempo-public-fixture, expires=2099-12-31, reason=public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof, link=limitation:ring-forget-targeting.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Review suppression owner, expiry, reason, and invariant/waiver/limitation link during runbook review.",
+      "rule": "destructive-delete-needs-targeting",
+      "semantic_obligation": "limitation:ring-forget-targeting",
+      "severity": "audit-only",
+      "status": "waived",
+      "waiver": {
+        "expires": "2099-12-31",
+        "link": "limitation:ring-forget-targeting",
+        "owner": "grafana-tempo-public-fixture",
+        "reason": "public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof"
+      }
+    }
+  ],
+  "pass": false,
+  "summary": {
+    "blocking_findings": 2,
+    "categories": {
+      "data_restoration_guard": 1,
+      "unsafe_deletion_guard": 2
+    },
+    "existing_findings": 0,
+    "high_risk_rules": [
+      "data-deletion-needs-restore-precondition",
+      "destructive-delete-needs-targeting"
+    ],
+    "new_high_risk_findings": 3,
+    "waived_findings": 1
+  },
+  "target": "case_studies/current/grafana_tempo"
+}

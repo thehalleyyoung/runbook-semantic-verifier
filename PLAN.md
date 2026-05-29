@@ -41,6 +41,7 @@ Operational runbooks are programs over infrastructure state, even when they are 
 - `frv check`: bounded verification with minimized counterexample traces and remediation hints.
 - `frv scan`: repository/wiki triage that discovers runbook-like Markdown, ranks dangerous-effect vocabulary against semantic obligations, and recommends which docs need executable models first.
 - `frv audit`: Markdown/wiki scan for dangerous operations prose, stale assumptions, missing executable blocks, auditable prose suppressions with owner, expiry, reason, and invariant/waiver/limitation links, and manual autofix suggestions for executable blocks, missing preconditions, stale owners, ambiguous instructions, and unsafe shell snippets.
+- `frv ci-gate`: implemented CI policy gate for changed high-risk operations prose; it blocks new unsafe deletion, credential, traffic/capacity, failover, SQL, cache, and data-restoration instructions unless they are existing baseline debt or carry an owner/expiry/reason waiver.
 - `frv diff old new`: implemented semantic pull-request review for changed effects, assumptions, verification settings, proof-obligation deltas, and reachable counterexample deltas.
 - `frv explain FINDING`: show the rule, state delta, source lines, weakest-precondition hint, and suggested fix for one diagnostic.
 - `frv readiness`: implemented service or repository incident-readiness report covering validation, bounded-checking status, audit severity, stale preconditions, rollback/restore coverage, proof obligations, and uncovered service/region paths.
