@@ -71,6 +71,14 @@ class Deployment:
 
 
 @dataclass(frozen=True)
+class TrafficRoute:
+    name: str
+    service: str
+    weights: dict[str, int]
+    drained_regions: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True)
 class SystemState:
     regions: dict[str, Region]
     services: dict[str, Service]
@@ -79,6 +87,7 @@ class SystemState:
     alerts: dict[str, Alert]
     flags: dict[str, FeatureFlag]
     deployments: dict[str, Deployment]
+    traffic_routes: dict[str, TrafficRoute]
     clock_minute: int = 0
 
     def fingerprint(self) -> tuple[Any, ...]:
@@ -97,7 +106,10 @@ class SystemState:
         deployments = tuple(sorted((n, d.current, d.previous) for n, d in self.deployments.items()))
         regions = tuple(sorted((n, r.healthy) for n, r in self.regions.items()))
         queues = tuple(sorted((n, q.depth, q.consumers, q.paused) for n, q in self.queues.items()))
-        return (self.clock_minute, regions, services, databases, queues, alerts, flags, deployments)
+        traffic_routes = tuple(sorted((
+            n, route.service, tuple(sorted(route.weights.items())), tuple(sorted(route.drained_regions))
+        ) for n, route in self.traffic_routes.items()))
+        return (self.clock_minute, regions, services, databases, queues, alerts, flags, deployments, traffic_routes)
 
 
 @dataclass(frozen=True)

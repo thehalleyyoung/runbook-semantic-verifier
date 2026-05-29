@@ -11,7 +11,7 @@
     "source": "synthetic schema example"
   },
   "allow_reordering": true,
-  "max_depth": 4,
+  "max_depth": 5,
   "safety": {
     "max_alert_suppression_minutes": 30
   },
@@ -78,6 +78,16 @@
         "current": "v2",
         "previous": "v1"
       }
+    },
+    "traffic_routes": {
+      "api-public": {
+        "service": "api",
+        "weights": {
+          "us-east": 100,
+          "us-west": 0
+        },
+        "drained_regions": []
+      }
     }
   },
   "steps": [
@@ -124,12 +134,35 @@
       ]
     },
     {
+      "id": "shift-api-traffic-west",
+      "action": "failover_traffic",
+      "params": {
+        "route": "api-public",
+        "target_region": "us-west"
+      },
+      "after": ["failover-orders-west"],
+      "requires": [
+        {
+          "kind": "region_healthy",
+          "region": "us-west"
+        }
+      ],
+      "effects": [
+        {
+          "kind": "traffic_weight_is",
+          "route": "api-public",
+          "region": "us-west",
+          "percent": 100
+        }
+      ]
+    },
+    {
       "id": "wait-for-dns",
       "action": "wait",
       "params": {
         "minutes": 5
       },
-      "after": ["failover-orders-west"]
+      "after": ["shift-api-traffic-west"]
     },
     {
       "id": "resume-orders-events",

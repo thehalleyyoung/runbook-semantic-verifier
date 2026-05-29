@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from .descriptors import ACTION_SCHEMAS, CONDITION_SCHEMAS
-from .model import Alert, Database, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState
+from .model import Alert, Database, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
 
 
 class ActionError(ValueError):
@@ -20,6 +20,7 @@ def _copy_state(state: SystemState, **updates: Any) -> SystemState:
         "alerts": state.alerts,
         "flags": state.flags,
         "deployments": state.deployments,
+        "traffic_routes": state.traffic_routes,
         "clock_minute": state.clock_minute,
     }
     data.update(updates)
@@ -52,6 +53,13 @@ def _queue(state: SystemState, name: str) -> Queue:
         return state.queues[name]
     except KeyError as exc:
         raise ActionError(f"unknown queue {name!r}") from exc
+
+
+def _route(state: SystemState, name: str) -> TrafficRoute:
+    try:
+        return state.traffic_routes[name]
+    except KeyError as exc:
+        raise ActionError(f"unknown traffic route {name!r}") from exc
 
 
 def _with_service(state: SystemState, service: Service) -> SystemState:
@@ -177,6 +185,47 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         regions = dict(state.regions)
         regions[name] = replace(regions[name], healthy=bool(p["healthy"]))
         return _copy_state(state, regions=regions)
+    if action == "shift_traffic":
+        route = _route(state, str(p["route"]))
+        region = str(p["region"])
+        percent = int(p["percent"])
+        if region not in state.regions:
+            raise ActionError(f"unknown region {region!r}")
+        weights = dict(route.weights)
+        weights.setdefault(region, 0)
+        if len(weights) == 2:
+            peer = next(other for other in weights if other != region)
+            weights[peer] = 100 - percent
+        weights[region] = percent
+        routes = dict(state.traffic_routes)
+        routes[route.name] = replace(route, weights=weights)
+        return _copy_state(state, traffic_routes=routes)
+    if action == "failover_traffic":
+        route = _route(state, str(p["route"]))
+        target = str(p["target_region"])
+        if target not in state.regions:
+            raise ActionError(f"unknown region {target!r}")
+        weights = {region: 0 for region in route.weights}
+        weights[target] = 100
+        routes = dict(state.traffic_routes)
+        routes[route.name] = replace(route, weights=weights)
+        return _copy_state(state, traffic_routes=routes)
+    if action == "drain_load_balancer":
+        route = _route(state, str(p["route"]))
+        region = str(p["region"])
+        if region not in state.regions:
+            raise ActionError(f"unknown region {region!r}")
+        routes = dict(state.traffic_routes)
+        routes[route.name] = replace(route, drained_regions=route.drained_regions | {region})
+        return _copy_state(state, traffic_routes=routes)
+    if action == "restore_load_balancer":
+        route = _route(state, str(p["route"]))
+        region = str(p["region"])
+        if region not in state.regions:
+            raise ActionError(f"unknown region {region!r}")
+        routes = dict(state.traffic_routes)
+        routes[route.name] = replace(route, drained_regions=route.drained_regions - {region})
+        return _copy_state(state, traffic_routes=routes)
     raise ActionError(f"unsupported action {action!r}")
 
 
@@ -209,4 +258,16 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
     if kind == "replica_not_drained":
         svc = _service(state, str(condition["service"]))
         return any(r.id == str(condition["replica"]) and not r.drained for r in svc.replicas)
+    if kind == "traffic_weight_is":
+        route = _route(state, str(condition["route"]))
+        return route.weights.get(str(condition["region"]), 0) == int(condition["percent"])
+    if kind == "traffic_weight_at_most":
+        route = _route(state, str(condition["route"]))
+        return route.weights.get(str(condition["region"]), 0) <= int(condition["percent"])
+    if kind == "traffic_weight_at_least":
+        route = _route(state, str(condition["route"]))
+        return route.weights.get(str(condition["region"]), 0) >= int(condition["percent"])
+    if kind == "load_balancer_active":
+        route = _route(state, str(condition["route"]))
+        return str(condition["region"]) not in route.drained_regions
     raise ActionError(f"unsupported condition kind {kind!r}")

@@ -144,6 +144,22 @@ def _system_schema() -> dict[str, Any]:
                     },
                 },
             },
+            "traffic_routes": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["service", "weights"],
+                    "properties": {
+                        "service": {"type": "string"},
+                        "weights": {
+                            "type": "object",
+                            "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 100},
+                        },
+                        "drained_regions": {"type": "array", "items": {"type": "string"}},
+                    },
+                },
+            },
         },
     }
 
@@ -212,9 +228,13 @@ def _field_schema(field: FieldDescriptor | str) -> dict[str, Any]:
         "expires_after_minutes": 1,
         "minutes": 0,
         "replicas": 0,
+        "percent": 0,
     }
     if name in integer_minimums:
-        return {"type": "integer", "minimum": integer_minimums[name]}
+        schema = {"type": "integer", "minimum": integer_minimums[name]}
+        if name == "percent":
+            schema["maximum"] = 100
+        return schema
     if name in {"enabled", "healthy", "active", "data_loss_risk", "compatible", "in_progress"}:
         return {"type": "boolean"}
     if name == "services":

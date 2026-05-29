@@ -50,3 +50,43 @@ class CheckerExplanationTests(unittest.TestCase):
         self.assertIn("no_queue_pause_without_drain_plan", props)
         self.assertIn("no_paused_queue_with_backlog", props)
         self.assertTrue(all(v.remediation for v in result.violations))
+
+    def test_safe_weighted_regional_traffic_failover(self):
+        runbook = parse_runbook({
+            "system": {
+                "regions": {"east": {"healthy": True}, "west": {"healthy": True}},
+                "services": {"api": {"min_available": 1, "replicas": [
+                    {"id": "api-east", "region": "east"},
+                    {"id": "api-west", "region": "west"},
+                ]}},
+                "traffic_routes": {"api-public": {"service": "api", "weights": {"east": 100, "west": 0}}},
+            },
+            "steps": [
+                {"id": "shift-west", "action": "failover_traffic", "params": {"route": "api-public", "target_region": "west"},
+                 "requires": [{"kind": "region_healthy", "region": "west"}],
+                 "effects": [{"kind": "traffic_weight_is", "route": "api-public", "region": "west", "percent": 100}]},
+                {"id": "drain-east-lb", "action": "drain_load_balancer", "after": ["shift-west"], "params": {"route": "api-public", "region": "east"},
+                 "effects": [{"kind": "load_balancer_active", "route": "api-public", "region": "west"}]},
+            ],
+        })
+        result = Checker(runbook).check()
+        self.assertTrue(result.safe, result.violations)
+
+    def test_unsafe_traffic_shift_and_load_balancer_drain_are_reported(self):
+        runbook = parse_runbook({
+            "system": {
+                "regions": {"east": {"healthy": True}, "west": {"healthy": False}},
+                "services": {"api": {"min_available": 1, "replicas": [{"id": "api-east", "region": "east"}]}},
+                "traffic_routes": {"api-public": {"service": "api", "weights": {"east": 100, "west": 0}, "drained_regions": ["west"]}},
+            },
+            "steps": [
+                {"id": "drain-east-lb", "action": "drain_load_balancer", "params": {"route": "api-public", "region": "east"}},
+                {"id": "shift-west", "action": "failover_traffic", "params": {"route": "api-public", "target_region": "west"}},
+            ],
+        })
+        result = Checker(runbook).check()
+        props = {v.property for v in result.violations}
+        self.assertIn("no_draining_load_balancer_with_traffic", props)
+        self.assertIn("no_traffic_to_drained_load_balancer", props)
+        self.assertIn("no_traffic_to_unhealthy_region", props)
+        self.assertIn("traffic_requires_regional_capacity", props)

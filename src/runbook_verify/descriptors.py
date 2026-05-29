@@ -12,6 +12,7 @@ class FieldDescriptor:
     type: FieldType
     required: bool = True
     minimum: int | None = None
+    maximum: int | None = None
     description: str = ""
 
     def json_schema(self) -> dict[str, Any]:
@@ -19,6 +20,8 @@ class FieldDescriptor:
             schema: dict[str, Any] = {"type": "integer"}
             if self.minimum is not None:
                 schema["minimum"] = self.minimum
+            if self.maximum is not None:
+                schema["maximum"] = self.maximum
             return schema
         if self.type == "boolean":
             return {"type": "boolean"}
@@ -36,6 +39,8 @@ class FieldDescriptor:
                 if self.minimum == 1:
                     return "must be a positive integer"
                 return f"must be an integer greater than or equal to {self.minimum}"
+            if self.maximum is not None and value > self.maximum:
+                return f"must be an integer less than or equal to {self.maximum}"
             return None
         if self.type == "boolean":
             return None if type(value) is bool else "must be a boolean"
@@ -50,7 +55,10 @@ class FieldDescriptor:
     @property
     def type_label(self) -> str:
         if self.type == "integer" and self.minimum is not None:
-            return f"integer>={self.minimum}"
+            label = f"integer>={self.minimum}"
+            if self.maximum is not None:
+                label += f"<={self.maximum}"
+            return label
         if self.type == "string_list":
             return "string[]"
         return self.type
@@ -82,8 +90,8 @@ class OperationDescriptor:
         return ", ".join(chunks) if chunks else "(none)"
 
 
-def F(name: str, type: FieldType = "string", *, required: bool = True, minimum: int | None = None, description: str = "") -> FieldDescriptor:
-    return FieldDescriptor(name=name, type=type, required=required, minimum=minimum, description=description)
+def F(name: str, type: FieldType = "string", *, required: bool = True, minimum: int | None = None, maximum: int | None = None, description: str = "") -> FieldDescriptor:
+    return FieldDescriptor(name=name, type=type, required=required, minimum=minimum, maximum=maximum, description=description)
 
 
 ACTION_DESCRIPTORS: dict[str, OperationDescriptor] = {
@@ -103,6 +111,10 @@ ACTION_DESCRIPTORS: dict[str, OperationDescriptor] = {
     "resume_queue": OperationDescriptor("resume_queue", (F("queue"),), "Resumes queue consumption/processing."),
     "wait": OperationDescriptor("wait", (F("minutes", "integer", minimum=0),), "Advances the model clock by a non-negative number of minutes."),
     "mark_region_health": OperationDescriptor("mark_region_health", (F("region"), F("healthy", "boolean")), "Sets a region health flag used by failover checks."),
+    "shift_traffic": OperationDescriptor("shift_traffic", (F("route"), F("region"), F("percent", "integer", minimum=0, maximum=100)), "Sets weighted routing for a route in one region; two-region routes automatically assign the remainder to the peer region."),
+    "failover_traffic": OperationDescriptor("failover_traffic", (F("route"), F("target_region")), "Moves all modeled route traffic to one target region and zeroes the other route weights."),
+    "drain_load_balancer": OperationDescriptor("drain_load_balancer", (F("route"), F("region")), "Marks a route's regional load balancer drained; traffic must already be shifted away."),
+    "restore_load_balancer": OperationDescriptor("restore_load_balancer", (F("route"), F("region")), "Marks a route's regional load balancer active again."),
 }
 
 CONDITION_DESCRIPTORS: dict[str, OperationDescriptor] = {
@@ -118,6 +130,10 @@ CONDITION_DESCRIPTORS: dict[str, OperationDescriptor] = {
     "queue_resumed": OperationDescriptor("queue_resumed", (F("queue"),), "Requires or asserts an unpaused queue."),
     "service_deployment_is": OperationDescriptor("service_deployment_is", (F("service"), F("deployment")), "Requires or asserts a service deployment version."),
     "replica_not_drained": OperationDescriptor("replica_not_drained", (F("service"), F("replica")), "Requires or asserts a replica is not drained."),
+    "traffic_weight_is": OperationDescriptor("traffic_weight_is", (F("route"), F("region"), F("percent", "integer", minimum=0, maximum=100)), "Requires or asserts an exact weighted-routing percentage for a route region."),
+    "traffic_weight_at_most": OperationDescriptor("traffic_weight_at_most", (F("route"), F("region"), F("percent", "integer", minimum=0, maximum=100)), "Requires or asserts a maximum weighted-routing percentage for a route region."),
+    "traffic_weight_at_least": OperationDescriptor("traffic_weight_at_least", (F("route"), F("region"), F("percent", "integer", minimum=0, maximum=100)), "Requires or asserts a minimum weighted-routing percentage for a route region."),
+    "load_balancer_active": OperationDescriptor("load_balancer_active", (F("route"), F("region")), "Requires or asserts that a route's regional load balancer is not drained."),
 }
 
 ACTION_SCHEMAS = {name: {"required": desc.required, "optional": desc.optional} for name, desc in ACTION_DESCRIPTORS.items()}

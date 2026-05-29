@@ -109,6 +109,18 @@ class Checker:
             q = state.queues[str(step.params["queue"])]
             if q.depth > 0 and q.consumers <= 1:
                 violations.append(_violation("no_queue_pause_without_drain_plan", f"queue {q.name} has depth={q.depth} and consumers={q.consumers} before pause", trace + (step.id,), step.id))
+        if step.action == "drain_load_balancer":
+            route = state.traffic_routes[str(step.params["route"])]
+            region = str(step.params["region"])
+            if route.weights.get(region, 0) > 0:
+                violations.append(_violation("no_draining_load_balancer_with_traffic", f"route {route.name} still sends {route.weights.get(region, 0)}% traffic to {region} before load balancer drain", trace + (step.id,), step.id))
+        if step.action in {"shift_traffic", "failover_traffic"}:
+            target = str(step.params.get("region", step.params.get("target_region")))
+            route = state.traffic_routes[str(step.params["route"])]
+            if target in route.drained_regions:
+                violations.append(_violation("no_traffic_to_drained_load_balancer", f"route {route.name} target {target} load balancer is drained", trace + (step.id,), step.id))
+            if target not in state.regions or not state.regions[target].healthy:
+                violations.append(_violation("no_traffic_to_unhealthy_region", f"route {route.name} target {target} region is unhealthy", trace + (step.id,), step.id))
         return violations
 
     def _post_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...]) -> list[Violation]:
@@ -121,6 +133,20 @@ class Checker:
         for q in state.queues.values():
             if q.paused and q.depth > 0 and q.consumers <= 1:
                 violations.append(_violation("no_paused_queue_with_backlog", f"queue {q.name} is paused with depth={q.depth} and consumers={q.consumers}", trace, step.id))
+        for route in state.traffic_routes.values():
+            total = sum(route.weights.values())
+            if total != 100:
+                violations.append(_violation("traffic_weights_sum_to_100", f"route {route.name} weights sum to {total}, expected 100", trace, step.id))
+            svc = state.services.get(route.service)
+            for region, weight in route.weights.items():
+                if weight <= 0:
+                    continue
+                if region in route.drained_regions:
+                    violations.append(_violation("no_traffic_to_drained_load_balancer", f"route {route.name} sends {weight}% traffic to drained load balancer in {region}", trace, step.id))
+                if region not in state.regions or not state.regions[region].healthy:
+                    violations.append(_violation("no_traffic_to_unhealthy_region", f"route {route.name} sends {weight}% traffic to unhealthy region {region}", trace, step.id))
+                if svc is not None and not any(r.region == region and r.healthy and not r.drained for r in svc.replicas):
+                    violations.append(_violation("traffic_requires_regional_capacity", f"route {route.name} sends {weight}% traffic to {region} but service {svc.name} has no available replica there", trace, step.id))
         for condition in step.effects:
             try:
                 holds = condition_holds(state, condition)
@@ -165,6 +191,11 @@ REMEDIATIONS = {
     "effect": "Repair action parameters or expected effects so the promised postcondition holds.",
     "no_queue_pause_without_drain_plan": "Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.",
     "no_paused_queue_with_backlog": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+    "traffic_weights_sum_to_100": "Keep route weights normalized to 100%; use failover_traffic or paired shift_traffic steps.",
+    "no_traffic_to_unhealthy_region": "Require region_healthy and restore regional health before shifting or failing over traffic.",
+    "no_traffic_to_drained_load_balancer": "Restore the regional load balancer or shift traffic away before relying on that route.",
+    "no_draining_load_balancer_with_traffic": "Shift traffic weight to 0% for the region before draining its load balancer.",
+    "traffic_requires_regional_capacity": "Scale or restore service replicas in the target region before assigning traffic there.",
 }
 
 

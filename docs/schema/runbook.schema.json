@@ -102,6 +102,26 @@
         {
           "additionalProperties": false,
           "properties": {
+            "kind": {
+              "const": "load_balancer_active"
+            },
+            "region": {
+              "type": "string"
+            },
+            "route": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "region",
+            "route"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "depth": {
               "minimum": 0,
               "type": "integer"
@@ -233,6 +253,84 @@
             "service"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "traffic_weight_at_least"
+            },
+            "percent": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "region": {
+              "type": "string"
+            },
+            "route": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "percent",
+            "region",
+            "route"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "traffic_weight_at_most"
+            },
+            "percent": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "region": {
+              "type": "string"
+            },
+            "route": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "percent",
+            "region",
+            "route"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "traffic_weight_is"
+            },
+            "percent": {
+              "maximum": 100,
+              "minimum": 0,
+              "type": "integer"
+            },
+            "region": {
+              "type": "string"
+            },
+            "route": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "percent",
+            "region",
+            "route"
+          ],
+          "type": "object"
         }
       ]
     },
@@ -261,6 +359,38 @@
                 },
                 "required": [
                   "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_load_balancer"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "region",
+                  "route"
                 ],
                 "type": "object"
               }
@@ -361,6 +491,38 @@
                 },
                 "required": [
                   "database",
+                  "target_region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "failover_traffic"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "route": {
+                    "type": "string"
+                  },
+                  "target_region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "route",
                   "target_region"
                 ],
                 "type": "object"
@@ -478,6 +640,38 @@
                 },
                 "required": [
                   "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restore_load_balancer"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "region",
+                  "route"
                 ],
                 "type": "object"
               }
@@ -649,6 +843,44 @@
           "if": {
             "properties": {
               "action": {
+                "const": "shift_traffic"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "percent": {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "region": {
+                    "type": "string"
+                  },
+                  "route": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "percent",
+                  "region",
+                  "route"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "suppress_alert"
               }
             },
@@ -744,18 +976,22 @@
         "action": {
           "enum": [
             "confirm_quorum",
+            "drain_load_balancer",
             "drain_region",
             "drain_replica",
             "failover_database",
+            "failover_traffic",
             "finish_migration",
             "mark_region_health",
             "pause_queue",
             "restart_service",
+            "restore_load_balancer",
             "restore_replica",
             "resume_queue",
             "rollback_deployment",
             "run_migration",
             "scale_service",
+            "shift_traffic",
             "suppress_alert",
             "toggle_flag",
             "wait"
@@ -955,6 +1191,36 @@
                 "type": "array"
               }
             },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "traffic_routes": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "drained_regions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "service": {
+                "type": "string"
+              },
+              "weights": {
+                "additionalProperties": {
+                  "maximum": 100,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "type": "object"
+              }
+            },
+            "required": [
+              "service",
+              "weights"
+            ],
             "type": "object"
           },
           "type": "object"

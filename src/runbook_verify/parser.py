@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, OperationDescriptor
-from .model import Alert, Database, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState
+from .model import Alert, Database, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute
 
 
 @dataclass
@@ -65,6 +65,7 @@ def _normalize_field(field: str | None) -> str | None:
     normalized = normalized.replace("queue ", "system.queues.")
     normalized = normalized.replace("alert ", "system.alerts.")
     normalized = normalized.replace("flag ", "system.feature_flags.")
+    normalized = normalized.replace("traffic route ", "system.traffic_routes.")
     normalized = normalized.replace("step ", "steps.")
     return normalized
 
@@ -218,7 +219,26 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
                 field=f"system.deployments.{name}.current",
                 remediation="Keep deployment.current synchronized with the referenced service.deployment value.",
             )
-    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
+    traffic_routes: dict[str, TrafficRoute] = {}
+    for name, cfg_any in _require_mapping(raw.get("traffic_routes", {}), "system.traffic_routes").items():
+        name = str(name)
+        cfg = _require_mapping(cfg_any, f"system.traffic_routes.{name}")
+        service = str(_require_key(cfg, "service", f"traffic route {name}"))
+        if service not in services:
+            raise RunbookParseError(f"traffic route {name}.service references unknown service {service!r}", field=f"system.traffic_routes.{name}.service")
+        weights_raw = _require_mapping(_require_key(cfg, "weights", f"traffic route {name}"), f"traffic route {name}.weights")
+        weights: dict[str, int] = {}
+        for region, value in weights_raw.items():
+            region = str(region)
+            if regions and region not in regions:
+                raise RunbookParseError(f"traffic route {name}.weights references unknown region {region!r}", field=f"system.traffic_routes.{name}.weights.{region}")
+            weights[region] = _bounded_percent(value, f"traffic route {name}.weights.{region}")
+        drained_regions = frozenset(str(region) for region in _require_list(cfg.get("drained_regions", []), f"traffic route {name}.drained_regions"))
+        unknown_drained = sorted(region for region in drained_regions if regions and region not in regions)
+        if unknown_drained:
+            raise RunbookParseError(f"traffic route {name}.drained_regions references unknown region(s): {', '.join(unknown_drained)}", field=f"system.traffic_routes.{name}.drained_regions")
+        traffic_routes[name] = TrafficRoute(name=name, service=service, weights=weights, drained_regions=drained_regions)
+    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
@@ -362,6 +382,13 @@ def _positive_int(value: Any, where: str) -> int:
     return value
 
 
+def _bounded_percent(value: Any, where: str) -> int:
+    value = _non_negative_int(value, where)
+    if value > 100:
+        raise RunbookParseError(f"{where} must be an integer less than or equal to 100", field=where)
+    return value
+
+
 def _optional_non_negative_int(value: Any, where: str) -> int | None:
     if value is None:
         return None
@@ -383,6 +410,8 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
             require_entity("alert", str(params["alert"]), state.alerts)
         if "queue" in params:
             require_entity("queue", str(params["queue"]), state.queues)
+        if "route" in params:
+            require_entity("traffic route", str(params["route"]), state.traffic_routes)
         if "region" in params:
             require_entity("region", str(params["region"]), state.regions)
         if "target_region" in params:
@@ -406,6 +435,7 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         ("queue", state.queues, "queue"),
         ("region", state.regions, "region"),
         ("flag", state.flags, "feature flag"),
+        ("route", state.traffic_routes, "traffic route"),
     ):
         if key in condition and str(condition[key]) not in collection:
             raise RunbookParseError(f"step {step_id} condition references unknown {label} {condition[key]!r}", field=f"step {step_id}.condition.{key}")

@@ -164,4 +164,37 @@ class ParserValidationTests(unittest.TestCase):
     def test_complete_schema_example_fixture_validates(self):
         runbook = load_runbook(ROOT / "docs" / "schema" / "examples" / "complete_runbook.json")
         self.assertEqual(runbook.name, "Complete documented DSL fixture")
-        self.assertEqual(len(runbook.steps), 4)
+        self.assertEqual(len(runbook.steps), 5)
+
+    def test_parses_and_validates_traffic_route_references(self):
+        runbook = parse_runbook({
+            "system": {
+                "regions": {"east": {}, "west": {}},
+                "services": {"api": {"min_available": 1, "replicas": [{"id": "api-east", "region": "east"}]}},
+                "traffic_routes": {"api-public": {"service": "api", "weights": {"east": 100, "west": 0}}},
+            },
+            "steps": [{"id": "shift", "action": "shift_traffic", "params": {"route": "api-public", "region": "west", "percent": 25}}],
+        })
+        self.assertEqual(runbook.state.traffic_routes["api-public"].weights["east"], 100)
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown traffic route"):
+            parse_runbook({
+                "system": {"regions": {"west": {}}},
+                "steps": [{"id": "shift", "action": "shift_traffic", "params": {"route": "missing", "region": "west", "percent": 25}}],
+            })
+
+    def test_rejects_invalid_traffic_weight_percentages(self):
+        with self.assertRaisesRegex(RunbookParseError, "less than or equal to 100"):
+            parse_runbook({
+                "system": {
+                    "regions": {"east": {}},
+                    "services": {"api": {"min_available": 0, "replicas": []}},
+                    "traffic_routes": {"api-public": {"service": "api", "weights": {"east": 101}}},
+                },
+                "steps": [],
+            })
+        with self.assertRaisesRegex(RunbookParseError, "less than or equal to 100"):
+            parse_runbook({
+                "system": {"regions": {"east": {}}, "traffic_routes": {}},
+                "steps": [{"id": "shift", "action": "shift_traffic", "params": {"route": "api-public", "region": "east", "percent": 101}}],
+            })

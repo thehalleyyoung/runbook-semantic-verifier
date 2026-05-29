@@ -43,7 +43,7 @@ Executable examples use JSON so the repository runs with the Python standard lib
 
 Top-level fields:
 
-- `system`: regions, services/replicas, databases, queues, alerts, feature flags, deployments.
+- `system`: regions, services/replicas, databases, queues, alerts, feature flags, deployments, traffic routes.
 - `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, and `effects`.
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
@@ -63,10 +63,11 @@ can be emitted as structured JSON diagnostics with `path`, `line`, `field`,
 `severity`, `message`, and `remediation` for editor and CI annotations. `frv
 schema` prints the JSON Schema for editor, registry, and CI integration; the
 canonical checked-in artifact lives at `docs/schema/runbook.schema.json`. See
-`docs/schema/examples.md`, `docs/schema/examples/complete_runbook.json`, and
-`docs/action_semantics.md` for a commented prose walkthrough, strict JSON
-fixture covering every supported top-level field, and generated action/condition
-semantics tables:
+`docs/schema/examples.md`, `docs/schema/examples/complete_runbook.json`,
+`docs/schema/compatibility_policy.md`, and `docs/action_semantics.md` for a
+commented prose walkthrough, strict JSON fixture covering every supported
+top-level field, schema versioning/deprecation guarantees, and generated
+action/condition semantics tables:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema
@@ -78,7 +79,8 @@ Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,
 `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,
 `finish_migration`, `pause_queue`, `resume_queue`, `wait`, and
-`mark_region_health`.
+`mark_region_health`, plus traffic actions `shift_traffic`,
+`failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`.
 
 ## Safety properties
 
@@ -91,6 +93,9 @@ The prototype checks pragmatic cloud-operations hazards:
 - no data-loss-risk database action before quorum confirmation;
 - no failover to an unhealthy target region;
 - no pausing a backlog-heavy queue without a drain/consumer plan;
+- no weighted traffic to unhealthy regions, drained load balancers, or regions
+  lacking available service capacity, and route weights must remain normalized
+  to 100%;
 - declared step preconditions and effects must hold.
 
 ## Architecture

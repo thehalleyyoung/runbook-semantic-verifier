@@ -14,9 +14,9 @@
 - [x] Add a `frv validate` command that performs parse/schema/entity/dependency checks without running state-space exploration.
 - [x] Add structured JSON diagnostics for parse errors with path, line, field, severity, and remediation text.
 - [ ] Extend Markdown source-line mapping to multiline step objects and nested precondition/effect diagnostics.
-- [ ] Add a schema compatibility policy documenting versioning, deprecations, and migration guarantees for industry users.
+- [x] Add a schema compatibility policy documenting versioning, deprecations, and migration guarantees for industry users.
 - [x] Introduce an explicit action semantics reference table generated from tests and implementation metadata.
-- [ ] Add first-class semantics for traffic shifting, load balancer draining, and weighted routing during regional failover.
+- [x] Add first-class semantics for traffic shifting, load balancer draining, and weighted routing during regional failover.
 - [ ] Add first-class semantics for cache flush, cache warmup, and stale-read risk during incident response.
 - [ ] Add first-class semantics for object storage replication, bucket write freezes, and restore-from-snapshot operations.
 - [ ] Add first-class semantics for message replay, dead-letter queues, and consumer group rebalancing.
