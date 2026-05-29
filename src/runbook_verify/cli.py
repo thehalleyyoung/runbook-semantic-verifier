@@ -16,6 +16,7 @@ from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
 from .parser import RunbookParseError, load_runbook
+from .profiles import get_profile, profile_names, render_profiles_json, render_profiles_markdown
 from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
 from .repository_scan import RepositoryScanError, ScanOptions, build_repository_scan, render_scan_json, render_scan_markdown
 from .schema import render_json_schema
@@ -23,6 +24,7 @@ from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
 
 
 def main(argv: list[str] | None = None) -> int:
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
     parser = argparse.ArgumentParser(prog="frv", description="Verify cloud incident runbooks with bounded state-space exploration.")
     sub = parser.add_subparsers(dest="command", required=True)
     check_p = sub.add_parser("check", help="parse and verify a runbook")
@@ -43,9 +45,13 @@ def main(argv: list[str] | None = None) -> int:
     audit_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
     audit_p.add_argument("--format", choices=["text", "json", "markdown", "sarif", "junit"], default="text", help="audit report format")
     audit_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command when --expect-findings is not set")
+    audit_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
     bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
     bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
     bench_p.add_argument("--format", choices=["json", "markdown"], default="json")
+    bench_p.add_argument("--profile", choices=profile_names(), help="record a verification profile in benchmark output")
+    profiles_p = sub.add_parser("profiles", help="list named verification policy profiles")
+    profiles_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     explain_p = sub.add_parser("explain", help="explain an audit/check finding with rule, trace, source, and remediation context")
     explain_p.add_argument("path", help="runbook file or directory used to produce the finding")
     explain_p.add_argument("finding_id", help="finding id such as finding-001 from `frv audit --format json`")
@@ -63,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
     readiness_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
     readiness_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     readiness_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
+    readiness_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
     owner_p = sub.add_parser("owner-scorecard", help="summarize runbook readiness, hazards, waivers, and remediation history by owner")
     owner_p.add_argument("path")
     owner_p.add_argument("--owner", help="limit scorecard to one owner id")
@@ -70,6 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     owner_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
     owner_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     owner_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
+    owner_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
     coverage_p = sub.add_parser("coverage", help="map safety properties to modeled entities, owners, and Markdown sections")
     coverage_p.add_argument("path")
     coverage_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -78,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     lint_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when prose findings are found")
     lint_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command when --expect-findings is not set")
+    lint_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
     scan_p = sub.add_parser("scan", help="rank Markdown/wiki runbooks by dangerous-effect vocabulary and model-first priority")
     scan_p.add_argument("path")
     scan_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -88,24 +97,31 @@ def main(argv: list[str] | None = None) -> int:
     gate_p.add_argument("--baseline", help="optional baseline path; matching high-risk findings are treated as existing debt")
     gate_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     gate_p.add_argument("--expect-blocks", action="store_true", help="exit 0 only when the gate finds blocking high-risk changes")
-    args = parser.parse_args(argv)
+    gate_p.add_argument("--fail-on", choices=["blocks", "none"], default="blocks", help="whether blocking high-risk findings fail the command")
+    gate_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
+    args = parser.parse_args(raw_argv)
 
     if args.command == "audit":
-        return _audit(args.path, args.expect_findings, args.diagnostics_format, args.format, args.fail_on)
+        fail_on = _profiled_fail_on(args.profile, args.fail_on, raw_argv, "audit_fail_on")
+        return _audit(args.path, args.expect_findings, args.diagnostics_format, args.format, fail_on, args.profile)
     if args.command == "benchmark":
         try:
-            result = run_benchmark(args.path)
+            result = run_benchmark(args.path, profile_name=args.profile)
         except BenchmarkConfigError as exc:
             print(f"benchmark error: {exc}", file=sys.stderr)
             return 2
         print(render_json(result) if args.format == "json" else render_markdown(result), end="")
         return 0 if result.pass_ else 1
+    if args.command == "profiles":
+        print(render_profiles_json() if args.format == "json" else render_profiles_markdown(), end="")
+        return 0
     if args.command == "lint-markdown":
+        fail_on = _profiled_fail_on(args.profile, args.fail_on, raw_argv, "lint_fail_on")
         findings = lint_markdown_tree(args.path)
         print(render_lint_json(findings) if args.format == "json" else render_lint_markdown(findings), end="")
         if args.expect_findings:
             return 0 if findings else 1
-        return 1 if has_findings_at_or_above(findings, args.fail_on) else 0
+        return 1 if has_findings_at_or_above(findings, fail_on) else 0
     if args.command == "scan":
         try:
             report = build_repository_scan(args.path, ScanOptions(min_score=args.min_score, include_low_priority=args.include_low_priority))
@@ -115,11 +131,13 @@ def main(argv: list[str] | None = None) -> int:
         print(render_scan_json(report) if args.format == "json" else render_scan_markdown(report), end="")
         return 0
     if args.command == "ci-gate":
-        report = build_ci_gate_report(args.path, args.baseline)
+        fail_on = _profiled_fail_on(args.profile, args.fail_on, raw_argv, "ci_gate_fail_on")
+        profile = get_profile(args.profile)
+        report = build_ci_gate_report(args.path, args.baseline, profile.to_json_dict() if profile else None)
         print(render_ci_gate_json(report) if args.format == "json" else render_ci_gate_markdown(report), end="")
         if args.expect_blocks:
             return 0 if report.summary["blocking_findings"] else 1
-        return 0 if report.pass_ else 1
+        return 0 if fail_on == "none" or report.pass_ else 1
     if args.command == "explain":
         try:
             explanation = explain_finding(args.path, args.finding_id)
@@ -139,6 +157,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         return 0 if result.pass_ else 1
     if args.command == "readiness":
+        fail_on = _profiled_fail_on(args.profile, args.fail_on, raw_argv, "readiness_fail_on")
         as_of = None
         if args.as_of:
             from datetime import date
@@ -153,10 +172,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"readiness error: {exc}", file=sys.stderr)
             return 2
         print(render_readiness_json(result) if args.format == "json" else render_readiness_markdown(result), end="")
-        if args.fail_on == "none":
+        if fail_on == "none":
             return 0
         return 1 if result["summary"]["status"] == "not_ready" else 0
     if args.command == "owner-scorecard":
+        fail_on = _profiled_fail_on(args.profile, args.fail_on, raw_argv, "owner_scorecard_fail_on")
         as_of = None
         if args.as_of:
             from datetime import date
@@ -171,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"owner-scorecard error: {exc}", file=sys.stderr)
             return 2
         print(render_owner_scorecard_json(result) if args.format == "json" else render_owner_scorecard_markdown(result), end="")
-        if args.fail_on == "none":
+        if fail_on == "none":
             return 0
         return 1 if result["summary"]["status"] == "not_ready" else 0
     if args.command == "coverage":
@@ -217,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
-def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", output_format: str = "text", fail_on: str = "warning") -> int:
+def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", output_format: str = "text", fail_on: str = "warning", profile_name: str | None = None) -> int:
     root = Path(path)
     if not root.exists():
         print(f"audit path does not exist: {root}", file=sys.stderr)
@@ -279,11 +299,17 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "recommendation": violation.remediation,
             })
     audit_findings = _with_finding_ids(_rank_audit_findings(audit_findings))
-    audit_report = {"summary": _audit_summary(runbook_summaries, audit_findings), "runbooks": runbook_summaries, "findings": audit_findings}
+    profile = get_profile(profile_name)
+    audit_report = {
+        "summary": _audit_summary(runbook_summaries, audit_findings),
+        "profile": profile.to_json_dict() if profile else None,
+        "runbooks": runbook_summaries,
+        "findings": audit_findings,
+    }
     if output_format == "json":
         print(json.dumps(audit_report, indent=2, sort_keys=True))
     elif output_format == "markdown":
-        print(_render_audit_markdown(root, runbook_summaries, audit_findings), end="")
+        print(_render_audit_markdown(root, runbook_summaries, audit_findings, profile_name), end="")
     elif output_format == "sarif":
         print(_render_audit_sarif(audit_report), end="")
     elif output_format == "junit":
@@ -359,11 +385,12 @@ def _audit_summary(runbooks: list[dict[str, object]], findings: list[dict[str, o
     }
 
 
-def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findings: list[dict[str, object]]) -> str:
+def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findings: list[dict[str, object]], profile_name: str | None = None) -> str:
     summary = _audit_summary(runbooks, findings)
     lines = [
         f"# Runbook audit: {root}",
         "",
+        f"- Profile: `{profile_name or 'none'}`",
         f"- Runbooks checked: {summary['runbooks']}",
         f"- Safe runbooks: {summary['safe_runbooks']}",
         f"- Findings: {summary['findings']}",
@@ -505,6 +532,19 @@ def _has_audit_findings_at_or_above(findings: list[dict[str, object]], threshold
         return False
     minimum = SEVERITY_RANK[threshold]
     return any(int(finding["rank"]) >= minimum for finding in findings)
+
+
+def _profiled_fail_on(profile_name: str | None, current: str, raw_argv: list[str], field: str) -> str:
+    if profile_name is None or _option_present(raw_argv, "--fail-on"):
+        return current
+    profile = get_profile(profile_name)
+    if profile is None:
+        return current
+    return str(getattr(profile, field))
+
+
+def _option_present(raw_argv: list[str], option: str) -> bool:
+    return any(item == option or item.startswith(f"{option}=") for item in raw_argv)
 
 
 if __name__ == "__main__":

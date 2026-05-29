@@ -1,6 +1,6 @@
 # CI gate report: case_studies/current/grafana_tempo
 
-- Profile: `none`
+- Profile: `advisory-research`
 - Status: **FAIL**
 - Baseline: `none; all high-risk findings are treated as new`
 - Blocking findings: 2

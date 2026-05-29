@@ -9,6 +9,7 @@ from typing import Any
 from .checker import Checker
 from .markdown_lint import lint_markdown_file
 from .parser import RunbookParseError, load_document, load_runbook
+from .profiles import get_profile
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
 
@@ -48,6 +49,7 @@ class BenchmarkSuiteResult:
     name: str
     runbooks: list[RunbookBenchmarkResult]
     runtime_seconds: float
+    profile: dict[str, str] | None = None
 
     @property
     def pass_(self) -> bool:
@@ -71,12 +73,13 @@ class BenchmarkSuiteResult:
                 aggregate["prose_findings_by_rule"][rule] = aggregate["prose_findings_by_rule"].get(rule, 0) + count
         return {
             "name": self.name,
+            "profile": self.profile,
             "aggregate": aggregate,
             "runbooks": [item.to_json_dict() for item in self.runbooks],
         }
 
 
-def run_benchmark(path: str | Path | None = None) -> BenchmarkSuiteResult:
+def run_benchmark(path: str | Path | None = None, profile_name: str | None = None) -> BenchmarkSuiteResult:
     root = Path.cwd()
     if path is None:
         builtin_config = root / "benchmarks" / "builtin.json"
@@ -111,7 +114,8 @@ def run_benchmark(path: str | Path | None = None) -> BenchmarkSuiteResult:
 
     started = time.perf_counter()
     runbooks = [_run_one(entry) for entry in entries]
-    return BenchmarkSuiteResult(suite_name, runbooks, time.perf_counter() - started)
+    profile = get_profile(profile_name)
+    return BenchmarkSuiteResult(suite_name, runbooks, time.perf_counter() - started, profile.to_json_dict() if profile else None)
 
 
 def render_json(result: BenchmarkSuiteResult) -> str:
@@ -124,6 +128,7 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
     lines = [
         f"# Benchmark: {result.name}",
         "",
+        f"- Profile: `{data['profile']['name']}` ({data['profile']['benchmark_mode']})" if data["profile"] else "- Profile: `none`",
         f"- Pass: `{aggregate['pass']}`",
         f"- Runbooks: {aggregate['runbooks']}",
         f"- States explored: {aggregate['states_explored']}",

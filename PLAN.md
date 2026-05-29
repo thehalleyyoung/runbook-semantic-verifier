@@ -47,6 +47,7 @@ Operational runbooks are programs over infrastructure state, even when they are 
 - `frv readiness`: implemented service or repository incident-readiness report covering validation, bounded-checking status, audit severity, stale preconditions, rollback/restore coverage, proof obligations, and uncovered service/region paths.
 - `frv owner-scorecard`: implemented team-facing scorecard for verified runbooks, open hazards, stale assumptions, waiver debt, proof-obligation failures, and remediation history grouped by owner metadata.
 - `frv coverage`: implemented property-coverage report mapping invariant/proof-obligation templates to modeled services, databases, queues, caches, alerts, DNS records, credentials, owners, regions, source steps, and Markdown sections; unverified prose obligations remain explicit coverage gaps.
+- `frv profiles`: implemented named exit-policy profiles for conservative production gates, advisory research review, documentation-only audits, and benchmark reproduction. Profiles set defaults only when `--fail-on` is omitted and do not alter semantic findings.
 - CI outputs should include JSON, Markdown, SARIF, and JUnit so the same semantic result powers terminals, GitHub annotations, dashboards, and reports.
 
 ## Benchmark and dataset plan

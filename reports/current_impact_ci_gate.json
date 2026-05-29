@@ -53,6 +53,7 @@
     }
   ],
   "pass": false,
+  "profile": null,
   "summary": {
     "blocking_findings": 2,
     "categories": {

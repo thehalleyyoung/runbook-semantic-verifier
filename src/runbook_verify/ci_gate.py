@@ -44,12 +44,13 @@ class CIGateFinding:
 class CIGateReport:
     target: str
     baseline: str | None
+    profile: dict[str, str] | None
     pass_: bool
     summary: dict[str, Any]
     findings: tuple[CIGateFinding, ...]
 
 
-def build_ci_gate_report(target: str | Path, baseline: str | Path | None = None) -> CIGateReport:
+def build_ci_gate_report(target: str | Path, baseline: str | Path | None = None, profile: dict[str, str] | None = None) -> CIGateReport:
     target_path = Path(target)
     baseline_path = Path(baseline) if baseline is not None else None
     target_findings = lint_markdown_tree(target_path)
@@ -69,6 +70,7 @@ def build_ci_gate_report(target: str | Path, baseline: str | Path | None = None)
     return CIGateReport(
         target=str(target_path),
         baseline=str(baseline_path) if baseline_path is not None else None,
+        profile=profile,
         pass_=not blockers,
         summary=summary,
         findings=tuple(gate_findings),
@@ -79,6 +81,7 @@ def render_ci_gate_json(report: CIGateReport) -> str:
     data = {
         "target": report.target,
         "baseline": report.baseline,
+        "profile": report.profile,
         "pass": report.pass_,
         "summary": report.summary,
         "findings": [asdict(finding) for finding in report.findings],
@@ -91,6 +94,7 @@ def render_ci_gate_markdown(report: CIGateReport) -> str:
     lines = [
         f"# CI gate report: {report.target}",
         "",
+        f"- Profile: `{report.profile['name']}`" if report.profile else "- Profile: `none`",
         f"- Status: **{status}**",
         f"- Baseline: `{report.baseline or 'none; all high-risk findings are treated as new'}`",
         f"- Blocking findings: {report.summary['blocking_findings']}",

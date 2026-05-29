@@ -2,12 +2,13 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **34/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **35/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
 CI gates for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
-runbook edits, queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
+runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
+queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
 cache flush/warmup/cold-start/capacity semantics, and checked-in
 historical/current public case-study evidence.
 
@@ -42,9 +43,11 @@ PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafa
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
+PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
-PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
 ```
 
 Optional editable install:
@@ -157,6 +160,7 @@ src/runbook_verify/
   coverage.py   property-to-entity/owner/Markdown-section coverage reports
   repository_scan.py  Markdown/wiki runbook discovery and model-first prioritization
   ci_gate.py    CI gate for new high-risk operations prose and owner-approved waivers
+  profiles.py   named CLI exit-policy profiles for production/advisory/docs/benchmark use
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -237,6 +241,27 @@ The checked-in `reports/current_impact_ci_gate.md` and
 public fixture: two destructive/data-restoration findings block, while the
 ring-forget excerpt is reported as owner-approved waiver evidence rather than
 silently skipped.
+
+`frv profiles` makes those policy choices reproducible. Profiles set default
+exit policies only when `--fail-on` is not explicitly supplied; they do not
+change parser validation, action semantics, bounded exploration, or finding
+content:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate \
+  case_studies/current/grafana_tempo --format markdown \
+  --profile advisory-research
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark \
+  benchmarks/builtin.json --format markdown --profile benchmark-reproduction
+```
+
+The checked-in `reports/current_impact_ci_gate_advisory_profile.md` shows the
+Tempo-derived fixture retains the same two blocking findings and one waiver
+while exiting successfully for non-blocking advisory review. The checked-in
+`reports/builtin_benchmark_profile.md` records the benchmark-reproduction
+profile alongside the public benchmark metrics. See
+`docs/configuration_profiles.md`.
 
 `frv readiness` turns validation, bounded checking, Markdown audit, service and
 region coverage, rollback/restore coverage, source freshness, and Hoare-style
@@ -358,7 +383,8 @@ the first finding's explain report is checked in as `reports/current_impact_expl
 service/region-scoped readiness report is checked in as `reports/current_impact_readiness.md` and
 `reports/current_impact_readiness.json`; the owner-facing scorecard is checked in
 as `reports/current_impact_owner_scorecard.md` and
-`reports/current_impact_owner_scorecard.json`.
+`reports/current_impact_owner_scorecard.json`; and the advisory CI profile
+evidence is checked in as `reports/current_impact_ci_gate_advisory_profile.md`.
 
 ## DNS failover public-pattern case study
 
@@ -442,10 +468,12 @@ Reusable config:
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
 ```
 
 The checked-in `reports/builtin_benchmark.md` records the Markdown output for
-the reusable public benchmark config.
+the reusable public benchmark config; `reports/builtin_benchmark_profile.md`
+records the same suite with the benchmark-reproduction profile metadata.
 
 External corpus:
 

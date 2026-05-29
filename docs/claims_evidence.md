@@ -13,6 +13,10 @@ missing preconditions/effects, stale owner placeholders, ambiguous operator
 instructions, and unsafe copy-paste shell snippets. `frv ci-gate` turns those
 findings into a baseline-aware CI policy for newly introduced high-risk deletion,
 credential, traffic/capacity, failover, SQL, cache, and data-restoration prose.
+Named configuration profiles make conservative production, advisory research,
+documentation-only, and benchmark-reproduction exit policies reproducible without
+changing parser validation, action semantics, bounded exploration, or reported
+findings.
 The DSL also models queue
 replay/DLQ/consumer-group semantics, DNS cutovers with TTL and health-check
 convergence obligations, and cache flush/warmup/cold-start/capacity semantics.
@@ -71,6 +75,10 @@ differently named system exists.
   and blocks only new unsafe operations prose unless the finding is represented
   by an auditable owner/expiry/reason waiver or explicit limitation. It is a
   document-review gate, not proof that waived operations are safe.
+- Configuration profiles set CLI default exit policies for audit, lint, CI gate,
+  readiness, owner-scorecard, and benchmark reproduction workflows. Explicit
+  `--fail-on` values override profile defaults, and profiles do not suppress or
+  rewrite findings.
 - The coverage report maps each current invariant/proof-obligation template to
   modeled services, databases, queues, alerts, DNS records, credentials (none in the current
   DSL), owners, regions, source steps, and Markdown sections; unverified prose
@@ -148,6 +156,7 @@ differently named system exists.
   - `reports/current_impact_lint.md`
   - `reports/current_impact_ci_gate.json`
   - `reports/current_impact_ci_gate.md`
+  - `reports/current_impact_ci_gate_advisory_profile.md`
   - `reports/current_impact_scan.json`
   - `reports/current_impact_scan.md`
   - `reports/current_impact_readiness.json`
@@ -166,6 +175,7 @@ differently named system exists.
   - `reports/redis_cache_flush_coverage.json`
   - `reports/redis_cache_flush_coverage.md`
   - `reports/builtin_benchmark.md`
+  - `reports/builtin_benchmark_profile.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -196,6 +206,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
+PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
+PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
@@ -204,6 +216,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/redis_ca
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/redis_cache_flush --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
 ```
 
 Expected result: tests pass; benchmark `aggregate.pass` is `true`; the GitHub
@@ -230,7 +243,9 @@ restore-path, queue, consumer, deduplication, and explicit-limitation
 obligations. The
 current-impact CI gate reports two blocking high-risk prose findings for the
 unsuppressed destructive/data-deletion line and one owner-approved waiver for the
-ring-forget excerpt retained as an explicit limitation.
+ring-forget excerpt retained as an explicit limitation. Under
+`--profile advisory-research`, the same Tempo-derived CI-gate findings are
+reported but the command exits successfully for non-blocking review.
 The
 current-impact coverage report maps eleven invariant/proof-obligation
 templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
