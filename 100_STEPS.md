@@ -85,7 +85,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [ ] Add stale-precondition detection by comparing runbook owners, service names, alert names, replica counts, and dependency names against configured inventories.
 - [ ] Add incident-readiness reports summarizing unverified claims, missing rollback steps, expired waivers, stale preconditions, uncovered services, and highest-risk counterexamples.
 - [ ] Add service-owner scorecards that aggregate verification status, audit severity, waiver debt, benchmark regressions, and freshness for each team.
-- [ ] Add SARIF, JUnit, Markdown, and JSON report outputs so GitHub code scanning, CI dashboards, and SRE review templates can consume the same semantic results.
+- [x] Add SARIF, JUnit, Markdown, and JSON report outputs so GitHub code scanning, CI dashboards, and SRE review templates can consume the same semantic results.
 
 ## Phase 7 — Benchmarks, historical cases, and validity threats
 

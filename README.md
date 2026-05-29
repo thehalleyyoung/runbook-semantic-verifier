@@ -16,6 +16,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/compl
 PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format markdown --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format sarif --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format junit --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
@@ -138,10 +140,14 @@ PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --ex
 
 `frv audit` now combines executable checking with severity-ranked Markdown/wiki
 prose findings. Each prose rule links to a semantic obligation or explicit
-limitation, and CI thresholds are tunable:
+limitation. Reports can be emitted as terminal text, JSON, Markdown, SARIF 2.1.0
+for GitHub code scanning, or JUnit XML for CI test dashboards; CI thresholds are
+tunable:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format json --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format sarif --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format junit --fail-on error
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format json
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --fail-on error
 ```
@@ -169,8 +175,9 @@ linter flags destructive `forget/remove/delete` and data-deletion operations
 that lack executable blast-radius/capacity or restore-path preconditions, and
 the derived executable model reports a queue fallback/backlog hazard. The
 combined audit report is checked in as `reports/current_impact_audit.md` and
-`reports/current_impact_audit.json`; the first finding's explain report is
-checked in as `reports/current_impact_explain.md` and
+`reports/current_impact_audit.json`, with code-scanning/CI equivalents in
+`reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
+the first finding's explain report is checked in as `reports/current_impact_explain.md` and
 `reports/current_impact_explain.json`.
 
 ## Historical public case study

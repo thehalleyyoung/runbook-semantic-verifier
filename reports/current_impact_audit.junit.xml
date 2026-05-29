@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="frv.audit" tests="5" failures="3" errors="0" skipped="0">
+  <testcase classname="frv.audit.no_paused_queue_with_backlog" name="finding-001 case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:">
+    <failure type="error" message="queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1 Recommendation: Resume the queue or prove backlog is drained and alternate consumers are active.">queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1 Recommendation: Resume the queue or prove backlog is drained and alternate consumers are active.</failure>
+  </testcase>
+  <testcase classname="frv.audit.no_queue_pause_without_drain_plan" name="finding-002 case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:">
+    <failure type="error" message="queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause Recommendation: Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.">queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause Recommendation: Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.</failure>
+  </testcase>
+  <testcase classname="frv.audit.data-deletion-needs-restore-precondition" name="finding-003 case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:20">
+    <failure type="error" message="Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least. Recommendation: Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.">Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least. Recommendation: Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.</failure>
+  </testcase>
+  <testcase classname="frv.audit.destructive-delete-needs-targeting" name="finding-004 case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:18">
+    <system-out>Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least. Recommendation: Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.</system-out>
+  </testcase>
+  <testcase classname="frv.audit.destructive-delete-needs-targeting" name="finding-005 case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:20">
+    <system-out>Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least. Recommendation: Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.</system-out>
+  </testcase>
+</testsuite>

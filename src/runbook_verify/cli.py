@@ -5,6 +5,7 @@ import json
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
@@ -34,7 +35,7 @@ def main(argv: list[str] | None = None) -> int:
     audit_p.add_argument("path")
     audit_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when at least one violation is found")
     audit_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
-    audit_p.add_argument("--format", choices=["text", "json", "markdown"], default="text", help="audit report format")
+    audit_p.add_argument("--format", choices=["text", "json", "markdown", "sarif", "junit"], default="text", help="audit report format")
     audit_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command when --expect-findings is not set")
     bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
     bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
@@ -171,10 +172,15 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "recommendation": violation.remediation,
             })
     audit_findings = _with_finding_ids(_rank_audit_findings(audit_findings))
+    audit_report = {"summary": _audit_summary(runbook_summaries, audit_findings), "runbooks": runbook_summaries, "findings": audit_findings}
     if output_format == "json":
-        print(json.dumps({"summary": _audit_summary(runbook_summaries, audit_findings), "runbooks": runbook_summaries, "findings": audit_findings}, indent=2, sort_keys=True))
+        print(json.dumps(audit_report, indent=2, sort_keys=True))
     elif output_format == "markdown":
         print(_render_audit_markdown(root, runbook_summaries, audit_findings), end="")
+    elif output_format == "sarif":
+        print(_render_audit_sarif(audit_report), end="")
+    elif output_format == "junit":
+        print(_render_audit_junit(audit_report, fail_on), end="")
     elif markdown_findings:
         print(f"Markdown prose findings: {len(markdown_findings)}")
         for finding in markdown_findings:
@@ -271,6 +277,106 @@ def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findin
             recommendation = str(finding.get("recommendation", "") or "").replace("|", "\\|")
             lines.append(f"| `{finding['id']}` | {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} |")
     return "\n".join(lines) + "\n"
+
+
+def _render_audit_sarif(report: dict[str, object]) -> str:
+    findings = list(report["findings"])  # type: ignore[index]
+    rules = {}
+    results = []
+    for finding in findings:
+        rule_id = str(finding["rule"])
+        if rule_id not in rules:
+            rules[rule_id] = {
+                "id": rule_id,
+                "name": rule_id,
+                "shortDescription": {"text": str(finding.get("semantic_obligation", rule_id))},
+                "help": {"text": str(finding.get("recommendation") or finding.get("message") or "")},
+                "defaultConfiguration": {"level": _sarif_level(str(finding.get("severity", "warning")))},
+            }
+        location: dict[str, object] = {
+            "physicalLocation": {
+                "artifactLocation": {"uri": str(finding.get("path", ""))},
+            }
+        }
+        line = finding.get("line")
+        if isinstance(line, int) and line > 0:
+            location["physicalLocation"]["region"] = {"startLine": line}  # type: ignore[index]
+        result = {
+            "ruleId": rule_id,
+            "level": _sarif_level(str(finding.get("severity", "warning"))),
+            "message": {"text": _finding_message(finding)},
+            "locations": [location],
+            "properties": {
+                "findingId": str(finding.get("id", "")),
+                "findingType": str(finding.get("type", "")),
+                "semanticObligation": str(finding.get("semantic_obligation", "")),
+            },
+        }
+        results.append(result)
+    sarif = {
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "formal-runbook-verification",
+                        "informationUri": "https://github.com/",
+                        "rules": [rules[key] for key in sorted(rules)],
+                    }
+                },
+                "results": results,
+                "properties": {"summary": report["summary"]},
+            }
+        ],
+    }
+    return json.dumps(sarif, indent=2, sort_keys=True) + "\n"
+
+
+def _render_audit_junit(report: dict[str, object], fail_on: str) -> str:
+    findings = list(report["findings"])  # type: ignore[index]
+    blocking = [finding for finding in findings if _finding_blocks_for_threshold(finding, fail_on)]
+    lines = [
+        '<?xml version="1.0" encoding="utf-8"?>',
+        f'<testsuite name="frv.audit" tests="{len(findings)}" failures="{len(blocking)}" errors="0" skipped="0">',
+    ]
+    for finding in findings:
+        name = f"{finding.get('id', '')} {finding.get('path', '')}:{finding.get('line') or ''}"
+        classname = f"frv.audit.{finding.get('rule', 'finding')}"
+        lines.append(f'  <testcase classname="{_xml_attr(classname)}" name="{_xml_attr(name)}">')
+        message = _finding_message(finding)
+        if _finding_blocks_for_threshold(finding, fail_on):
+            lines.append(f'    <failure type="{_xml_attr(str(finding.get("severity", "")))}" message="{_xml_attr(message)}">{escape(message)}</failure>')
+        else:
+            lines.append(f"    <system-out>{escape(message)}</system-out>")
+        lines.append("  </testcase>")
+    lines.append("</testsuite>")
+    return "\n".join(lines) + "\n"
+
+
+def _sarif_level(severity: str) -> str:
+    if severity in {"error", "responsible-disclosure"}:
+        return "error"
+    if severity == "warning":
+        return "warning"
+    return "note"
+
+
+def _finding_message(finding: dict[str, object]) -> str:
+    recommendation = str(finding.get("recommendation") or "")
+    if recommendation:
+        return f"{finding.get('message', '')} Recommendation: {recommendation}"
+    return str(finding.get("message", ""))
+
+
+def _finding_blocks_for_threshold(finding: dict[str, object], threshold: str) -> bool:
+    if threshold == "none":
+        return False
+    return int(finding["rank"]) >= SEVERITY_RANK[threshold]
+
+
+def _xml_attr(value: str) -> str:
+    return escape(value, {'"': "&quot;"})
 
 
 def _has_audit_findings_at_or_above(findings: list[dict[str, object]], threshold: str) -> bool:

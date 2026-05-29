@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 import unittest
+import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -114,6 +115,69 @@ class MarkdownCaseStudyTests(unittest.TestCase):
         self.assertGreaterEqual(len(explanation["state_delta"]), 1)
         self.assertEqual(explanation["source"]["path"], semantic_finding["path"])
         self.assertIsNotNone(explanation["source"]["line"])
+
+    def test_audit_cli_emits_sarif_for_code_scanning(self):
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT / "src")
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runbook_verify.cli",
+                "audit",
+                "case_studies/current/grafana_tempo",
+                "--format",
+                "sarif",
+                "--expect-findings",
+            ],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        sarif = json.loads(proc.stdout)
+        self.assertEqual(sarif["version"], "2.1.0")
+        run = sarif["runs"][0]
+        self.assertEqual(run["tool"]["driver"]["name"], "formal-runbook-verification")
+        rule_ids = {rule["id"] for rule in run["tool"]["driver"]["rules"]}
+        result_rule_ids = {result["ruleId"] for result in run["results"]}
+        self.assertIn("no_queue_pause_without_drain_plan", result_rule_ids)
+        self.assertIn("destructive-delete-needs-targeting", rule_ids)
+        self.assertTrue(all(result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] for result in run["results"]))
+
+    def test_audit_cli_emits_junit_for_ci_dashboards(self):
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT / "src")
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runbook_verify.cli",
+                "audit",
+                "case_studies/current/grafana_tempo",
+                "--format",
+                "junit",
+                "--expect-findings",
+                "--fail-on",
+                "error",
+            ],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        suite = ET.fromstring(proc.stdout)
+        self.assertEqual(suite.attrib["name"], "frv.audit")
+        self.assertGreaterEqual(int(suite.attrib["tests"]), 1)
+        self.assertGreaterEqual(int(suite.attrib["failures"]), 1)
+        failure_messages = [failure.attrib["message"] for failure in suite.findall(".//failure")]
+        self.assertTrue(any("Recommendation:" in message for message in failure_messages))
 
 
 if __name__ == "__main__":

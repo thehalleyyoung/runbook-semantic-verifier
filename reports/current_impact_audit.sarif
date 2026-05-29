@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "properties": {
+        "summary": {
+          "findings": 5,
+          "findings_by_rule": {
+            "data-deletion-needs-restore-precondition": 1,
+            "destructive-delete-needs-targeting": 2,
+            "no_paused_queue_with_backlog": 1,
+            "no_queue_pause_without_drain_plan": 1
+          },
+          "findings_by_severity": {
+            "error": 3,
+            "warning": 2
+          },
+          "runbooks": 1,
+          "safe_runbooks": 0
+        }
+      },
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1 Recommendation: Resume the queue or prove backlog is drained and alternate consumers are active."
+          },
+          "properties": {
+            "findingId": "finding-001",
+            "findingType": "semantic",
+            "semanticObligation": "no_paused_queue_with_backlog"
+          },
+          "ruleId": "no_paused_queue_with_backlog"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause Recommendation: Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing."
+          },
+          "properties": {
+            "findingId": "finding-002",
+            "findingType": "semantic",
+            "semanticObligation": "no_queue_pause_without_drain_plan"
+          },
+          "ruleId": "no_queue_pause_without_drain_plan"
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least. Recommendation: Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations."
+          },
+          "properties": {
+            "findingId": "finding-003",
+            "findingType": "prose",
+            "semanticObligation": "restore_path_and_blast_radius_limited"
+          },
+          "ruleId": "data-deletion-needs-restore-precondition"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 18
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least. Recommendation: Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions."
+          },
+          "properties": {
+            "findingId": "finding-004",
+            "findingType": "prose",
+            "semanticObligation": "blast_radius_limited_or_explicit_limitation"
+          },
+          "ruleId": "destructive-delete-needs-targeting"
+        },
+        {
+          "level": "warning",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+                },
+                "region": {
+                  "startLine": 20
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least. Recommendation: Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions."
+          },
+          "properties": {
+            "findingId": "finding-005",
+            "findingType": "prose",
+            "semanticObligation": "blast_radius_limited_or_explicit_limitation"
+          },
+          "ruleId": "destructive-delete-needs-targeting"
+        }
+      ],
+      "tool": {
+        "driver": {
+          "informationUri": "https://github.com/",
+          "name": "formal-runbook-verification",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations."
+              },
+              "id": "data-deletion-needs-restore-precondition",
+              "name": "data-deletion-needs-restore-precondition",
+              "shortDescription": {
+                "text": "restore_path_and_blast_radius_limited"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "help": {
+                "text": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions."
+              },
+              "id": "destructive-delete-needs-targeting",
+              "name": "destructive-delete-needs-targeting",
+              "shortDescription": {
+                "text": "blast_radius_limited_or_explicit_limitation"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "Resume the queue or prove backlog is drained and alternate consumers are active."
+              },
+              "id": "no_paused_queue_with_backlog",
+              "name": "no_paused_queue_with_backlog",
+              "shortDescription": {
+                "text": "no_paused_queue_with_backlog"
+              }
+            },
+            {
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "help": {
+                "text": "Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing."
+              },
+              "id": "no_queue_pause_without_drain_plan",
+              "name": "no_queue_pause_without_drain_plan",
+              "shortDescription": {
+                "text": "no_queue_pause_without_drain_plan"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
