@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "description": "Bounded inventory fixture for the public Grafana Tempo excerpt case study. It is not a live Grafana inventory; it exercises freshness/refinement checks against documented service, alert, ownership, replica, and dependency assumptions.",
+    "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md",
+    "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
+    "observed_date": "2026-05-29"
+  },
+  "owners": [
+    "grafana-tempo-public-fixture"
+  ],
+  "alerts": [
+    "tempo-query-fallback-backlog",
+    "tempo-query-consumer-group-unstable"
+  ],
+  "dependencies": [
+    "tenant-index-fallback-scan",
+    "tempo-ring"
+  ],
+  "services": {
+    "tempo-query": {
+      "replicas": 3,
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "alerts": [
+        "tempo-query-fallback-backlog",
+        "tempo-query-consumer-group-unstable"
+      ],
+      "dependencies": [
+        "tenant-index-fallback-scan",
+        "tempo-ring"
+      ]
+    }
+  }
+}

@@ -2,12 +2,14 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **36/100** items in the local roadmap are complete. The
+Current roadmap status: **37/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
 CI gates and pull-request annotations for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
+inventory-refinement checks for stale service, owner, alert, dependency, and
+replica-count assumptions,
 queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
 cache flush/warmup/cold-start/capacity semantics, and checked-in
 historical/current public case-study evidence.
@@ -38,6 +40,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/redis_ca
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --inventory case_studies/current/grafana_tempo/tempo_inventory_current_impact.json --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
@@ -285,22 +288,36 @@ profile alongside the public benchmark metrics. See
 `docs/configuration_profiles.md`.
 
 `frv readiness` turns validation, bounded checking, Markdown audit, service and
-region coverage, rollback/restore coverage, source freshness, and Hoare-style
-proof-obligation counters into a service- or region-scoped incident-readiness
-report:
+region coverage, rollback/restore coverage, source freshness, optional inventory
+refinement, and Hoare-style proof-obligation counters into a service- or
+region-scoped incident-readiness report:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli readiness \
   case_studies/current/grafana_tempo \
   --service tempo-query --region prod --as-of 2026-05-29 \
   --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli readiness \
+  case_studies/current/grafana_tempo \
+  --service tempo-query --region prod \
+  --inventory case_studies/current/grafana_tempo/tempo_inventory_current_impact.json \
+  --as-of 2026-05-29 --format markdown --fail-on none
 ```
 
 The checked-in outputs `reports/current_impact_readiness.md` and
 `reports/current_impact_readiness.json` report `not_ready` for the derived Tempo
 fixture because the model has six bounded queue replay/consumer-group
 counterexamples, three unsuppressed destructive/data-deletion/backfill prose
-claims, and one audited explicit-limitation suppression.
+claims, and one audited explicit-limitation suppression. With
+`--inventory`, readiness also checks the runbook as a refinement of a configured
+service inventory: modeled services must be present, owner/alert/dependency names
+must match configured identifiers, and modeled replica counts must match the
+declared current assumption. The checked-in
+`reports/current_impact_inventory_readiness.md` and
+`reports/current_impact_inventory_readiness.json` validate this on the bounded
+Tempo fixture inventory by reporting a `replica_count_mismatch`,
+`missing_service_alert`, and `missing_dependency` under the formal
+`inventory_refinement_precondition` obligation.
 
 `frv owner-scorecard` groups the same bounded semantic and prose-audit evidence
 by owner metadata (`metadata.owners`, `metadata.owner`, `metadata.team`, or
@@ -405,7 +422,11 @@ the first finding's explain report is checked in as `reports/current_impact_expl
 `reports/current_impact_explain.json`. The repository scan outputs are checked in as
 `reports/current_impact_scan.md` and `reports/current_impact_scan.json`. The
 service/region-scoped readiness report is checked in as `reports/current_impact_readiness.md` and
-`reports/current_impact_readiness.json`; the owner-facing scorecard is checked in
+`reports/current_impact_readiness.json`; inventory-refinement readiness evidence
+for the bounded fixture inventory in
+`case_studies/current/grafana_tempo/tempo_inventory_current_impact.json` is
+checked in as `reports/current_impact_inventory_readiness.md` and
+`reports/current_impact_inventory_readiness.json`; the owner-facing scorecard is checked in
 as `reports/current_impact_owner_scorecard.md` and
 `reports/current_impact_owner_scorecard.json`; and the advisory CI profile
 evidence is checked in as `reports/current_impact_ci_gate_advisory_profile.md`.

@@ -3,15 +3,15 @@
 - Status: `not_ready`
 - Readiness score: 0/100
 - Filters: service=`tempo-query` region=`prod`
-- Inventory: ``
+- Inventory: `case_studies/current/grafana_tempo/tempo_inventory_current_impact.json`
 - Runbooks considered: 1
 - Safe runbooks: 0
 - Parse errors: 0
 - Semantic counterexamples: 6
 - Unverified prose claims: 4
 - Missing rollback/restore coverage: 0
-- Stale preconditions: 0
-- Blocking stale preconditions: 0
+- Stale preconditions: 3
+- Blocking stale preconditions: 1
 - Benchmark expectation mismatches: 0
 
 ## Runbooks
@@ -44,7 +44,9 @@ No high-risk executable step lacked a modeled rollback/restore action.
 
 ## Stale preconditions
 
-No file exceeded the configured freshness window and no inventory-refinement precondition failed.
+- `error` `replica_count_mismatch` in `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`: service 'tempo-query' models 2 replica(s) but inventory expects 3 (obligation `inventory_refinement_precondition`)
+- `warning` `missing_service_alert` in `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`: service 'tempo-query' omits inventory alert(s): tempo-query-consumer-group-unstable, tempo-query-fallback-backlog (obligation `inventory_refinement_precondition`)
+- `warning` `missing_dependency` in `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`: service 'tempo-query' omits inventory dependency name(s): tempo-ring (obligation `inventory_refinement_precondition`)
 
 ## Proof obligations
 

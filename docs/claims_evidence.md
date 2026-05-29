@@ -19,7 +19,10 @@ prose-audit rule names for Markdown findings. Named configuration profiles make
 conservative production, advisory research,
 documentation-only, and benchmark-reproduction exit policies reproducible without
 changing parser validation, action semantics, bounded exploration, or reported
-findings.
+findings. Readiness reports can also compare scoped runbooks against a configured
+JSON inventory of current service names, owner identifiers, alert identifiers,
+dependency names, and replica counts, reporting stale assumptions as
+`inventory_refinement_precondition` obligations.
 The DSL also models queue
 replay/DLQ/consumer-group semantics, DNS cutovers with TTL and health-check
 convergence obligations, and cache flush/warmup/cold-start/capacity semantics.
@@ -66,7 +69,9 @@ differently named system exists.
   traces between two bounded executable runbook models.
 - The readiness report aggregates validation, bounded checker, Markdown audit,
   service/region coverage, rollback/restore coverage, source-freshness, and
-  proof-obligation signals for a repository path or scoped service/region.
+  proof-obligation signals for a repository path or scoped service/region. With
+  `--inventory`, it additionally checks that modeled services, owner names,
+  alerts, dependencies, and replica counts refine a configured inventory fixture.
 - The owner scorecard groups bounded semantic counterexamples, blocking prose
   obligations, stale assumptions, declared waiver debt, proof-obligation
   failures, and remediation history by checked-in owner metadata.
@@ -96,6 +101,10 @@ differently named system exists.
 - Cache write freezes, destructive flushes, warmup thresholds, capacity limits,
   and stale-read risk are checked as bounded small-step transitions with
   concrete cold-start and over-capacity counterexamples.
+- Inventory-refinement findings are configuration checks over provided inventory
+  data, not live discovery. A mismatch means the artifact and configured
+  inventory disagree; it does not prove the external service catalog is complete
+  or current.
 
 ## Auditable prose suppression evidence
 
@@ -171,6 +180,9 @@ differently named system exists.
   - `reports/current_impact_scan.md`
   - `reports/current_impact_readiness.json`
   - `reports/current_impact_readiness.md`
+  - `case_studies/current/grafana_tempo/tempo_inventory_current_impact.json`
+  - `reports/current_impact_inventory_readiness.json`
+  - `reports/current_impact_inventory_readiness.md`
   - `reports/current_impact_owner_scorecard.json`
   - `reports/current_impact_owner_scorecard.md`
   - `reports/current_impact_coverage.json`
@@ -218,6 +230,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
 PYTHONPATH=src python3 -m runbook_verify.cli annotate case_studies/current/grafana_tempo --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --inventory case_studies/current/grafana_tempo/tempo_inventory_current_impact.json --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none

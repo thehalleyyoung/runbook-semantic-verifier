@@ -68,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     readiness_p.add_argument("--region", help="limit readiness to executable runbooks covering this region")
     readiness_p.add_argument("--freshness-days", type=int, default=180, help="maximum allowed age for source metadata or file mtime")
     readiness_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
+    readiness_p.add_argument("--inventory", help="JSON inventory of current services, owners, alerts, dependencies, and replica counts")
     readiness_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     readiness_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
     readiness_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
@@ -185,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"readiness error: invalid --as-of date {args.as_of!r}: {exc}", file=sys.stderr)
                 return 2
         try:
-            result = build_readiness_report(args.path, ReadinessOptions(service=args.service, region=args.region, freshness_days=args.freshness_days, as_of=as_of))
+            result = build_readiness_report(args.path, ReadinessOptions(service=args.service, region=args.region, freshness_days=args.freshness_days, as_of=as_of, inventory_path=args.inventory))
         except ReadinessError as exc:
             print(f"readiness error: {exc}", file=sys.stderr)
             return 2

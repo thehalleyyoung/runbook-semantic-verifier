@@ -113,7 +113,17 @@
       ]
     }
   ],
-  "inventory": null,
+  "inventory": {
+    "alerts": 2,
+    "dependencies": 2,
+    "description": "Bounded inventory fixture for the public Grafana Tempo excerpt case study. It is not a live Grafana inventory; it exercises freshness/refinement checks against documented service, alert, ownership, replica, and dependency assumptions.",
+    "observed_date": "2026-05-29",
+    "owners": 1,
+    "path": "case_studies/current/grafana_tempo/tempo_inventory_current_impact.json",
+    "services": 1,
+    "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
+    "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md"
+  },
   "missing_rollback_steps": [],
   "modeled_entities": {
     "regions": [
@@ -168,10 +178,41 @@
       "transitions_explored": 2
     }
   ],
-  "stale_preconditions": [],
+  "stale_preconditions": [
+    {
+      "entity": "tempo-query",
+      "kind": "replica_count_mismatch",
+      "message": "service 'tempo-query' models 2 replica(s) but inventory expects 3",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Refresh the runbook model or update the inventory fixture before treating the readiness result as current.",
+      "semantic_obligation": "inventory_refinement_precondition",
+      "severity": "error",
+      "source": "configured_inventory"
+    },
+    {
+      "entity": "tempo-query",
+      "kind": "missing_service_alert",
+      "message": "service 'tempo-query' omits inventory alert(s): tempo-query-consumer-group-unstable, tempo-query-fallback-backlog",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Refresh the runbook model or update the inventory fixture before treating the readiness result as current.",
+      "semantic_obligation": "inventory_refinement_precondition",
+      "severity": "warning",
+      "source": "configured_inventory"
+    },
+    {
+      "entity": "tempo-query",
+      "kind": "missing_dependency",
+      "message": "service 'tempo-query' omits inventory dependency name(s): tempo-ring",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Refresh the runbook model or update the inventory fixture before treating the readiness result as current.",
+      "semantic_obligation": "inventory_refinement_precondition",
+      "severity": "warning",
+      "source": "configured_inventory"
+    }
+  ],
   "summary": {
     "benchmark_expectation_mismatches": 0,
-    "blocking_stale_preconditions": 0,
+    "blocking_stale_preconditions": 1,
     "coverage_findings": 0,
     "missing_rollback_steps": 0,
     "parse_errors": 0,
@@ -179,7 +220,7 @@
     "runbooks_considered": 1,
     "safe_runbooks": 0,
     "semantic_counterexamples": 6,
-    "stale_preconditions": 0,
+    "stale_preconditions": 3,
     "status": "not_ready",
     "unsafe_runbooks": 1,
     "unverified_prose_claims": 4

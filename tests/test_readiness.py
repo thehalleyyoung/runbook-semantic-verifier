@@ -90,6 +90,26 @@ class ReadinessTests(unittest.TestCase):
         self.assertEqual(missing_payload["summary"]["coverage_findings"], 1)
         self.assertEqual(missing_payload["coverage_findings"][0]["kind"], "uncovered_service")
 
+    def test_inventory_preconditions_detect_stale_public_case_assumptions(self):
+        report = build_readiness_report(
+            ROOT / "case_studies" / "current" / "grafana_tempo",
+            ReadinessOptions(
+                service="tempo-query",
+                region="prod",
+                as_of=date(2026, 5, 29),
+                inventory_path=ROOT / "case_studies" / "current" / "grafana_tempo" / "tempo_inventory_current_impact.json",
+            ),
+        )
+
+        self.assertEqual(report["inventory"]["services"], 1)
+        self.assertGreaterEqual(report["summary"]["blocking_stale_preconditions"], 1)
+        stale_kinds = {item["kind"] for item in report["stale_preconditions"]}
+        self.assertIn("replica_count_mismatch", stale_kinds)
+        self.assertIn("missing_service_alert", stale_kinds)
+        self.assertIn("missing_dependency", stale_kinds)
+        obligations = {item["semantic_obligation"] for item in report["stale_preconditions"]}
+        self.assertIn("inventory_refinement_precondition", obligations)
+
 
 if __name__ == "__main__":
     unittest.main()
