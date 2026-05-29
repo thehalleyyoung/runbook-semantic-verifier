@@ -58,7 +58,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [ ] Emit explanation traces with state deltas, causal dependencies, action rule names, provenance for every field, and source-line links to Markdown and DSL.
 - [ ] Synthesize missing preconditions from weakest-precondition failures, producing candidate Markdown text and JSON patches for operator review.
 - [ ] Add runtime-verification mode that checks observed execution logs or chatops events against modeled traces and reports deviations without claiming full infrastructure proof.
-- [ ] Add performance counters for states, transitions, branch factor, reductions, minimized trace length, symbolic splits, and proof-obligation outcomes in benchmark reports.
+- [x] Add performance counters for states, transitions, branch factor, reductions, minimized trace length, symbolic splits, and proof-obligation outcomes in benchmark reports.
 
 ## Phase 5 — Formal exports and mechanizable semantics
 

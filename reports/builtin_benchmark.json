@@ -1,13 +1,36 @@
 {
   "aggregate": {
     "pass": true,
+    "performance_counters": {
+      "avg_branch_factor": 2.2875,
+      "branch_factor_total": 183,
+      "branch_points": 80,
+      "max_branch_factor": 5,
+      "max_depth_reached": false,
+      "minimized_counterexample_trace_length": 1,
+      "proof_obligation_failures": {
+        "precondition": 95,
+        "safety_postcondition": 73
+      },
+      "proof_obligations_checked": {
+        "action_defined": 183,
+        "precondition": 107,
+        "promised_effect": 13,
+        "safety_postcondition": 542
+      },
+      "reductions_applied": 0,
+      "states_explored": 85,
+      "symbolic_splits": 0,
+      "terminal_traces": 5,
+      "transitions_explored": 183
+    },
     "prose_findings_by_rule": {
       "data-deletion-needs-restore-precondition": 1,
       "destructive-delete-needs-targeting": 2,
       "failover-needs-health-and-quorum": 3
     },
     "runbooks": 5,
-    "runtime_seconds": 0.012914249993627891,
+    "runtime_seconds": 0.011981999996351078,
     "states_explored": 85,
     "traces_explored": 5,
     "violations_by_property": {
@@ -33,8 +56,28 @@
       "name": "Safe regional database failover",
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
+      "performance_counters": {
+        "avg_branch_factor": 2.4,
+        "branch_factor_total": 84,
+        "branch_points": 35,
+        "max_branch_factor": 4,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 84,
+          "precondition": 12,
+          "promised_effect": 12,
+          "safety_postcondition": 252
+        },
+        "reductions_applied": 0,
+        "states_explored": 36,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 84
+      },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.005374208005378023,
+      "runtime_seconds": 0.0029340829933062196,
       "safe": true,
       "states_explored": 36,
       "traces_explored": 1,
@@ -55,8 +98,31 @@
       "name": "Unsafe emergency rollback and evacuation",
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
+      "performance_counters": {
+        "avg_branch_factor": 2.5806451612903225,
+        "branch_factor_total": 80,
+        "branch_points": 31,
+        "max_branch_factor": 5,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 80,
+          "safety_postcondition": 56
+        },
+        "proof_obligations_checked": {
+          "action_defined": 80,
+          "precondition": 80,
+          "promised_effect": 0,
+          "safety_postcondition": 240
+        },
+        "reductions_applied": 0,
+        "states_explored": 32,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 80
+      },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.00439504100359045,
+      "runtime_seconds": 0.003502916020806879,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -82,10 +148,33 @@
       "name": "kubernetes region failover - missing quorum and capacity checks",
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/real_world/kubernetes_region_failover.md",
+      "performance_counters": {
+        "avg_branch_factor": 1.7142857142857142,
+        "branch_factor_total": 12,
+        "branch_points": 7,
+        "max_branch_factor": 3,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 12,
+          "safety_postcondition": 16
+        },
+        "proof_obligations_checked": {
+          "action_defined": 12,
+          "precondition": 12,
+          "promised_effect": 0,
+          "safety_postcondition": 24
+        },
+        "reductions_applied": 0,
+        "states_explored": 8,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 12
+      },
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.0012180829944554716,
+      "runtime_seconds": 0.003309749998152256,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -108,10 +197,32 @@
       "name": "GitHub Oct21 2018 MySQL failover reconstruction",
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "performance_counters": {
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 5,
+        "branch_points": 5,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 2
+        },
+        "proof_obligations_checked": {
+          "action_defined": 5,
+          "precondition": 2,
+          "promised_effect": 0,
+          "safety_postcondition": 20
+        },
+        "reductions_applied": 0,
+        "states_explored": 6,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 5
+      },
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0011702920019160956,
+      "runtime_seconds": 0.001403625006787479,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -136,11 +247,34 @@
       "name": "Grafana Tempo current public runbook derived safety model",
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "performance_counters": {
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 1,
+          "safety_postcondition": 1
+        },
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 1,
+          "promised_effect": 1,
+          "safety_postcondition": 6
+        },
+        "reductions_applied": 0,
+        "states_explored": 3,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "transitions_explored": 2
+      },
       "prose_findings_by_rule": {
         "data-deletion-needs-restore-precondition": 1,
         "destructive-delete-needs-targeting": 2
       },
-      "runtime_seconds": 0.0007151669997256249,
+      "runtime_seconds": 0.0007554159965366125,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,

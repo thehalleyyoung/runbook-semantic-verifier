@@ -30,6 +30,7 @@ class RunbookBenchmarkResult:
     violations_by_property: dict[str, int]
     prose_findings_by_rule: dict[str, int]
     runtime_seconds: float
+    performance_counters: dict[str, Any] = field(default_factory=dict)
     expected_labels: dict[str, Any] | None = None
     errors: list[str] = field(default_factory=list)
 
@@ -57,6 +58,7 @@ class BenchmarkSuiteResult:
             "violations_by_property": {},
             "prose_findings_by_rule": {},
             "runtime_seconds": self.runtime_seconds,
+            "performance_counters": _aggregate_performance_counters(self.runbooks),
             "pass": self.pass_,
         }
         for item in self.runbooks:
@@ -120,20 +122,23 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
         f"- States explored: {aggregate['states_explored']}",
         f"- Traces explored: {aggregate['traces_explored']}",
         f"- Runtime seconds: {aggregate['runtime_seconds']:.6f}",
+        f"- Performance counters: `{json.dumps(aggregate['performance_counters'], sort_keys=True)}`",
         f"- Violations by property: `{json.dumps(aggregate['violations_by_property'], sort_keys=True)}`",
         f"- Prose findings by rule: `{json.dumps(aggregate['prose_findings_by_rule'], sort_keys=True)}`",
         "",
-        "| Runbook | Pass | Safe | States | Traces | Runtime (s) | Violations | Prose findings | Expected labels |",
-        "| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
+        "| Runbook | Pass | Safe | States | Transitions | Max branch | Min CEX trace | Runtime (s) | Violations | Prose findings | Expected labels |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for item in data["runbooks"]:
         lines.append(
-            "| {name} | `{pass_}` | `{safe}` | {states} | {traces} | {runtime:.6f} | `{violations}` | `{prose}` | `{expected}` |".format(
+            "| {name} | `{pass_}` | `{safe}` | {states} | {transitions} | {max_branch} | {min_trace} | {runtime:.6f} | `{violations}` | `{prose}` | `{expected}` |".format(
                 name=item["name"].replace("|", "\\|"),
                 pass_=item["pass"],
                 safe=item["safe"],
                 states=item["states_explored"],
-                traces=item["traces_explored"],
+                transitions=item["performance_counters"].get("transitions_explored", 0),
+                max_branch=item["performance_counters"].get("max_branch_factor", 0),
+                min_trace=item["performance_counters"].get("minimized_counterexample_trace_length") or "",
                 runtime=item["runtime_seconds"],
                 violations=json.dumps(item["violations_by_property"], sort_keys=True),
                 prose=json.dumps(item["prose_findings_by_rule"], sort_keys=True),
@@ -145,6 +150,54 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
 
 class BenchmarkConfigError(ValueError):
     pass
+
+
+def _aggregate_performance_counters(items: list[RunbookBenchmarkResult]) -> dict[str, Any]:
+    counters: dict[str, Any] = {
+        "states_explored": 0,
+        "terminal_traces": 0,
+        "transitions_explored": 0,
+        "branch_points": 0,
+        "branch_factor_total": 0,
+        "avg_branch_factor": 0.0,
+        "max_branch_factor": 0,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "minimized_counterexample_trace_length": None,
+        "max_depth_reached": False,
+        "proof_obligations_checked": {},
+        "proof_obligation_failures": {},
+    }
+    min_trace: int | None = None
+    for item in items:
+        perf = item.performance_counters or {}
+        counters["states_explored"] += int(perf.get("states_explored", item.states_explored))
+        counters["terminal_traces"] += int(perf.get("terminal_traces", item.traces_explored))
+        counters["transitions_explored"] += int(perf.get("transitions_explored", 0))
+        counters["branch_points"] += int(perf.get("branch_points", 0))
+        counters["branch_factor_total"] += int(perf.get("branch_factor_total", 0))
+        counters["max_branch_factor"] = max(counters["max_branch_factor"], int(perf.get("max_branch_factor", 0)))
+        counters["reductions_applied"] += int(perf.get("reductions_applied", 0))
+        counters["symbolic_splits"] += int(perf.get("symbolic_splits", 0))
+        counters["max_depth_reached"] = bool(counters["max_depth_reached"] or perf.get("max_depth_reached", False))
+        trace_len = perf.get("minimized_counterexample_trace_length")
+        if isinstance(trace_len, int):
+            min_trace = trace_len if min_trace is None else min(min_trace, trace_len)
+        _merge_counter_map(counters["proof_obligations_checked"], perf.get("proof_obligations_checked", {}))
+        _merge_counter_map(counters["proof_obligation_failures"], perf.get("proof_obligation_failures", {}))
+    points = counters["branch_points"]
+    counters["avg_branch_factor"] = counters["branch_factor_total"] / points if points else 0.0
+    counters["minimized_counterexample_trace_length"] = min_trace
+    counters["proof_obligations_checked"] = dict(sorted(counters["proof_obligations_checked"].items()))
+    counters["proof_obligation_failures"] = dict(sorted(counters["proof_obligation_failures"].items()))
+    return counters
+
+
+def _merge_counter_map(target: dict[str, int], source: object) -> None:
+    if not isinstance(source, dict):
+        return
+    for key, value in source.items():
+        target[str(key)] = target.get(str(key), 0) + int(value)
 
 
 def _load_config(path: Path) -> tuple[str, list[BenchmarkEntry]]:
@@ -207,6 +260,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             violations_by_property=violations,
             prose_findings_by_rule=prose_findings,
             runtime_seconds=time.perf_counter() - started,
+            performance_counters=result.performance_counters(),
             expected_labels=expected_labels,
             errors=errors,
         )
@@ -221,6 +275,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             violations_by_property={},
             prose_findings_by_rule={},
             runtime_seconds=time.perf_counter() - started,
+            performance_counters={},
             expected_labels=expected_labels,
             errors=[str(exc)],
         )

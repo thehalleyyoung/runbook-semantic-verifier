@@ -197,9 +197,11 @@ PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_201
 ## Benchmark harness
 
 The benchmark command runs the built-in fixtures or a user-provided corpus and
-emits JSON or Markdown. Metrics include number of runbooks, states explored, terminal traces explored,
-violations by property, prose findings by rule, expected labels when present,
-runtime, and pass/fail.
+emits JSON or Markdown. Metrics include number of runbooks, states explored,
+terminal traces explored, checker performance counters (transitions, branch
+factor, reductions, symbolic splits, minimized counterexample trace length, and
+proof-obligation outcomes), violations by property, prose findings by rule,
+expected labels when present, runtime, and pass/fail.
 
 Built-in suite:
 

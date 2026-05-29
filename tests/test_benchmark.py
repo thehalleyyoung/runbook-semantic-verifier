@@ -24,6 +24,8 @@ class BenchmarkTests(unittest.TestCase):
         self.assertTrue(data["aggregate"]["pass"])
         self.assertGreaterEqual(data["aggregate"]["runbooks"], 4)
         self.assertGreater(data["aggregate"]["states_explored"], 0)
+        self.assertGreater(data["aggregate"]["performance_counters"]["transitions_explored"], 0)
+        self.assertIn("proof_obligations_checked", data["aggregate"]["performance_counters"])
         self.assertIn("quorum_before_data_loss_action", data["aggregate"]["violations_by_property"])
 
     def test_benchmark_cli_outputs_json_and_markdown(self):
@@ -41,6 +43,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(json_proc.returncode, 0, json_proc.stdout + json_proc.stderr)
         parsed = json.loads(json_proc.stdout)
         self.assertTrue(parsed["aggregate"]["pass"])
+        self.assertIn("performance_counters", parsed["aggregate"])
         self.assertIn("runbooks", parsed)
 
         md_proc = subprocess.run(
@@ -54,6 +57,7 @@ class BenchmarkTests(unittest.TestCase):
         )
         self.assertEqual(md_proc.returncode, 0, md_proc.stdout + md_proc.stderr)
         self.assertIn("# Benchmark:", md_proc.stdout)
+        self.assertIn("Performance counters", md_proc.stdout)
         self.assertIn("quorum_before_data_loss_action", md_proc.stdout)
 
     def test_renderers_include_expected_labels(self):

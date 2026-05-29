@@ -24,6 +24,41 @@ class CheckResult:
     states_explored: int = 0
     traces_explored: int = 0
     max_depth_reached: bool = False
+    transitions_explored: int = 0
+    branch_points: int = 0
+    branch_factor_total: int = 0
+    max_branch_factor: int = 0
+    reductions_applied: int = 0
+    symbolic_splits: int = 0
+    proof_obligations_checked: dict[str, int] = field(default_factory=dict)
+    proof_obligation_failures: dict[str, int] = field(default_factory=dict)
+
+    @property
+    def avg_branch_factor(self) -> float:
+        return self.branch_factor_total / self.branch_points if self.branch_points else 0.0
+
+    @property
+    def minimized_counterexample_trace_length(self) -> int | None:
+        if not self.violations:
+            return None
+        return min(len(violation.trace) for violation in self.violations)
+
+    def performance_counters(self) -> dict[str, Any]:
+        return {
+            "states_explored": self.states_explored,
+            "transitions_explored": self.transitions_explored,
+            "terminal_traces": self.traces_explored,
+            "max_depth_reached": self.max_depth_reached,
+            "branch_points": self.branch_points,
+            "branch_factor_total": self.branch_factor_total,
+            "avg_branch_factor": self.avg_branch_factor,
+            "max_branch_factor": self.max_branch_factor,
+            "reductions_applied": self.reductions_applied,
+            "symbolic_splits": self.symbolic_splits,
+            "minimized_counterexample_trace_length": self.minimized_counterexample_trace_length,
+            "proof_obligations_checked": dict(sorted(self.proof_obligations_checked.items())),
+            "proof_obligation_failures": dict(sorted(self.proof_obligation_failures.items())),
+        }
 
 
 class Checker:
@@ -51,18 +86,29 @@ class Checker:
                 if len(trace) >= self.runbook.max_depth and len(done) < len(self.runbook.steps):
                     result.max_depth_reached = True
                 continue
-            for step in self._enabled_steps(done):
+            enabled = self._enabled_steps(done)
+            result.branch_points += 1
+            result.branch_factor_total += len(enabled)
+            result.max_branch_factor = max(result.max_branch_factor, len(enabled))
+            for step in enabled:
+                result.transitions_explored += 1
                 pre = self._pre_action_violations(state, step, trace)
+                _record_obligations(result, "precondition", len(step.requires), pre)
                 if pre:
                     result.violations.extend(pre)
                     result.safe = False
                 try:
                     next_state = apply_action(state, step)
                 except ActionError as exc:
-                    result.violations.append(_violation("action_defined", str(exc), trace + (step.id,), step.id))
+                    violation = _violation("action_defined", str(exc), trace + (step.id,), step.id)
+                    _record_obligations(result, "action_defined", 1, [violation])
+                    result.violations.append(violation)
                     result.safe = False
                     continue
+                _record_obligations(result, "action_defined", 1, [])
                 post = self._post_action_violations(next_state, step, trace + (step.id,))
+                _record_obligations(result, "safety_postcondition", _safety_obligation_count(next_state), post)
+                _record_obligations(result, "promised_effect", len(step.effects), [v for v in post if v.property in {"effect", "effect_defined"}])
                 if post:
                     result.violations.extend(post)
                     result.safe = False
@@ -167,6 +213,17 @@ class Checker:
             for svc in next_state.services.values()
             if svc.available_count() < svc.min_available
         ]
+
+
+def _record_obligations(result: CheckResult, group: str, checked: int, failures: list[Violation]) -> None:
+    observed = max(checked, len(failures))
+    result.proof_obligations_checked[group] = result.proof_obligations_checked.get(group, 0) + observed
+    if failures:
+        result.proof_obligation_failures[group] = result.proof_obligation_failures.get(group, 0) + len(failures)
+
+
+def _safety_obligation_count(state: SystemState) -> int:
+    return len(state.services) * 2 + len(state.queues) + len(state.traffic_routes)
 
 
 def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
