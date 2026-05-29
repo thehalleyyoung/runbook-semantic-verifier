@@ -1,0 +1,279 @@
+{
+  "fail_on": "none",
+  "groups": [
+    {
+      "annotations": [
+        {
+          "end_line": 105,
+          "finding_id": "finding-001",
+          "id": "annotation-001-01",
+          "level": "error",
+          "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+          "rule": "no_duplicate_processing_risk",
+          "semantic_obligation": "no_duplicate_processing_risk",
+          "severity": "error",
+          "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
+          "start_line": 105,
+          "title": "frv no_duplicate_processing_risk: no_duplicate_processing_risk",
+          "type": "semantic"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-001",
+      "semantic_obligation": "no_duplicate_processing_risk",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:105"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 114,
+          "finding_id": "finding-002",
+          "id": "annotation-002-01",
+          "level": "error",
+          "message": "queue tenant-index-fallback-scan has replayed messages without modeled deduplication",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Stop replay or add deduplication/idempotency guards before messages can be processed twice.",
+          "rule": "no_duplicate_processing_risk",
+          "semantic_obligation": "no_duplicate_processing_risk",
+          "severity": "error",
+          "small_step_rule": "PostInvariant.NoDuplicateReplayProcessing",
+          "start_line": 114,
+          "title": "frv no_duplicate_processing_risk: no_duplicate_processing_risk",
+          "type": "semantic"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-002",
+      "semantic_obligation": "no_duplicate_processing_risk",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:114"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 114,
+          "finding_id": "finding-003",
+          "id": "annotation-003-01",
+          "level": "error",
+          "message": "queue tenant-index-fallback-scan has depth=36000 before rebalance to 0 consumers",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
+          "rule": "no_rebalance_to_zero_consumers",
+          "semantic_obligation": "no_rebalance_to_zero_consumers",
+          "severity": "error",
+          "small_step_rule": "ActionGuard.ConsumerRebalanceProgress",
+          "start_line": 114,
+          "title": "frv no_rebalance_to_zero_consumers: no_rebalance_to_zero_consumers",
+          "type": "semantic"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-003",
+      "semantic_obligation": "no_rebalance_to_zero_consumers",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:114"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 105,
+          "finding_id": "finding-004",
+          "id": "annotation-004-01",
+          "level": "error",
+          "message": "queue tenant-index-fallback-scan replay count=18000 lacks dedupe_key, idempotency proof, or dedupe window",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Add a dedupe_key, prove the handler idempotent, or model a positive dedupe_window_minutes before replay.",
+          "rule": "no_replay_without_dedupe",
+          "semantic_obligation": "no_replay_without_dedupe",
+          "severity": "error",
+          "small_step_rule": "ActionGuard.MessageReplayDeduplication",
+          "start_line": 105,
+          "title": "frv no_replay_without_dedupe: no_replay_without_dedupe",
+          "type": "semantic"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-004",
+      "semantic_obligation": "no_replay_without_dedupe",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:105"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 114,
+          "finding_id": "finding-005",
+          "id": "annotation-005-01",
+          "level": "error",
+          "message": "queue tenant-index-fallback-scan has depth=36000 while consumer group rebalance is not stable",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
+          "rule": "no_unstable_consumer_group_with_backlog",
+          "semantic_obligation": "no_unstable_consumer_group_with_backlog",
+          "severity": "error",
+          "small_step_rule": "PostInvariant.ConsumerGroupStableForBacklog",
+          "start_line": 114,
+          "title": "frv no_unstable_consumer_group_with_backlog: no_unstable_consumer_group_with_backlog",
+          "type": "semantic"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-005",
+      "semantic_obligation": "no_unstable_consumer_group_with_backlog",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:114"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 114,
+          "finding_id": "finding-006",
+          "id": "annotation-006-01",
+          "level": "error",
+          "message": "queue tenant-index-fallback-scan has depth=36000 with no active consumers",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
+          "rule": "queue_backlog_requires_consumers",
+          "semantic_obligation": "queue_backlog_requires_consumers",
+          "severity": "error",
+          "small_step_rule": "PostInvariant.QueueBacklogHasConsumers",
+          "start_line": 114,
+          "title": "frv queue_backlog_requires_consumers: queue_backlog_requires_consumers",
+          "type": "semantic"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-006",
+      "semantic_obligation": "queue_backlog_requires_consumers",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:114"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 21,
+          "finding_id": "finding-007",
+          "id": "annotation-007-01",
+          "level": "error",
+          "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
+          "rule": "data-deletion-needs-restore-precondition",
+          "semantic_obligation": "restore_path_and_blast_radius_limited",
+          "severity": "error",
+          "small_step_rule": "ProseAudit.data-deletion-needs-restore-precondition",
+          "start_line": 21,
+          "title": "frv data-deletion-needs-restore-precondition: restore_path_and_blast_radius_limited",
+          "type": "prose"
+        }
+      ],
+      "highest_severity": "error",
+      "id": "annotation-group-007",
+      "semantic_obligation": "restore_path_and_blast_radius_limited",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:21"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 21,
+          "finding_id": "finding-008",
+          "id": "annotation-008-01",
+          "level": "warning",
+          "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+          "rule": "destructive-delete-needs-targeting",
+          "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+          "severity": "warning",
+          "small_step_rule": "ProseAudit.destructive-delete-needs-targeting",
+          "start_line": 21,
+          "title": "frv destructive-delete-needs-targeting: blast_radius_limited_or_explicit_limitation",
+          "type": "prose"
+        }
+      ],
+      "highest_severity": "warning",
+      "id": "annotation-group-008",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:21"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 27,
+          "finding_id": "finding-009",
+          "id": "annotation-009-01",
+          "level": "warning",
+          "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
+          "rule": "backfill-needs-queue-capacity",
+          "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
+          "severity": "warning",
+          "small_step_rule": "ProseAudit.backfill-needs-queue-capacity",
+          "start_line": 27,
+          "title": "frv backfill-needs-queue-capacity: queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
+          "type": "prose"
+        }
+      ],
+      "highest_severity": "warning",
+      "id": "annotation-group-009",
+      "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:27"
+    },
+    {
+      "annotations": [
+        {
+          "end_line": 18,
+          "finding_id": "finding-010",
+          "id": "annotation-010-01",
+          "level": "notice",
+          "message": "Suppressed destructive-delete-needs-targeting at line 19 with owner=grafana-tempo-public-fixture, expires=2099-12-31, reason=public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof, link=limitation:ring-forget-targeting.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "recommendation": "Review suppression owner, expiry, reason, and invariant/waiver/limitation link during runbook review.",
+          "rule": "prose-suppression-applied",
+          "semantic_obligation": "limitation:ring-forget-targeting",
+          "severity": "audit-only",
+          "small_step_rule": "ProseAudit.prose-suppression-applied",
+          "start_line": 18,
+          "title": "frv prose-suppression-applied: limitation:ring-forget-targeting",
+          "type": "prose"
+        }
+      ],
+      "highest_severity": "audit-only",
+      "id": "annotation-group-010",
+      "semantic_obligation": "limitation:ring-forget-targeting",
+      "source_span": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md:18"
+    }
+  ],
+  "pass": true,
+  "summary": {
+    "annotations": 10,
+    "blocking_annotations": 0,
+    "findings_by_obligation": {
+      "blast_radius_limited_or_explicit_limitation": 1,
+      "limitation:ring-forget-targeting": 1,
+      "no_duplicate_processing_risk": 2,
+      "no_rebalance_to_zero_consumers": 1,
+      "no_replay_without_dedupe": 1,
+      "no_unstable_consumer_group_with_backlog": 1,
+      "queue_backlog_requires_consumers": 1,
+      "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk": 1,
+      "restore_path_and_blast_radius_limited": 1
+    },
+    "findings_by_rule": {
+      "backfill-needs-queue-capacity": 1,
+      "data-deletion-needs-restore-precondition": 1,
+      "destructive-delete-needs-targeting": 1,
+      "no_duplicate_processing_risk": 2,
+      "no_rebalance_to_zero_consumers": 1,
+      "no_replay_without_dedupe": 1,
+      "no_unstable_consumer_group_with_backlog": 1,
+      "prose-suppression-applied": 1,
+      "queue_backlog_requires_consumers": 1
+    },
+    "findings_by_severity": {
+      "audit-only": 1,
+      "error": 7,
+      "warning": 2
+    },
+    "groups": 10
+  },
+  "target": "case_studies/current/grafana_tempo"
+}

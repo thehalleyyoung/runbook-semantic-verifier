@@ -2,11 +2,11 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **35/100** items in the local roadmap are complete. The
+Current roadmap status: **36/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
-CI gates for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
+CI gates and pull-request annotations for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
 queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
 cache flush/warmup/cold-start/capacity semantics, and checked-in
@@ -45,6 +45,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_t
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
 PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
+PYTHONPATH=src python3 -m runbook_verify.cli annotate case_studies/current/grafana_tempo --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
@@ -160,6 +161,7 @@ src/runbook_verify/
   coverage.py   property-to-entity/owner/Markdown-section coverage reports
   repository_scan.py  Markdown/wiki runbook discovery and model-first prioritization
   ci_gate.py    CI gate for new high-risk operations prose and owner-approved waivers
+  pr_annotations.py  pull-request annotations grouped by obligation and source span
   profiles.py   named CLI exit-policy profiles for production/advisory/docs/benchmark use
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
@@ -241,6 +243,25 @@ The checked-in `reports/current_impact_ci_gate.md` and
 public fixture: two destructive/data-restoration findings block, while the
 ring-forget excerpt is reported as owner-approved waiver evidence rather than
 silently skipped.
+
+`frv annotate` emits pull-request-review annotations from the same audit/check
+finding set, grouped by semantic obligation and source span. GitHub Actions
+format uses workflow annotation commands; JSON and Markdown keep the grouping
+explicit for bots and reviewer summaries:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli annotate \
+  case_studies/current/grafana_tempo --format github --fail-on error
+PYTHONPATH=src python3 -m runbook_verify.cli annotate \
+  case_studies/current/grafana_tempo --format markdown --fail-on none
+```
+
+The checked-in `reports/current_impact_annotations.md`,
+`reports/current_impact_annotations.json`, and
+`reports/current_impact_annotations.github.txt` validate this on the
+Tempo-derived public fixture: 10 annotations are grouped into 10
+obligation/source-span groups, including queue replay small-step violations,
+destructive-data prose obligations, and the audited limitation suppression.
 
 `frv profiles` makes those policy choices reproducible. Profiles set default
 exit policies only when `--fail-on` is not explicitly supplied; they do not
@@ -377,6 +398,9 @@ combined audit report is checked in as `reports/current_impact_audit.md` and
 `reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
 the high-risk prose gate outputs are checked in as
 `reports/current_impact_ci_gate.md` and `reports/current_impact_ci_gate.json`;
+the pull-request annotation outputs are checked in as
+`reports/current_impact_annotations.md`, `reports/current_impact_annotations.json`,
+and `reports/current_impact_annotations.github.txt`;
 the first finding's explain report is checked in as `reports/current_impact_explain.md` and
 `reports/current_impact_explain.json`. The repository scan outputs are checked in as
 `reports/current_impact_scan.md` and `reports/current_impact_scan.json`. The

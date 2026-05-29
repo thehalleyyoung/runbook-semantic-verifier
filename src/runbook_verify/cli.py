@@ -16,6 +16,7 @@ from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
 from .parser import RunbookParseError, load_runbook
+from .pr_annotations import build_annotation_report, render_annotations_github, render_annotations_json, render_annotations_markdown
 from .profiles import get_profile, profile_names, render_profiles_json, render_profiles_markdown
 from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
 from .repository_scan import RepositoryScanError, ScanOptions, build_repository_scan, render_scan_json, render_scan_markdown
@@ -99,6 +100,10 @@ def main(argv: list[str] | None = None) -> int:
     gate_p.add_argument("--expect-blocks", action="store_true", help="exit 0 only when the gate finds blocking high-risk changes")
     gate_p.add_argument("--fail-on", choices=["blocks", "none"], default="blocks", help="whether blocking high-risk findings fail the command")
     gate_p.add_argument("--profile", choices=profile_names(), help="verification profile that supplies default exit policy when --fail-on is omitted")
+    annotate_p = sub.add_parser("annotate", help="emit pull-request annotations grouped by semantic obligation and source span")
+    annotate_p.add_argument("path", help="runbook file or directory used to produce audit/check findings")
+    annotate_p.add_argument("--format", choices=["json", "markdown", "github"], default="github", help="annotation output format")
+    annotate_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command")
     args = parser.parse_args(raw_argv)
 
     if args.command == "audit":
@@ -138,6 +143,19 @@ def main(argv: list[str] | None = None) -> int:
         if args.expect_blocks:
             return 0 if report.summary["blocking_findings"] else 1
         return 0 if fail_on == "none" or report.pass_ else 1
+    if args.command == "annotate":
+        try:
+            report = build_annotation_report(args.path, fail_on=args.fail_on)
+        except ExplainError as exc:
+            print(f"annotate error: {exc}", file=sys.stderr)
+            return 2
+        if args.format == "json":
+            print(render_annotations_json(report), end="")
+        elif args.format == "markdown":
+            print(render_annotations_markdown(report), end="")
+        else:
+            print(render_annotations_github(report), end="")
+        return 0 if report.pass_ else 1
     if args.command == "explain":
         try:
             explanation = explain_finding(args.path, args.finding_id)

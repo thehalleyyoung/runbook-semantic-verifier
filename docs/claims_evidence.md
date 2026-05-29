@@ -13,7 +13,10 @@ missing preconditions/effects, stale owner placeholders, ambiguous operator
 instructions, and unsafe copy-paste shell snippets. `frv ci-gate` turns those
 findings into a baseline-aware CI policy for newly introduced high-risk deletion,
 credential, traffic/capacity, failover, SQL, cache, and data-restoration prose.
-Named configuration profiles make conservative production, advisory research,
+`frv annotate` emits pull-request annotations grouped by semantic obligation and
+source span, including small-step rule names for executable counterexamples and
+prose-audit rule names for Markdown findings. Named configuration profiles make
+conservative production, advisory research,
 documentation-only, and benchmark-reproduction exit policies reproducible without
 changing parser validation, action semantics, bounded exploration, or reported
 findings.
@@ -75,6 +78,10 @@ differently named system exists.
   and blocks only new unsafe operations prose unless the finding is represented
   by an auditable owner/expiry/reason waiver or explicit limitation. It is a
   document-review gate, not proof that waived operations are safe.
+- Pull-request annotations are deterministic projections of the audit/check
+  findings. They group findings by semantic obligation and exact modeled source
+  span, then render GitHub Actions commands, JSON, or Markdown; they do not add
+  new proof beyond the underlying bounded checker and prose audit.
 - Configuration profiles set CLI default exit policies for audit, lint, CI gate,
   readiness, owner-scorecard, and benchmark reproduction workflows. Explicit
   `--fail-on` values override profile defaults, and profiles do not suppress or
@@ -157,6 +164,9 @@ differently named system exists.
   - `reports/current_impact_ci_gate.json`
   - `reports/current_impact_ci_gate.md`
   - `reports/current_impact_ci_gate_advisory_profile.md`
+  - `reports/current_impact_annotations.json`
+  - `reports/current_impact_annotations.md`
+  - `reports/current_impact_annotations.github.txt`
   - `reports/current_impact_scan.json`
   - `reports/current_impact_scan.md`
   - `reports/current_impact_readiness.json`
@@ -207,6 +217,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitc
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
+PYTHONPATH=src python3 -m runbook_verify.cli annotate case_studies/current/grafana_tempo --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
