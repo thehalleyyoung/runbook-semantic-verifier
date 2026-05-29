@@ -101,6 +101,15 @@
       "type": "semantic"
     },
     {
+      "autofix_suggestions": [
+        {
+          "applicability": "manual",
+          "kind": "add-preconditions",
+          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+          "replacement": "[\n  {\n    \"count\": 1,\n    \"kind\": \"service_available_at_least\",\n    \"service\": \"TODO-service\"\n  }\n]",
+          "title": "Add missing semantic preconditions/effects"
+        }
+      ],
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
       "id": "finding-007",
       "line": 21,
@@ -114,6 +123,15 @@
       "type": "prose"
     },
     {
+      "autofix_suggestions": [
+        {
+          "applicability": "manual",
+          "kind": "add-preconditions",
+          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+          "replacement": "[\n  {\n    \"count\": 1,\n    \"kind\": \"service_available_at_least\",\n    \"service\": \"TODO-service\"\n  }\n]",
+          "title": "Add missing semantic preconditions/effects"
+        }
+      ],
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
       "id": "finding-008",
       "line": 21,
@@ -127,6 +145,15 @@
       "type": "prose"
     },
     {
+      "autofix_suggestions": [
+        {
+          "applicability": "manual",
+          "kind": "add-preconditions",
+          "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+          "replacement": "[\n  {\n    \"depth\": 1000,\n    \"kind\": \"queue_depth_at_most\",\n    \"queue\": \"TODO-queue\"\n  },\n  {\n    \"consumers\": 1,\n    \"kind\": \"queue_has_consumers\",\n    \"queue\": \"TODO-queue\"\n  },\n  {\n    \"kind\": \"queue_replay_deduplicated\",\n    \"queue\": \"TODO-queue\",\n    \"window_minutes\": 60\n  }\n]",
+          "title": "Add missing semantic preconditions/effects"
+        }
+      ],
       "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
       "id": "finding-009",
       "line": 27,
@@ -140,6 +167,7 @@
       "type": "prose"
     },
     {
+      "autofix_suggestions": [],
       "excerpt": "frv-suppress rule=destructive-delete-needs-targeting",
       "id": "finding-010",
       "line": 18,

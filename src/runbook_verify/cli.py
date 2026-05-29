@@ -365,13 +365,27 @@ def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findin
             lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | {item['violations']} |")
         lines.append("")
     if findings:
-        lines.extend(["| ID | Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation |", "| --- | ---: | --- | --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| ID | Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation | Autofix suggestions |", "| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |"])
         for finding in findings:
             location = f"{finding.get('path')}:{finding.get('line') or ''}"
             message = str(finding.get("message", "")).replace("|", "\\|")
             recommendation = str(finding.get("recommendation", "") or "").replace("|", "\\|")
-            lines.append(f"| `{finding['id']}` | {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} |")
+            suggestions = _autofix_summary(finding).replace("|", "\\|")
+            lines.append(f"| `{finding['id']}` | {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} | {suggestions} |")
     return "\n".join(lines) + "\n"
+
+
+def _autofix_summary(finding: dict[str, object]) -> str:
+    raw = finding.get("autofix_suggestions")
+    if not isinstance(raw, (list, tuple)):
+        return ""
+    summaries: list[str] = []
+    for item in raw:
+        if isinstance(item, dict):
+            kind = str(item.get("kind", "autofix"))
+            title = str(item.get("title", "suggested edit"))
+            summaries.append(f"{kind}: {title}")
+    return "; ".join(summaries)
 
 
 def _render_audit_sarif(report: dict[str, object]) -> str:

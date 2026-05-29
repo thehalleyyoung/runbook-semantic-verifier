@@ -1,5 +1,14 @@
 [
   {
+    "autofix_suggestions": [
+      {
+        "applicability": "manual",
+        "kind": "add-preconditions",
+        "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+        "replacement": "[\n  {\n    \"count\": 1,\n    \"kind\": \"service_available_at_least\",\n    \"service\": \"TODO-service\"\n  }\n]",
+        "title": "Add missing semantic preconditions/effects"
+      }
+    ],
     "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
     "line": 21,
     "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
@@ -10,6 +19,15 @@
     "severity": "error"
   },
   {
+    "autofix_suggestions": [
+      {
+        "applicability": "manual",
+        "kind": "add-preconditions",
+        "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+        "replacement": "[\n  {\n    \"count\": 1,\n    \"kind\": \"service_available_at_least\",\n    \"service\": \"TODO-service\"\n  }\n]",
+        "title": "Add missing semantic preconditions/effects"
+      }
+    ],
     "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
     "line": 21,
     "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
@@ -20,6 +38,15 @@
     "severity": "warning"
   },
   {
+    "autofix_suggestions": [
+      {
+        "applicability": "manual",
+        "kind": "add-preconditions",
+        "rationale": "Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+        "replacement": "[\n  {\n    \"depth\": 1000,\n    \"kind\": \"queue_depth_at_most\",\n    \"queue\": \"TODO-queue\"\n  },\n  {\n    \"consumers\": 1,\n    \"kind\": \"queue_has_consumers\",\n    \"queue\": \"TODO-queue\"\n  },\n  {\n    \"kind\": \"queue_replay_deduplicated\",\n    \"queue\": \"TODO-queue\",\n    \"window_minutes\": 60\n  }\n]",
+        "title": "Add missing semantic preconditions/effects"
+      }
+    ],
     "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
     "line": 27,
     "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
@@ -30,6 +57,7 @@
     "severity": "warning"
   },
   {
+    "autofix_suggestions": [],
     "excerpt": "frv-suppress rule=destructive-delete-needs-targeting",
     "line": 18,
     "message": "Suppressed destructive-delete-needs-targeting at line 19 with owner=grafana-tempo-public-fixture, expires=2099-12-31, reason=public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof, link=limitation:ring-forget-targeting.",

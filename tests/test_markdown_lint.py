@@ -99,6 +99,38 @@ class MarkdownLintTests(unittest.TestCase):
         self.assertIn("destructive-delete-needs-targeting", by_rule)
         self.assertIn("missing required field", by_rule["invalid-prose-suppression"].message)
 
+    def test_markdown_findings_include_autofix_suggestions(self):
+        text = "Force failover if needed and verify it works."
+        findings = lint_markdown_text(text, "autofix.md")
+        by_rule = {finding.rule: finding for finding in findings}
+
+        failover = by_rule["failover-needs-health-and-quorum"]
+        suggestion_kinds = {suggestion.kind for suggestion in failover.autofix_suggestions}
+        self.assertIn("insert-runbook-json-block", suggestion_kinds)
+        self.assertIn("add-step-action", suggestion_kinds)
+        self.assertIn("add-preconditions", suggestion_kinds)
+        self.assertIn("database_quorum_confirmed", failover.autofix_suggestions[-1].replacement)
+        self.assertIn("ambiguous-operator-instruction", by_rule)
+
+        parsed = json.loads(render_lint_json(findings))
+        self.assertIn("autofix_suggestions", parsed[0])
+        self.assertTrue(parsed[0]["autofix_suggestions"])
+
+    def test_stale_owner_and_unsafe_shell_snippets_have_autofixes(self):
+        text = "\n".join([
+            "Owner: TBD",
+            "",
+            "```bash",
+            "kubectl delete pod tempo-1",
+            "```",
+        ])
+        findings = lint_markdown_text(text, "shell.md")
+        by_rule = {finding.rule: finding for finding in findings}
+
+        self.assertEqual(by_rule["stale-owner-needs-current-reviewer"].autofix_suggestions[0].kind, "replace-owner-line")
+        self.assertEqual(by_rule["unsafe-copy-paste-shell-snippet"].severity, "error")
+        self.assertIn("--dry-run=server", by_rule["unsafe-copy-paste-shell-snippet"].autofix_suggestions[0].replacement)
+
 
 if __name__ == "__main__":
     unittest.main()

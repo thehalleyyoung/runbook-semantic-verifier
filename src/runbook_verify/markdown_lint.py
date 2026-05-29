@@ -3,12 +3,21 @@ from __future__ import annotations
 import json
 import re
 import shlex
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
 from typing import Any
 
 from .parser import RunbookParseError, load_document
+
+
+@dataclass(frozen=True)
+class AutoFixSuggestion:
+    kind: str
+    title: str
+    applicability: str
+    replacement: str
+    rationale: str
 
 
 @dataclass(frozen=True)
@@ -21,6 +30,7 @@ class MarkdownFinding:
     message: str
     recommendation: str
     semantic_obligation: str
+    autofix_suggestions: tuple[AutoFixSuggestion, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -179,6 +189,17 @@ SEVERITY_RANK = {
 SUPPRESSION_RE = re.compile(r"<!--\s*frv-suppress\s+(.*?)\s*-->", re.I)
 SUPPRESSION_REQUIRED_FIELDS = ("rule", "owner", "expires", "reason", "link")
 SUPPRESSION_LINK_PREFIXES = ("invariant:", "waiver:", "limitation:")
+STALE_OWNER_RE = re.compile(r"\b(owner|owners|service owner|on[- ]call|maintainer)\s*[:=]\s*(tbd|todo|unknown|none|former|deprecated|unassigned)\b", re.I)
+AMBIGUOUS_INSTRUCTION_RE = re.compile(r"\b(if needed|if necessary|as appropriate|when possible|etc\.?|maybe|should be fine|verify it works|do the needful)\b", re.I)
+SHELL_FENCE_LANGS = {"bash", "sh", "shell", "console", "terminal", "zsh"}
+UNSAFE_SHELL_RE = re.compile(
+    r"(curl\b[^\n|;&]*\|\s*(?:sudo\s+)?(?:sh|bash)\b|"
+    r"\brm\s+-[rfRf]*\s+/(?:\s|$)|"
+    r"\bkubectl\s+delete\b(?![^\n]*\s-n\s)(?![^\n]*\s--namespace\b)|"
+    r"\bterraform\s+destroy\b(?![^\n]*\s-plan\b)|"
+    r"\b(drop|truncate)\s+(database|table)\b)",
+    re.I,
+)
 
 
 def lint_markdown_file(path: str | Path) -> list[MarkdownFinding]:
@@ -201,12 +222,17 @@ def lint_markdown_text(text: str, path: str | Path = "<memory>") -> list[Markdow
     condition_kinds = _condition_kinds(doc)
     findings: list[MarkdownFinding] = []
     pending_suppressions: list[ProseSuppression] = []
-    in_fence = False
+    fence_language: str | None = None
     for line_no, line in enumerate(text.splitlines(), start=1):
         if line.strip().startswith("```"):
-            in_fence = not in_fence
+            if fence_language is None:
+                fence_language = line.strip()[3:].strip().lower().split()[0] if line.strip()[3:].strip() else ""
+            else:
+                fence_language = None
             continue
-        if in_fence:
+        if fence_language is not None:
+            if fence_language in SHELL_FENCE_LANGS:
+                findings.extend(_unsafe_shell_findings(line, line_no, str(path)))
             continue
         line_suppressions, suppression_findings = _parse_suppressions(line, line_no, str(path))
         findings.extend(suppression_findings)
@@ -237,12 +263,15 @@ def lint_markdown_text(text: str, path: str | Path = "<memory>") -> list[Markdow
                     message=detail,
                     recommendation=rule.recommendation,
                     semantic_obligation=rule.semantic_obligation,
+                    autofix_suggestions=_autofix_suggestions(rule, missing_action, tuple(missing_conditions), doc is not None),
                 )
                 suppression = _matching_suppression(active_suppressions, finding)
                 if suppression is not None:
                     findings.append(_applied_suppression_finding(suppression, finding, str(path)))
                     continue
                 findings.append(finding)
+        findings.extend(_stale_owner_findings(line_without_suppressions, line_no, str(path)))
+        findings.extend(_ambiguous_instruction_findings(line_without_suppressions, line_no, str(path)))
     return _rank(_dedupe(findings))
 
 
@@ -253,10 +282,11 @@ def render_lint_json(findings: list[MarkdownFinding]) -> str:
 def render_lint_markdown(findings: list[MarkdownFinding]) -> str:
     lines = ["# Markdown runbook lint report", "", f"- Findings: {len(findings)}", ""]
     if findings:
-        lines.extend(["| Rule | Severity | Obligation | Location | Excerpt | Recommendation |", "| --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| Rule | Severity | Obligation | Location | Excerpt | Recommendation | Autofix suggestions |", "| --- | --- | --- | --- | --- | --- | --- |"])
         for finding in findings:
             location = f"{finding.path}:{finding.line}"
-            lines.append(f"| {finding.rule} | {finding.severity} | `{finding.semantic_obligation}` | `{location}` | {finding.excerpt.replace('|', '\\|')} | {finding.recommendation.replace('|', '\\|')} |")
+            suggestions = "; ".join(f"{suggestion.kind}: {suggestion.title}" for suggestion in finding.autofix_suggestions) or ""
+            lines.append(f"| {finding.rule} | {finding.severity} | `{finding.semantic_obligation}` | `{location}` | {finding.excerpt.replace('|', '\\|')} | {finding.recommendation.replace('|', '\\|')} | {suggestions.replace('|', '\\|')} |")
     return "\n".join(lines) + "\n"
 
 
@@ -391,7 +421,179 @@ def _invalid_suppression_finding(path: str, line_no: int, excerpt: str, problem:
         message=f"Invalid frv-suppress directive: {problem}.",
         recommendation="Use <!-- frv-suppress rule=<rule|*> owner=<owner> expires=YYYY-MM-DD reason=\"...\" link=invariant:<id>|waiver:<id>|limitation:<id> -->.",
         semantic_obligation="auditable_prose_suppression_waiver_contract",
+        autofix_suggestions=(
+            AutoFixSuggestion(
+                kind="replace-comment",
+                title="Replace with auditable frv-suppress metadata",
+                applicability="manual",
+                replacement='<!-- frv-suppress rule=<rule|*> owner=<team> expires=YYYY-MM-DD reason="bounded rationale" link=invariant:<id>|waiver:<id>|limitation:<id> -->',
+                rationale="Suppressions must remain reviewable evidence, not silent deletion of a semantic obligation.",
+            ),
+        ),
     )
+
+
+def _autofix_suggestions(rule: PhraseRule, missing_action: bool, missing_conditions: tuple[str, ...], has_model: bool) -> tuple[AutoFixSuggestion, ...]:
+    suggestions: list[AutoFixSuggestion] = []
+    if not has_model:
+        suggestions.append(AutoFixSuggestion(
+            kind="insert-runbook-json-block",
+            title="Add an executable runbook-json block near this prose",
+            applicability="manual",
+            replacement=_runbook_block_template(rule),
+            rationale="Prose-only instructions cannot discharge the formal obligation; a bounded DSL block gives the checker a state, action, and trace to analyze.",
+        ))
+    if missing_action and rule.required_action:
+        suggestions.append(AutoFixSuggestion(
+            kind="add-step-action",
+            title=f"Add a `{rule.required_action}` step to the executable model",
+            applicability="manual",
+            replacement=_action_step_template(rule.required_action),
+            rationale="The prose names an operational transition, but the small-step checker has no corresponding action to execute.",
+        ))
+    if missing_conditions:
+        suggestions.append(AutoFixSuggestion(
+            kind="add-preconditions",
+            title="Add missing semantic preconditions/effects",
+            applicability="manual",
+            replacement=json.dumps([_condition_template(kind) for kind in missing_conditions], indent=2, sort_keys=True),
+            rationale="Hoare-style safety obligations need explicit guards/effects so failed weakest preconditions point to concrete runbook edits.",
+        ))
+    if not suggestions:
+        suggestions.append(AutoFixSuggestion(
+            kind="document-limitation",
+            title="Document an explicit limitation or waiver",
+            applicability="manual",
+            replacement='<!-- frv-suppress rule={rule} owner=<team> expires=YYYY-MM-DD reason="why this prose remains outside the executable model" link=limitation:<id> -->'.format(rule=rule.rule),
+            rationale="When the DSL cannot model the operation yet, keep the unverified claim visible as an auditable limitation.",
+        ))
+    return tuple(suggestions)
+
+
+def _runbook_block_template(rule: PhraseRule) -> str:
+    action = rule.required_action or "model_operation"
+    conditions = [_condition_template(kind) for kind in rule.required_condition_kinds]
+    doc = {
+        "name": "TODO bounded model for this runbook section",
+        "max_depth": 1,
+        "system": {
+            "regions": {"TODO-region": {"healthy": True}},
+            "services": {
+                "TODO-service": {
+                    "min_available": 1,
+                    "replicas": [{"id": "TODO-replica-1", "region": "TODO-region", "healthy": True}],
+                }
+            },
+        },
+        "steps": [
+            {
+                "id": f"TODO-{action}",
+                "action": action,
+                "params": {},
+                "requires": conditions,
+            }
+        ],
+    }
+    return "```runbook-json\n" + json.dumps(doc, indent=2, sort_keys=True) + "\n```"
+
+
+def _action_step_template(action: str) -> str:
+    return json.dumps({
+        "id": f"TODO-{action}",
+        "action": action,
+        "params": {},
+        "requires": [],
+        "effects": [],
+    }, indent=2, sort_keys=True)
+
+
+def _condition_template(kind: str) -> dict[str, Any]:
+    templates: dict[str, dict[str, Any]] = {
+        "alert_suppressed_for_at_most": {"kind": kind, "alert": "TODO-alert", "minutes": 60},
+        "region_healthy": {"kind": kind, "region": "TODO-region"},
+        "database_quorum_confirmed": {"kind": kind, "database": "TODO-database"},
+        "service_available_at_least": {"kind": kind, "service": "TODO-service", "count": 1},
+        "queue_depth_at_most": {"kind": kind, "queue": "TODO-queue", "depth": 1000},
+        "queue_has_consumers": {"kind": kind, "queue": "TODO-queue", "consumers": 1},
+        "queue_replay_deduplicated": {"kind": kind, "queue": "TODO-queue", "window_minutes": 60},
+        "cache_writes_frozen": {"kind": kind, "cache": "TODO-cache"},
+        "cache_capacity_at_least": {"kind": kind, "cache": "TODO-cache", "entries": 1000},
+        "cache_warm": {"kind": kind, "cache": "TODO-cache"},
+        "service_deployment_is": {"kind": kind, "service": "TODO-service", "deployment": "TODO-version"},
+    }
+    return templates.get(kind, {"kind": kind, "target": "TODO"})
+
+
+def _stale_owner_findings(line: str, line_no: int, path: str) -> list[MarkdownFinding]:
+    if not STALE_OWNER_RE.search(line):
+        return []
+    return [MarkdownFinding(
+        rule="stale-owner-needs-current-reviewer",
+        severity="warning",
+        path=path,
+        line=line_no,
+        excerpt=line.strip(),
+        message="Runbook ownership appears stale or unassigned, weakening readiness and waiver accountability.",
+        recommendation="Replace placeholder ownership with a current accountable owner and review date.",
+        semantic_obligation="fresh_owner_metadata_for_runbook_obligations",
+        autofix_suggestions=(
+            AutoFixSuggestion(
+                kind="replace-owner-line",
+                title="Replace placeholder owner metadata",
+                applicability="manual",
+                replacement="Owner: <team-or-person> (reviewed YYYY-MM-DD)",
+                rationale="Semantic findings, suppressions, and readiness scorecards need accountable owners.",
+            ),
+        ),
+    )]
+
+
+def _ambiguous_instruction_findings(line: str, line_no: int, path: str) -> list[MarkdownFinding]:
+    if not AMBIGUOUS_INSTRUCTION_RE.search(line):
+        return []
+    return [MarkdownFinding(
+        rule="ambiguous-operator-instruction",
+        severity="warning",
+        path=path,
+        line=line_no,
+        excerpt=line.strip(),
+        message="Runbook prose uses ambiguous operator judgment where a bounded precondition or observable criterion would be safer.",
+        recommendation="Replace vague wording with an explicit condition, threshold, owner decision, or executable precondition.",
+        semantic_obligation="operator_choice_has_observable_guard",
+        autofix_suggestions=(
+            AutoFixSuggestion(
+                kind="replace-ambiguous-prose",
+                title="Replace vague operator choice with measurable criteria",
+                applicability="manual",
+                replacement="Proceed only when <metric/alert/check> is <threshold> for <duration>; otherwise stop and page <owner>.",
+                rationale="Nondeterministic operator choices should be represented by explicit guards for review and counterexample traces.",
+            ),
+        ),
+    )]
+
+
+def _unsafe_shell_findings(line: str, line_no: int, path: str) -> list[MarkdownFinding]:
+    if not UNSAFE_SHELL_RE.search(line):
+        return []
+    return [MarkdownFinding(
+        rule="unsafe-copy-paste-shell-snippet",
+        severity="error",
+        path=path,
+        line=line_no,
+        excerpt=line.strip(),
+        message="Shell snippet is unsafe to copy-paste in an incident runbook without targeting, preview, or provenance checks.",
+        recommendation="Add dry-run/preview flags, explicit namespace or target scope, reviewed source provenance, and rollback/restore criteria.",
+        semantic_obligation="copy_paste_command_has_scope_preview_and_rollback",
+        autofix_suggestions=(
+            AutoFixSuggestion(
+                kind="replace-shell-snippet",
+                title="Replace with scoped, previewable command template",
+                applicability="manual",
+                replacement="# Preview first, then execute only after owner approval\n<command> --namespace <ns> --selector <target> --dry-run=server\n# If preview matches the intended blast radius, rerun without dry-run and record rollback evidence.",
+                rationale="Unsafe commands are operational transitions with destructive effects; scope and preview reduce accidental blast radius.",
+            ),
+        ),
+    )]
 
 
 def _dedupe(findings: list[MarkdownFinding]) -> list[MarkdownFinding]:

@@ -2,13 +2,14 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **32/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **33/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
-auditable prose suppressions, queue replay/DLQ/consumer-group semantics, DNS
-cutover semantics, cache flush/warmup/cold-start/capacity semantics, and
-checked-in historical/current public case-study evidence.
+auditable prose suppressions, Markdown autofix suggestions for reviewable
+runbook edits, queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
+cache flush/warmup/cold-start/capacity semantics, and checked-in
+historical/current public case-study evidence.
 
 ## Quickstart
 
@@ -285,12 +286,17 @@ obligations; it is not a claim about a live deployment.
 
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, cache flush/invalidation, credential handling, customer-notification
-gaps, rollback ambiguity, alert suppression, failover, draining, and unmodeled
-escalation paths. Backfill or replay prose is tied to executable backlog,
-consumer, and deduplication obligations; cache-flush prose is tied to executable
-write-freeze, warmup, and capacity obligations. Severity
-levels are `audit-only`, `warning`, `error`, and `responsible-disclosure`, with
-`info` reserved for future advisory checks.
+gaps, rollback ambiguity, alert suppression, failover, draining, unmodeled
+escalation paths, ambiguous operator instructions, stale owner placeholders, and
+unsafe copy-paste shell snippets. Backfill or replay prose is tied to executable
+backlog, consumer, and deduplication obligations; cache-flush prose is tied to
+executable write-freeze, warmup, and capacity obligations. Findings now carry
+machine-readable `autofix_suggestions` in JSON and a Markdown summary column for
+manual edits such as inserting a `runbook-json` block, adding missing
+preconditions/effects, replacing stale owners, tightening vague criteria, or
+scoping unsafe shell commands. These suggestions are review aids, not automatic
+proof repair. Severity levels are `audit-only`, `warning`, `error`, and
+`responsible-disclosure`, with `info` reserved for future advisory checks.
 
 Markdown prose suppressions are supported only when the suppression itself is
 auditable:
@@ -312,7 +318,9 @@ short, attributed excerpts from Grafana Tempo's public runbook at commit
 `ef18cc176e44dea795543f50cb2341f5ea9e7827` (retrieved 2026-05-29). The prose
 linter flags destructive `forget/remove/delete`, data-deletion, and replay or
 backfill operations that lack executable blast-radius/capacity, restore-path,
-consumer, or deduplication preconditions. The derived executable model reports
+consumer, or deduplication preconditions; `reports/current_impact_lint.*` now
+includes bounded autofix suggestions for those missing preconditions. The
+derived executable model reports
 bounded queue fallback replay hazards: replay without dedupe, duplicate
 processing risk, rebalancing to zero consumers, and an unstable consumer group
 with backlog. One public ring-forget excerpt is intentionally retained with an
@@ -410,7 +418,11 @@ Reusable config:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
 ```
+
+The checked-in `reports/builtin_benchmark.md` records the Markdown output for
+the reusable public benchmark config.
 
 External corpus:
 

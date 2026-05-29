@@ -7,9 +7,12 @@ a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes repository/wiki runbook-priority scanning,
 incident-readiness, owner-scorecard, property-coverage reports, and auditable
-prose suppressions with owner/expiry/reason/limitation metadata. The DSL also models queue replay/DLQ/consumer-group
-semantics, DNS cutovers with TTL and health-check convergence obligations, and
-cache flush/warmup/cold-start/capacity semantics.
+prose suppressions with owner/expiry/reason/limitation metadata. Markdown
+findings also include manual autofix suggestions for missing executable models,
+missing preconditions/effects, stale owner placeholders, ambiguous operator
+instructions, and unsafe copy-paste shell snippets. The DSL also models queue
+replay/DLQ/consumer-group semantics, DNS cutovers with TTL and health-check
+convergence obligations, and cache flush/warmup/cold-start/capacity semantics.
 The historical fixture reconstructs the GitHub
 October 21, 2018 MySQL failover incident from public postmortem facts. The
 current case studies analyze short attributed excerpts from Grafana Tempo's
@@ -40,6 +43,11 @@ differently named system exists.
   when the file lacks matching executable actions/preconditions/effects, and
   refuses to silently hide prose findings unless a suppression has owner,
   expiry, reason, and invariant/waiver/limitation metadata.
+- Markdown lint/audit JSON includes `autofix_suggestions` for reviewable edits.
+  These suggestions point to executable blocks, Hoare-style precondition/effect
+  snippets, owner metadata, measurable operator guards, or scoped shell command
+  templates; they are not applied automatically and do not prove the suggested
+  repair is operationally correct without review.
 - The benchmark records states explored, terminal traces explored, violations by
   property, prose findings by rule, expected labels when present, runtime, and
   pass/fail.
@@ -74,6 +82,9 @@ differently named system exists.
 - Expected result: `reports/current_impact_lint.md` includes
   `prose-suppression-applied` for the public Tempo ring-forget excerpt, with
   owner, expiry, reason, and `limitation:ring-forget-targeting` metadata.
+  It also includes Markdown autofix-suggestion summaries for the unsuppressed
+  destructive-data/backfill findings; `reports/current_impact_lint.json` carries
+  the full suggestion payloads.
   Invalid suppressions are tested in `tests/test_markdown_lint.py` and produce
   `invalid-prose-suppression` without hiding the original finding.
 - Claim supported: the Markdown audit can represent an explicit
@@ -145,6 +156,7 @@ differently named system exists.
   - `reports/redis_cache_flush_audit.md`
   - `reports/redis_cache_flush_coverage.json`
   - `reports/redis_cache_flush_coverage.md`
+  - `reports/builtin_benchmark.md`
 
 ## Prior-art search protocol for bounded novelty
 
