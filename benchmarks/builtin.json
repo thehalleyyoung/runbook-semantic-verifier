@@ -4,6 +4,7 @@
     { "path": "../examples/safe_runbook.json" },
     { "path": "../examples/unsafe_runbook.json" },
     { "path": "../examples/real_world" },
-    { "path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md" }
+    { "path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md" },
+    { "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md" }
   ]
 }

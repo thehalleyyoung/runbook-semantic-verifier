@@ -11,7 +11,9 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
 ```
 
@@ -42,10 +44,16 @@ Top-level fields:
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
 - `safety`: checker configuration such as maximum alert suppression duration.
-- `metadata.labels`: optional benchmark labels such as `expected_safe` and
-  `expected_violation_properties`.
+- `metadata.labels`: optional benchmark labels such as `expected_safe`,
+  `expected_violation_properties`, and `expected_prose_rules`.
 
-Supported actions include `restart_service`, `drain_replica`, `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`, `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`, `finish_migration`, `pause_queue`, and `resume_queue`.
+The parser validates supported actions, required/unknown parameters, condition
+kinds, duplicate step ids, dependencies, and entity references before checking.
+Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
+`drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,
+`suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,
+`finish_migration`, `pause_queue`, `resume_queue`, `wait`, and
+`mark_region_health`.
 
 ## Safety properties
 
@@ -57,6 +65,7 @@ The prototype checks pragmatic cloud-operations hazards:
 - no alert suppression without a bounded positive expiry;
 - no data-loss-risk database action before quorum confirmation;
 - no failover to an unhealthy target region;
+- no pausing a backlog-heavy queue without a drain/consumer plan;
 - declared step preconditions and effects must hold.
 
 ## Architecture
@@ -67,6 +76,7 @@ src/runbook_verify/
   parser.py     JSON loader plus optional YAML support
   actions.py    operational semantics for runbook actions
   checker.py    bounded state-space explorer and safety checker
+  markdown_lint.py static/prose linter for dangerous unmodeled Markdown
   exporter.py   TLA+/Alloy-like text exporters
   benchmark.py  benchmark harness and JSON/Markdown result renderers
   cli.py        command-line interface
@@ -77,7 +87,10 @@ docs/           claims, evidence, and reproducibility notes
 tests/          parser, checker, CLI, exporter, and example tests
 ```
 
-The checker is deliberately small: it models a runbook as a finite set of steps, enumerates all dependency-respecting traces up to `max_depth`, applies action semantics to immutable system states, and records safety violations with traces.
+The checker is deliberately small: it models a runbook as a finite set of steps,
+enumerates all dependency-respecting traces up to `max_depth`, applies action
+semantics to immutable system states, deduplicates canonical states, and records
+safety violations with shortest traces and remediation hints.
 
 ## Real-world finding workflow
 
@@ -85,9 +98,19 @@ The repo is designed to audit real operational material, not only toy JSON examp
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli audit path/to/runbooks --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --expect-findings
 ```
 
 `examples/real_world/kubernetes_region_failover.md` is a case-study fixture modeled on common cloud failover mistakes. The audit confirms three concrete bugs: suppressing an alert for longer than policy allows, draining all available API replicas in a region before replacement capacity exists, and performing a data-loss-risk database failover before quorum confirmation.
+
+## Current public-doc case study
+
+`case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` analyzes
+short, attributed excerpts from Grafana Tempo's public runbook at commit
+`ef18cc176e44dea795543f50cb2341f5ea9e7827` (retrieved 2026-05-29). The prose
+linter flags destructive `forget/remove/delete` operations that lack executable
+blast-radius/capacity preconditions, and the derived executable model reports a
+queue fallback/backlog hazard. Reports are checked in under `reports/`.
 
 ## Historical public case study
 
@@ -113,8 +136,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_201
 ## Benchmark harness
 
 The benchmark command runs the built-in fixtures or a user-provided corpus and
-emits JSON or Markdown. Metrics include number of runbooks, states explored,
-terminal traces explored, violations by property, expected labels when present,
+emits JSON or Markdown. Metrics include number of runbooks, states explored, terminal traces explored,
+violations by property, prose findings by rule, expected labels when present,
 runtime, and pass/fail.
 
 Built-in suite:

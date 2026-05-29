@@ -10,6 +10,41 @@ class ActionError(ValueError):
     pass
 
 
+ACTION_SCHEMAS: dict[str, dict[str, set[str]]] = {
+    "restart_service": {"required": {"service"}, "optional": set()},
+    "drain_replica": {"required": {"service", "replica"}, "optional": set()},
+    "restore_replica": {"required": {"service", "replica"}, "optional": set()},
+    "drain_region": {"required": {"region"}, "optional": {"services"}},
+    "rollback_deployment": {"required": {"service"}, "optional": {"to"}},
+    "failover_database": {"required": {"database", "target_region"}, "optional": {"data_loss_risk"}},
+    "confirm_quorum": {"required": {"database"}, "optional": set()},
+    "suppress_alert": {"required": {"alert", "expires_after_minutes"}, "optional": set()},
+    "scale_service": {"required": {"service", "replicas"}, "optional": {"region"}},
+    "toggle_flag": {"required": {"flag", "enabled"}, "optional": set()},
+    "run_migration": {"required": {"database"}, "optional": {"in_progress", "compatible"}},
+    "finish_migration": {"required": {"database"}, "optional": set()},
+    "pause_queue": {"required": {"queue"}, "optional": set()},
+    "resume_queue": {"required": {"queue"}, "optional": set()},
+    "wait": {"required": {"minutes"}, "optional": set()},
+    "mark_region_health": {"required": {"region", "healthy"}, "optional": set()},
+}
+
+CONDITION_SCHEMAS: dict[str, dict[str, set[str]]] = {
+    "service_available_at_least": {"required": {"service", "count"}, "optional": set()},
+    "database_quorum_confirmed": {"required": {"database"}, "optional": set()},
+    "database_primary_region": {"required": {"database", "region"}, "optional": set()},
+    "region_healthy": {"required": {"region"}, "optional": set()},
+    "flag_enabled": {"required": {"flag", "enabled"}, "optional": set()},
+    "alert_active": {"required": {"alert", "active"}, "optional": set()},
+    "alert_suppressed_for_at_most": {"required": {"alert", "minutes"}, "optional": set()},
+    "queue_depth_at_most": {"required": {"queue", "depth"}, "optional": set()},
+    "queue_has_consumers": {"required": {"queue", "count"}, "optional": set()},
+    "queue_resumed": {"required": {"queue"}, "optional": set()},
+    "service_deployment_is": {"required": {"service", "deployment"}, "optional": set()},
+    "replica_not_drained": {"required": {"service", "replica"}, "optional": set()},
+}
+
+
 def _copy_state(state: SystemState, **updates: Any) -> SystemState:
     data = {
         "regions": state.regions,
@@ -46,6 +81,13 @@ def _alert(state: SystemState, name: str) -> Alert:
         raise ActionError(f"unknown alert {name!r}") from exc
 
 
+def _queue(state: SystemState, name: str) -> Queue:
+    try:
+        return state.queues[name]
+    except KeyError as exc:
+        raise ActionError(f"unknown queue {name!r}") from exc
+
+
 def _with_service(state: SystemState, service: Service) -> SystemState:
     services = dict(state.services)
     services[service.name] = service
@@ -67,6 +109,20 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
             if r.id == rid:
                 found = True
                 replicas.append(replace(r, drained=True))
+            else:
+                replicas.append(r)
+        if not found:
+            raise ActionError(f"unknown replica {rid!r} for service {svc.name!r}")
+        return _with_service(state, svc.with_replicas(tuple(replicas)))
+    if action == "restore_replica":
+        svc = _service(state, str(p["service"]))
+        rid = str(p["replica"])
+        found = False
+        replicas = []
+        for r in svc.replicas:
+            if r.id == rid:
+                found = True
+                replicas.append(replace(r, drained=False))
             else:
                 replicas.append(r)
         if not found:
@@ -134,15 +190,27 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         databases[db.name] = replace(db, migration_in_progress=False)
         return _copy_state(state, databases=databases)
     if action == "pause_queue":
-        q = state.queues[str(p["queue"])]
+        q = _queue(state, str(p["queue"]))
         queues = dict(state.queues)
         queues[q.name] = replace(q, paused=True)
         return _copy_state(state, queues=queues)
     if action == "resume_queue":
-        q = state.queues[str(p["queue"])]
+        q = _queue(state, str(p["queue"]))
         queues = dict(state.queues)
         queues[q.name] = replace(q, paused=False)
         return _copy_state(state, queues=queues)
+    if action == "wait":
+        minutes = int(p["minutes"])
+        if minutes < 0:
+            raise ActionError("wait minutes must be non-negative")
+        return _copy_state(state, clock_minute=state.clock_minute + minutes)
+    if action == "mark_region_health":
+        name = str(p["region"])
+        if name not in state.regions:
+            raise ActionError(f"unknown region {name!r}")
+        regions = dict(state.regions)
+        regions[name] = replace(regions[name], healthy=bool(p["healthy"]))
+        return _copy_state(state, regions=regions)
     raise ActionError(f"unsupported action {action!r}")
 
 
@@ -152,8 +220,27 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
         return _service(state, str(condition["service"])).available_count() >= int(condition["count"])
     if kind == "database_quorum_confirmed":
         return _database(state, str(condition["database"])).quorum_confirmed
+    if kind == "database_primary_region":
+        return _database(state, str(condition["database"])).primary_region == str(condition["region"])
     if kind == "region_healthy":
         return bool(state.regions[str(condition["region"])].healthy)
     if kind == "flag_enabled":
         return state.flags[str(condition["flag"])].enabled is bool(condition["enabled"])
+    if kind == "alert_active":
+        return _alert(state, str(condition["alert"])).active is bool(condition["active"])
+    if kind == "alert_suppressed_for_at_most":
+        alert = _alert(state, str(condition["alert"]))
+        until = alert.suppressed_until_minute
+        return until is not None and until - state.clock_minute <= int(condition["minutes"])
+    if kind == "queue_depth_at_most":
+        return _queue(state, str(condition["queue"])).depth <= int(condition["depth"])
+    if kind == "queue_has_consumers":
+        return _queue(state, str(condition["queue"])).consumers >= int(condition["count"])
+    if kind == "queue_resumed":
+        return not _queue(state, str(condition["queue"])).paused
+    if kind == "service_deployment_is":
+        return _service(state, str(condition["service"])).deployment == str(condition["deployment"])
+    if kind == "replica_not_drained":
+        svc = _service(state, str(condition["service"]))
+        return any(r.id == str(condition["replica"]) and not r.drained for r in svc.replicas)
     raise ActionError(f"unsupported condition kind {kind!r}")

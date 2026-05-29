@@ -7,6 +7,7 @@ from pathlib import Path
 from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
 from .exporter import export_alloy, export_tla
+from .markdown_lint import lint_markdown_tree, render_lint_json, render_lint_markdown
 from .parser import RunbookParseError, load_runbook
 
 
@@ -25,6 +26,10 @@ def main(argv: list[str] | None = None) -> int:
     bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
     bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
     bench_p.add_argument("--format", choices=["json", "markdown"], default="json")
+    lint_p = sub.add_parser("lint-markdown", help="lint Markdown runbook prose for dangerous unmodeled operations")
+    lint_p.add_argument("path")
+    lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    lint_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when prose findings are found")
     args = parser.parse_args(argv)
 
     if args.command == "audit":
@@ -37,6 +42,12 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(render_json(result) if args.format == "json" else render_markdown(result), end="")
         return 0 if result.pass_ else 1
+    if args.command == "lint-markdown":
+        findings = lint_markdown_tree(args.path)
+        print(render_lint_json(findings) if args.format == "json" else render_lint_markdown(findings), end="")
+        if args.expect_findings:
+            return 0 if findings else 1
+        return 1 if findings else 0
 
     try:
         runbook = load_runbook(args.runbook)
@@ -47,11 +58,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "check":
         result = Checker(runbook).check()
         print(f"Runbook: {runbook.name}")
-        print(f"States explored: {result.states_explored}; terminal traces: {result.traces_explored}")
+        print(f"States explored: {result.states_explored}; terminal traces: {result.traces_explored}; max depth reached: {result.max_depth_reached}")
         if result.violations:
             print("Violations:")
             for v in result.violations:
                 print(f"- [{v.property}] trace={' -> '.join(v.trace)}: {v.message}")
+                if v.remediation:
+                    print(f"  remediation: {v.remediation}")
         else:
             print("No safety violations found within bound.")
         if args.expect_violations:

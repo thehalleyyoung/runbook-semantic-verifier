@@ -27,3 +27,23 @@ class ParserTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ParserValidationTests(unittest.TestCase):
+    def test_rejects_unknown_action_and_params(self):
+        with self.assertRaisesRegex(RunbookParseError, "unsupported action"):
+            parse_runbook({"system": {}, "steps": [{"id": "x", "action": "rm_rf", "params": {}}]})
+        with self.assertRaisesRegex(RunbookParseError, "unknown field"):
+            parse_runbook({"system": {}, "steps": [{"id": "x", "action": "wait", "params": {"minutes": 1, "extra": True}}]})
+
+    def test_rejects_unknown_entity_references(self):
+        doc = {
+            "system": {"regions": {"a": {}}, "services": {}, "databases": {}, "queues": {}, "alerts": {}, "feature_flags": {}, "deployments": {}},
+            "steps": [{"id": "x", "action": "suppress_alert", "params": {"alert": "missing", "expires_after_minutes": 5}}],
+        }
+        with self.assertRaisesRegex(RunbookParseError, "unknown alert"):
+            parse_runbook(doc)
+
+    def test_source_path_is_attached_to_steps(self):
+        runbook = load_runbook(ROOT / "examples" / "safe_runbook.json")
+        self.assertTrue(runbook.steps[0].source_path.endswith("safe_runbook.json"))
+        self.assertIsInstance(runbook.steps[0].source_line, int)

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .checker import Checker
+from .markdown_lint import lint_markdown_file
 from .parser import RunbookParseError, load_document, load_runbook
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
@@ -27,6 +28,7 @@ class RunbookBenchmarkResult:
     states_explored: int
     traces_explored: int
     violations_by_property: dict[str, int]
+    prose_findings_by_rule: dict[str, int]
     runtime_seconds: float
     expected_labels: dict[str, Any] | None = None
     errors: list[str] = field(default_factory=list)
@@ -53,12 +55,15 @@ class BenchmarkSuiteResult:
             "states_explored": sum(item.states_explored for item in self.runbooks),
             "traces_explored": sum(item.traces_explored for item in self.runbooks),
             "violations_by_property": {},
+            "prose_findings_by_rule": {},
             "runtime_seconds": self.runtime_seconds,
             "pass": self.pass_,
         }
         for item in self.runbooks:
             for prop, count in item.violations_by_property.items():
                 aggregate["violations_by_property"][prop] = aggregate["violations_by_property"].get(prop, 0) + count
+            for rule, count in item.prose_findings_by_rule.items():
+                aggregate["prose_findings_by_rule"][rule] = aggregate["prose_findings_by_rule"].get(rule, 0) + count
         return {
             "name": self.name,
             "aggregate": aggregate,
@@ -75,6 +80,7 @@ def run_benchmark(path: str | Path | None = None) -> BenchmarkSuiteResult:
             BenchmarkEntry(root / "examples" / "unsafe_runbook.json"),
             BenchmarkEntry(root / "examples" / "real_world" / "kubernetes_region_failover.md"),
             BenchmarkEntry(root / "case_studies" / "github_oct21_2018" / "github_oct21_reconstructed_runbook.md"),
+            BenchmarkEntry(root / "case_studies" / "current" / "grafana_tempo" / "tempo_runbook_current_impact.md"),
         ]
     else:
         config_path = Path(path)
@@ -115,13 +121,14 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
         f"- Traces explored: {aggregate['traces_explored']}",
         f"- Runtime seconds: {aggregate['runtime_seconds']:.6f}",
         f"- Violations by property: `{json.dumps(aggregate['violations_by_property'], sort_keys=True)}`",
+        f"- Prose findings by rule: `{json.dumps(aggregate['prose_findings_by_rule'], sort_keys=True)}`",
         "",
-        "| Runbook | Pass | Safe | States | Traces | Runtime (s) | Violations | Expected labels |",
-        "| --- | --- | --- | ---: | ---: | ---: | --- | --- |",
+        "| Runbook | Pass | Safe | States | Traces | Runtime (s) | Violations | Prose findings | Expected labels |",
+        "| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |",
     ]
     for item in data["runbooks"]:
         lines.append(
-            "| {name} | `{pass_}` | `{safe}` | {states} | {traces} | {runtime:.6f} | `{violations}` | `{expected}` |".format(
+            "| {name} | `{pass_}` | `{safe}` | {states} | {traces} | {runtime:.6f} | `{violations}` | `{prose}` | `{expected}` |".format(
                 name=item["name"].replace("|", "\\|"),
                 pass_=item["pass"],
                 safe=item["safe"],
@@ -129,6 +136,7 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
                 traces=item["traces_explored"],
                 runtime=item["runtime_seconds"],
                 violations=json.dumps(item["violations_by_property"], sort_keys=True),
+                prose=json.dumps(item["prose_findings_by_rule"], sort_keys=True),
                 expected=json.dumps(item["expected_labels"], sort_keys=True) if item["expected_labels"] else "",
             )
         )
@@ -187,7 +195,8 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
         name = entry.name or runbook.name
         result = Checker(runbook).check()
         violations = _violations_by_property(result)
-        passed, errors = _matches_expected(result.safe, violations, expected_labels)
+        prose_findings = _prose_findings_by_rule(entry.path)
+        passed, errors = _matches_expected(result.safe, violations, prose_findings, expected_labels)
         return RunbookBenchmarkResult(
             path=str(entry.path),
             name=name,
@@ -196,6 +205,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             states_explored=result.states_explored,
             traces_explored=result.traces_explored,
             violations_by_property=violations,
+            prose_findings_by_rule=prose_findings,
             runtime_seconds=time.perf_counter() - started,
             expected_labels=expected_labels,
             errors=errors,
@@ -209,6 +219,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             states_explored=0,
             traces_explored=0,
             violations_by_property={},
+            prose_findings_by_rule={},
             runtime_seconds=time.perf_counter() - started,
             expected_labels=expected_labels,
             errors=[str(exc)],
@@ -235,10 +246,13 @@ def _expected_labels(doc: dict[str, Any]) -> dict[str, Any] | None:
     props = labels.get("expected_violation_properties")
     if isinstance(props, list):
         expected["expected_violation_properties"] = sorted(str(prop) for prop in props)
+    prose_rules = labels.get("expected_prose_rules")
+    if isinstance(prose_rules, list):
+        expected["expected_prose_rules"] = sorted(str(rule) for rule in prose_rules)
     return expected or None
 
 
-def _matches_expected(safe: bool, violations: dict[str, int], expected: dict[str, Any] | None) -> tuple[bool, list[str]]:
+def _matches_expected(safe: bool, violations: dict[str, int], prose_findings: dict[str, int], expected: dict[str, Any] | None) -> tuple[bool, list[str]]:
     if expected is None:
         return True, []
     errors = []
@@ -249,4 +263,18 @@ def _matches_expected(safe: bool, violations: dict[str, int], expected: dict[str
     missing = sorted(expected_props - observed_props)
     if missing:
         errors.append(f"missing expected violation properties: {', '.join(missing)}")
+    expected_prose = set(expected.get("expected_prose_rules", []))
+    observed_prose = set(prose_findings)
+    missing_prose = sorted(expected_prose - observed_prose)
+    if missing_prose:
+        errors.append(f"missing expected prose rules: {', '.join(missing_prose)}")
     return not errors, errors
+
+
+def _prose_findings_by_rule(path: Path) -> dict[str, int]:
+    if path.suffix.lower() != ".md":
+        return {}
+    counts: dict[str, int] = {}
+    for finding in lint_markdown_file(path):
+        counts[finding.rule] = counts.get(finding.rule, 0) + 1
+    return dict(sorted(counts.items()))

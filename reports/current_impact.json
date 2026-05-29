@@ -1,0 +1,46 @@
+{
+  "aggregate": {
+    "pass": true,
+    "prose_findings_by_rule": {
+      "destructive-delete-needs-targeting": 2
+    },
+    "runbooks": 1,
+    "runtime_seconds": 0.0007036659808363765,
+    "states_explored": 3,
+    "traces_explored": 1,
+    "violations_by_property": {
+      "no_paused_queue_with_backlog": 1,
+      "no_queue_pause_without_drain_plan": 1
+    }
+  },
+  "name": "current public runbook impact benchmark",
+  "runbooks": [
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [
+          "destructive-delete-needs-targeting"
+        ],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "no_paused_queue_with_backlog",
+          "no_queue_pause_without_drain_plan"
+        ]
+      },
+      "name": "Grafana Tempo current public runbook derived safety model",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "prose_findings_by_rule": {
+        "destructive-delete-needs-targeting": 2
+      },
+      "runtime_seconds": 0.0006959160091355443,
+      "safe": false,
+      "states_explored": 3,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "no_paused_queue_with_backlog": 1,
+        "no_queue_pause_without_drain_plan": 1
+      }
+    }
+  ]
+}

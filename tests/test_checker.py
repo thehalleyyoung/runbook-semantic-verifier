@@ -5,6 +5,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from runbook_verify import Checker, load_runbook
+from runbook_verify.parser import parse_runbook
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -34,3 +35,18 @@ class CheckerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class CheckerExplanationTests(unittest.TestCase):
+    def test_queue_pause_hazard_has_remediation(self):
+        runbook = parse_runbook({
+            "system": {
+                "regions": {}, "services": {}, "databases": {}, "alerts": {}, "feature_flags": {}, "deployments": {},
+                "queues": {"q": {"depth": 10, "consumers": 1}}
+            },
+            "steps": [{"id": "pause", "action": "pause_queue", "params": {"queue": "q"}}]
+        })
+        result = Checker(runbook).check()
+        props = {v.property for v in result.violations}
+        self.assertIn("no_queue_pause_without_drain_plan", props)
+        self.assertIn("no_paused_queue_with_backlog", props)
+        self.assertTrue(all(v.remediation for v in result.violations))

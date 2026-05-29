@@ -1,0 +1,150 @@
+{
+  "aggregate": {
+    "pass": true,
+    "prose_findings_by_rule": {
+      "destructive-delete-needs-targeting": 2,
+      "failover-needs-health-and-quorum": 3
+    },
+    "runbooks": 5,
+    "runtime_seconds": 0.008620708016678691,
+    "states_explored": 85,
+    "traces_explored": 5,
+    "violations_by_property": {
+      "bounded_alert_suppression": 20,
+      "no_draining_all_replicas": 36,
+      "no_failover_to_unhealthy_region": 16,
+      "no_paused_queue_with_backlog": 1,
+      "no_queue_pause_without_drain_plan": 1,
+      "no_rollback_during_incompatible_migration": 16,
+      "precondition": 1,
+      "quorum_before_data_loss_action": 21,
+      "service_min_available": 56
+    }
+  },
+  "name": "built-in formal runbook verification benchmark",
+  "runbooks": [
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_safe": true,
+        "expected_violation_properties": []
+      },
+      "name": "Safe regional database failover",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.003722249995917082,
+      "safe": true,
+      "states_explored": 36,
+      "traces_explored": 1,
+      "violations_by_property": {}
+    },
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "bounded_alert_suppression",
+          "no_failover_to_unhealthy_region",
+          "no_rollback_during_incompatible_migration",
+          "quorum_before_data_loss_action",
+          "service_min_available"
+        ]
+      },
+      "name": "Unsafe emergency rollback and evacuation",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.0031583330128341913,
+      "safe": false,
+      "states_explored": 32,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "bounded_alert_suppression": 16,
+        "no_draining_all_replicas": 28,
+        "no_failover_to_unhealthy_region": 16,
+        "no_rollback_during_incompatible_migration": 16,
+        "quorum_before_data_loss_action": 16,
+        "service_min_available": 44
+      }
+    },
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "bounded_alert_suppression",
+          "quorum_before_data_loss_action",
+          "service_min_available"
+        ]
+      },
+      "name": "kubernetes region failover - missing quorum and capacity checks",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/real_world/kubernetes_region_failover.md",
+      "prose_findings_by_rule": {
+        "failover-needs-health-and-quorum": 2
+      },
+      "runtime_seconds": 0.0006975840078666806,
+      "safe": false,
+      "states_explored": 8,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "bounded_alert_suppression": 4,
+        "no_draining_all_replicas": 8,
+        "quorum_before_data_loss_action": 4,
+        "service_min_available": 12
+      }
+    },
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "precondition",
+          "quorum_before_data_loss_action"
+        ]
+      },
+      "name": "GitHub Oct21 2018 MySQL failover reconstruction",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "prose_findings_by_rule": {
+        "failover-needs-health-and-quorum": 1
+      },
+      "runtime_seconds": 0.0005696660082321614,
+      "safe": false,
+      "states_explored": 6,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "precondition": 1,
+        "quorum_before_data_loss_action": 1
+      }
+    },
+    {
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [
+          "destructive-delete-needs-targeting"
+        ],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "no_paused_queue_with_backlog",
+          "no_queue_pause_without_drain_plan"
+        ]
+      },
+      "name": "Grafana Tempo current public runbook derived safety model",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "prose_findings_by_rule": {
+        "destructive-delete-needs-targeting": 2
+      },
+      "runtime_seconds": 0.00043149999692104757,
+      "safe": false,
+      "states_explored": 3,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "no_paused_queue_with_backlog": 1,
+        "no_queue_pause_without_drain_plan": 1
+      }
+    }
+  ]
+}

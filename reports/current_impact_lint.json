@@ -1,0 +1,20 @@
+[
+  {
+    "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
+    "line": 18,
+    "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+    "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+    "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+    "rule": "destructive-delete-needs-targeting",
+    "severity": "warning"
+  },
+  {
+    "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+    "line": 20,
+    "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+    "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+    "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+    "rule": "destructive-delete-needs-targeting",
+    "severity": "warning"
+  }
+]

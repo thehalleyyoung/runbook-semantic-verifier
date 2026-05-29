@@ -108,6 +108,8 @@ class Step:
     after: tuple[str, ...] = ()
     requires: tuple[dict[str, Any], ...] = ()
     effects: tuple[dict[str, Any], ...] = ()
+    source_path: str | None = None
+    source_line: int | None = None
 
 
 @dataclass(frozen=True)

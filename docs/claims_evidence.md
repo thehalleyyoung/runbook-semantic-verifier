@@ -3,17 +3,21 @@
 ## What this repo now demonstrates
 
 This repository contains a small, executable verifier for operational runbooks,
-a benchmark harness, and a public historical case-study fixture. The historical
-fixture reconstructs the GitHub October 21, 2018 MySQL failover incident from
-public postmortem facts and checks it as an executable safety model.
+a Markdown prose linter, a benchmark harness, a public historical case-study
+fixture, and a current public-documentation case study. The historical fixture
+reconstructs the GitHub October 21, 2018 MySQL failover incident from public
+postmortem facts. The current case study analyzes short attributed excerpts from
+Grafana Tempo's public runbook and checks a derived executable safety model.
 
 ## Bounded novelty claim
 
-We are not aware of an existing open-source benchmark that converts public
-outage narratives into executable runbook safety models and reproduces the
-safety failure with model checking. This is a bounded novelty claim about this
-artifact and its public, reproducible benchmark; it is not a universal proof
-that no such private or unpublished system exists.
+We are not aware, as of 2026-05-29, of an existing open-source benchmark that
+combines (1) public outage narratives, (2) current public runbook prose, (3)
+executable runbook safety models, (4) static prose checks for dangerous
+unmodeled operations, and (5) checked-in JSON/Markdown findings with exact source
+metadata. This is a bounded novelty claim about this artifact and the search
+protocol below; it is not a universal proof that no private, unpublished, or
+differently named system exists.
 
 ## What is proven
 
@@ -21,8 +25,14 @@ that no such private or unpublished system exists.
   step orders up to the runbook's `max_depth`.
 - Within that finite bound and this DSL's action semantics, reported violations
   are concrete traces that breach named safety properties.
+- The parser rejects unsupported actions, unknown parameters, unknown condition
+  kinds, duplicate step ids, missing dependencies, and references to unknown
+  modeled entities before state-space exploration.
+- The Markdown linter deterministically flags selected dangerous prose patterns
+  when the file lacks matching executable actions/preconditions/effects.
 - The benchmark records states explored, terminal traces explored, violations by
-  property, expected labels when present, runtime, and pass/fail.
+  property, prose findings by rule, expected labels when present, runtime, and
+  pass/fail.
 
 ## What is not proven
 
@@ -32,11 +42,46 @@ that no such private or unpublished system exists.
 - The abstractions do not prove what GitHub's private systems did internally.
 - Absence of violations means no modeled property failed within the configured
   bound; it is not proof of operational safety in production.
+- The Grafana Tempo case study is a defensive documentation analysis. It reports
+  potential operational safety gaps in public prose/modeling, not an undisclosed
+  vulnerability in Grafana Labs, Tempo, or any live service.
+- The prior-art search cannot prove universal nonexistence; it only documents
+  the public search performed for this repository.
 
 ## Historical source
 
 - GitHub, "October 21 post-incident analysis":
   <https://github.blog/news-insights/company-news/oct21-post-incident-analysis/>
+
+## Current public source
+
+- Grafana Tempo `operations/tempo-mixin/runbook.md`:
+  <https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md>
+- Commit observed with GitHub API on 2026-05-29:
+  `ef18cc176e44dea795543f50cb2341f5ea9e7827`
+- Source repository license text observed: AGPL-3.0.
+- Checked-in evidence:
+  - `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md`
+  - `reports/current_impact.json`
+  - `reports/current_impact.md`
+  - `reports/current_impact_lint.json`
+  - `reports/current_impact_lint.md`
+
+## Prior-art search protocol for bounded novelty
+
+The bounded claim above was checked using public web/GitHub search phrases such
+as:
+
+- `"runbook" "model checking" "benchmark"`
+- `"incident runbook" "formal verification"`
+- `"runbook-json" "safety" "benchmark"`
+- `"public runbook" "prose linter" "precondition"`
+- `"outage narrative" "executable runbook"`
+
+No result found during this session matched this repository's combination of
+public-source executable runbook models, deterministic safety checker, prose
+linter, benchmark labels, generated reports, and precise source metadata. This
+is evidence for the bounded claim only.
 
 ## Reproducibility protocol
 
@@ -47,9 +92,13 @@ python3 -m unittest discover -s tests
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
+PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 ```
 
 Expected result: tests pass; benchmark `aggregate.pass` is `true`; the GitHub
 case-study runbook reports `precondition` and
-`quorum_before_data_loss_action` violations.
+`quorum_before_data_loss_action` violations; the current-impact benchmark reports
+`destructive-delete-needs-targeting`, `no_queue_pause_without_drain_plan`, and
+`no_paused_queue_with_backlog`.

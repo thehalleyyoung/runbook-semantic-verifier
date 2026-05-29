@@ -1,0 +1,6 @@
+{
+  "name": "current public runbook impact benchmark",
+  "runbooks": [
+    { "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md" }
+  ]
+}
