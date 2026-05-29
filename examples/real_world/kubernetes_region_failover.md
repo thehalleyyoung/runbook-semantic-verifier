@@ -8,6 +8,17 @@ The modeled bug is realistic: an operator suppresses the high-latency alert for 
 {
   "name": "kubernetes region failover - missing quorum and capacity checks",
   "description": "Real-world-style Markdown runbook with an executable model embedded for audit.",
+  "metadata": {
+    "provenance": "synthetic real-world-style fixture",
+    "labels": {
+      "expected_safe": false,
+      "expected_violation_properties": [
+        "bounded_alert_suppression",
+        "quorum_before_data_loss_action",
+        "service_min_available"
+      ]
+    }
+  },
   "allow_reordering": true,
   "max_depth": 4,
   "safety": {"max_alert_suppression_minutes": 120},

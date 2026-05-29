@@ -1,6 +1,12 @@
 {
   "name": "Safe regional database failover",
   "description": "Scale API capacity, drain one degraded region, confirm quorum, fail over database, and suppress a noisy alert with a bounded expiry.",
+  "metadata": {
+    "labels": {
+      "expected_safe": true,
+      "expected_violation_properties": []
+    }
+  },
   "allow_reordering": true,
   "max_depth": 6,
   "safety": { "max_alert_suppression_minutes": 120 },

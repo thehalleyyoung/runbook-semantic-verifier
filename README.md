@@ -11,6 +11,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
 ```
 
 Optional editable install:
@@ -40,6 +42,8 @@ Top-level fields:
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
 - `safety`: checker configuration such as maximum alert suppression duration.
+- `metadata.labels`: optional benchmark labels such as `expected_safe` and
+  `expected_violation_properties`.
 
 Supported actions include `restart_service`, `drain_replica`, `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`, `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`, `finish_migration`, `pause_queue`, and `resume_queue`.
 
@@ -64,8 +68,12 @@ src/runbook_verify/
   actions.py    operational semantics for runbook actions
   checker.py    bounded state-space explorer and safety checker
   exporter.py   TLA+/Alloy-like text exporters
+  benchmark.py  benchmark harness and JSON/Markdown result renderers
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
+case_studies/   public historical reconstructed executable fixtures
+benchmarks/     reusable benchmark suite config files
+docs/           claims, evidence, and reproducibility notes
 tests/          parser, checker, CLI, exporter, and example tests
 ```
 
@@ -80,6 +88,65 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit path/to/runbooks --expect-fin
 ```
 
 `examples/real_world/kubernetes_region_failover.md` is a case-study fixture modeled on common cloud failover mistakes. The audit confirms three concrete bugs: suppressing an alert for longer than policy allows, draining all available API replicas in a region before replacement capacity exists, and performing a data-loss-risk database failover before quorum confirmation.
+
+## Historical public case study
+
+`case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md`
+contains a reconstructed executable fixture derived from GitHub's public
+October 21, 2018 post-incident analysis:
+<https://github.blog/news-insights/company-news/oct21-post-incident-analysis/>.
+
+This is **not** original GitHub runbook text. It transparently models public
+facts from the incident: a brief network partition, MySQL/Orchestrator failover
+to US West, unreplicated writes in US East, pausing webhook and Pages work to
+protect data integrity, and a recovery plan based on backup restoration and
+replica synchronization. The modeled safety failure is a data-loss-risk
+database failover before the DSL's explicit quorum/data-safety precondition has
+been confirmed.
+
+Run it directly:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
+```
+
+## Benchmark harness
+
+The benchmark command runs the built-in fixtures or a user-provided corpus and
+emits JSON or Markdown. Metrics include number of runbooks, states explored,
+terminal traces explored, violations by property, expected labels when present,
+runtime, and pass/fail.
+
+Built-in suite:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format markdown
+```
+
+Reusable config:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
+```
+
+External corpus:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli benchmark path/to/runbook-or-directory --format markdown
+```
+
+Benchmark config files are JSON:
+
+```json
+{
+  "name": "my runbook corpus",
+  "runbooks": [
+    { "path": "../examples/safe_runbook.json" },
+    { "path": "../case_studies/github_oct21_2018" }
+  ]
+}
+```
 
 ## Paper angle
 
@@ -96,7 +163,17 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - Concurrency is represented as permissible step reordering, not real-time interleavings.
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
 - The benchmark examples are synthetic and should be expanded before empirical claims.
+- The historical GitHub fixture is reconstructed from public facts, not exact
+  internal runbook text.
 - The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.
+
+## Claims and evidence
+
+See `docs/claims_evidence.md` for the precise novelty claim, what is and is not
+proven, and a reproduction protocol. In short: we are not aware of an existing
+open-source benchmark that converts public outage narratives into executable
+runbook safety models and reproduces the safety failure with model checking, but
+we do not claim a universal proof that no unpublished or private system exists.
 
 ## License
 

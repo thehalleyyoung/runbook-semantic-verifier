@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
 from .exporter import export_alloy, export_tla
 from .parser import RunbookParseError, load_runbook
@@ -21,10 +22,21 @@ def main(argv: list[str] | None = None) -> int:
     audit_p = sub.add_parser("audit", help="verify every runbook file in a directory tree")
     audit_p.add_argument("path")
     audit_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when at least one violation is found")
+    bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
+    bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
+    bench_p.add_argument("--format", choices=["json", "markdown"], default="json")
     args = parser.parse_args(argv)
 
     if args.command == "audit":
         return _audit(args.path, args.expect_findings)
+    if args.command == "benchmark":
+        try:
+            result = run_benchmark(args.path)
+        except BenchmarkConfigError as exc:
+            print(f"benchmark error: {exc}", file=sys.stderr)
+            return 2
+        print(render_json(result) if args.format == "json" else render_markdown(result), end="")
+        return 0 if result.pass_ else 1
 
     try:
         runbook = load_runbook(args.runbook)
