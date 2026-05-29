@@ -6,10 +6,12 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes incident-readiness, owner-scorecard, and
-property-coverage reports. The historical fixture reconstructs the GitHub
+property-coverage reports. The DSL also models DNS cutovers with TTL and
+health-check convergence obligations. The historical fixture reconstructs the GitHub
 October 21, 2018 MySQL failover incident from public postmortem facts. The
-current case study analyzes short attributed excerpts from Grafana Tempo's
-public runbook and checks a derived executable safety model.
+current case studies analyze short attributed excerpts from Grafana Tempo's
+public runbook and a bounded DNS failover pattern derived from public
+`dnsswitch` guidance.
 
 ## Bounded novelty claim
 
@@ -45,7 +47,7 @@ differently named system exists.
   obligations, stale assumptions, declared waiver debt, proof-obligation
   failures, and remediation history by checked-in owner metadata.
 - The coverage report maps each current invariant/proof-obligation template to
-  modeled services, databases, queues, alerts, credentials (none in the current
+  modeled services, databases, queues, alerts, DNS records, credentials (none in the current
   DSL), owners, regions, source steps, and Markdown sections; unverified prose
   obligations are reported as coverage gaps, not as verified properties.
 
@@ -62,6 +64,8 @@ differently named system exists.
 - The Grafana Tempo case study is a defensive documentation analysis. It reports
   potential operational safety gaps in public prose/modeling, not an undisclosed
   vulnerability in Grafana Labs, Tempo, or any live service.
+- The `dnsswitch` DNS case study is a defensive bounded reconstruction of a
+  documented failover pattern, not a claim about a live deployment.
 - The prior-art search cannot prove universal nonexistence; it only documents
   the public search performed for this repository.
 
@@ -77,6 +81,8 @@ differently named system exists.
 - Commit observed with GitHub API on 2026-05-29:
   `ef18cc176e44dea795543f50cb2341f5ea9e7827`
 - Source repository license text observed: AGPL-3.0.
+- Hotpirsch `dnsswitch` public DNS failover guidance:
+  <https://github.com/Hotpirsch/dnsswitch>
 - Checked-in evidence:
   - `case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md`
   - `reports/github_oct21_semantic_diff.json`
@@ -92,6 +98,10 @@ differently named system exists.
   - `reports/current_impact_owner_scorecard.md`
   - `reports/current_impact_coverage.json`
   - `reports/current_impact_coverage.md`
+  - `case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md`
+  - `reports/dnsswitch_dns_audit.json`
+  - `reports/dnsswitch_dns_audit.md`
+  - `reports/dnsswitch_dns_coverage.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -119,6 +129,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
+PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
@@ -145,3 +156,6 @@ The current-impact coverage report maps five invariant/proof-obligation
 templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
 queue, `prod` region, owner metadata, and executable Markdown section, and
 keeps three destructive-data prose obligations as explicit coverage gaps.
+The DNS case-study check reports bounded `dns_health_check_converged_before_cutover`,
+`dns_requires_regional_capacity`, `dns_no_split_brain_during_ttl`, and
+`dns_ttl_elapsed_before_finalize` counterexamples.

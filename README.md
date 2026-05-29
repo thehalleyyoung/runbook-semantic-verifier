@@ -2,11 +2,11 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **27/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **28/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
-scorecards, property-coverage reports, and checked-in historical/current public
-case-study evidence.
+scorecards, property-coverage reports, DNS cutover semantics, and checked-in
+historical/current public case-study evidence.
 
 ## Quickstart
 
@@ -24,6 +24,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format markdown --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format sarif --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format junit --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/dnsswitch_dns_failover --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
@@ -57,7 +59,7 @@ Executable examples use JSON so the repository runs with the Python standard lib
 
 Top-level fields:
 
-- `system`: regions, services/replicas, databases, queues, alerts, feature flags, deployments, traffic routes.
+- `system`: regions, services/replicas, databases, queues, alerts, feature flags, deployments, traffic routes, DNS records.
 - `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, and `effects`.
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
@@ -94,7 +96,9 @@ Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,
 `finish_migration`, `pause_queue`, `resume_queue`, `wait`, and
 `mark_region_health`, plus traffic actions `shift_traffic`,
-`failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`.
+`failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`, and
+DNS actions `update_dns_record`, `mark_dns_health_check`, and
+`finalize_dns_record`.
 
 ## Safety properties
 
@@ -110,6 +114,10 @@ The prototype checks pragmatic cloud-operations hazards:
 - no weighted traffic to unhealthy regions, drained load balancers, or regions
   lacking available service capacity, and route weights must remain normalized
   to 100%;
+- no DNS cutover to unhealthy or capacity-less regions, no cutover before target
+  health-check convergence, no premature DNS finalization before the TTL window
+  elapses, and no stateful split-brain DNS window unless explicitly modeled as
+  active-active safe;
 - declared step preconditions and effects must hold.
 
 ## Architecture
@@ -210,8 +218,8 @@ counterexamples plus one blocking data-deletion prose obligation as owner-visibl
 remediation debt.
 
 `frv coverage` maps each current invariant template to the services, databases,
-queues, alerts, credentials (currently no credential state in the DSL), owners,
-regions, and Markdown sections it covers:
+queues, alerts, DNS records, credentials (currently no credential state in the
+DSL), owners, regions, and Markdown sections it covers:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli coverage \
@@ -223,6 +231,10 @@ The checked-in outputs `reports/current_impact_coverage.md` and
 `tempo-query` service, `tenant-index-fallback-scan` queue, `prod` region, owner,
 and executable DSL section are covered by five invariant/proof-obligation
 templates, while three destructive-data prose obligations remain coverage gaps.
+
+The checked-in DNS case-study reports (`reports/dnsswitch_dns_audit.md`,
+`reports/dnsswitch_dns_audit.json`, and `reports/dnsswitch_dns_coverage.md`)
+show the same report surfaces on a bounded DNS failover fixture.
 
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, credential handling, customer-notification gaps, rollback ambiguity,
@@ -247,6 +259,16 @@ report is checked in as `reports/current_impact_readiness.md` and
 `reports/current_impact_readiness.json`; the owner-facing scorecard is checked in
 as `reports/current_impact_owner_scorecard.md` and
 `reports/current_impact_owner_scorecard.json`.
+
+## DNS failover public-pattern case study
+
+`case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md`
+is an independently authored bounded model derived from public DNS failover
+guidance in `Hotpirsch/dnsswitch` (retrieved 2026-05-29). It demonstrates the
+new DNS semantics by reporting a cutover before target health-check convergence,
+before west-region service capacity exists, during a stateful TTL split-brain
+window, and with premature finalization before TTL expiry. This is a defensive
+artifact-level validation, not a claim about a live deployment.
 
 ## Historical public case study
 
@@ -357,7 +379,8 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - Concurrency is represented as permissible step reordering, not real-time interleavings.
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
 - The benchmark corpus is small: it includes synthetic examples plus bounded
-  public historical/current fixtures, and should be expanded before empirical claims.
+  public historical/current fixtures for database failover, queue fallback, and
+  DNS failover patterns, and should be expanded before empirical claims.
 - The historical GitHub fixture is reconstructed from public facts, not exact
   internal runbook text.
 - The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.

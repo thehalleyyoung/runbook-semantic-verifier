@@ -82,6 +82,78 @@
         {
           "additionalProperties": false,
           "properties": {
+            "kind": {
+              "const": "dns_health_check_converged"
+            },
+            "record": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "record",
+            "region"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "dns_no_split_brain"
+            },
+            "record": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "record"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "dns_points_to"
+            },
+            "record": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "record",
+            "region"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "dns_ttl_elapsed"
+            },
+            "record": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "record"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "enabled": {
               "type": "boolean"
             },
@@ -534,6 +606,34 @@
           "if": {
             "properties": {
               "action": {
+                "const": "finalize_dns_record"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "record": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "record"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "finish_migration"
               }
             },
@@ -552,6 +652,42 @@
                 },
                 "required": [
                   "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "mark_dns_health_check"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "converged": {
+                    "type": "boolean"
+                  },
+                  "record": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "converged",
+                  "record",
+                  "region"
                 ],
                 "type": "object"
               }
@@ -946,6 +1082,38 @@
           "if": {
             "properties": {
               "action": {
+                "const": "update_dns_record"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "record": {
+                    "type": "string"
+                  },
+                  "target_region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "record",
+                  "target_region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "wait"
               }
             },
@@ -981,7 +1149,9 @@
             "drain_replica",
             "failover_database",
             "failover_traffic",
+            "finalize_dns_record",
             "finish_migration",
+            "mark_dns_health_check",
             "mark_region_health",
             "pause_queue",
             "restart_service",
@@ -994,6 +1164,7 @@
             "shift_traffic",
             "suppress_alert",
             "toggle_flag",
+            "update_dns_record",
             "wait"
           ],
           "type": "string"
@@ -1104,6 +1275,48 @@
                 "type": "string"
               }
             },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "dns_records": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "allow_split_brain": {
+                "type": "boolean"
+              },
+              "health_check_converged_regions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "last_changed_minute": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "previous_region": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "region": {
+                "type": "string"
+              },
+              "service": {
+                "type": "string"
+              },
+              "ttl_minutes": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "service",
+              "region"
+            ],
             "type": "object"
           },
           "type": "object"

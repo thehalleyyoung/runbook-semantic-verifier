@@ -88,6 +88,17 @@
         },
         "drained_regions": []
       }
+    },
+    "dns_records": {
+      "api.example.com": {
+        "service": "api",
+        "region": "us-east",
+        "ttl_minutes": 5,
+        "last_changed_minute": 0,
+        "previous_region": null,
+        "health_check_converged_regions": ["us-east", "us-west"],
+        "allow_split_brain": true
+      }
     }
   },
   "steps": [

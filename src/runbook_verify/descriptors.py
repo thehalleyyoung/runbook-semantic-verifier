@@ -115,6 +115,9 @@ ACTION_DESCRIPTORS: dict[str, OperationDescriptor] = {
     "failover_traffic": OperationDescriptor("failover_traffic", (F("route"), F("target_region")), "Moves all modeled route traffic to one target region and zeroes the other route weights."),
     "drain_load_balancer": OperationDescriptor("drain_load_balancer", (F("route"), F("region")), "Marks a route's regional load balancer drained; traffic must already be shifted away."),
     "restore_load_balancer": OperationDescriptor("restore_load_balancer", (F("route"), F("region")), "Marks a route's regional load balancer active again."),
+    "update_dns_record": OperationDescriptor("update_dns_record", (F("record"), F("target_region")), "Changes a DNS record target region and starts the modeled TTL propagation window."),
+    "mark_dns_health_check": OperationDescriptor("mark_dns_health_check", (F("record"), F("region"), F("converged", "boolean")), "Records whether DNS health checks have converged for a record's regional endpoint."),
+    "finalize_dns_record": OperationDescriptor("finalize_dns_record", (F("record"),), "Clears a DNS record's prior target after the TTL wait obligation has elapsed."),
 }
 
 CONDITION_DESCRIPTORS: dict[str, OperationDescriptor] = {
@@ -134,6 +137,10 @@ CONDITION_DESCRIPTORS: dict[str, OperationDescriptor] = {
     "traffic_weight_at_most": OperationDescriptor("traffic_weight_at_most", (F("route"), F("region"), F("percent", "integer", minimum=0, maximum=100)), "Requires or asserts a maximum weighted-routing percentage for a route region."),
     "traffic_weight_at_least": OperationDescriptor("traffic_weight_at_least", (F("route"), F("region"), F("percent", "integer", minimum=0, maximum=100)), "Requires or asserts a minimum weighted-routing percentage for a route region."),
     "load_balancer_active": OperationDescriptor("load_balancer_active", (F("route"), F("region")), "Requires or asserts that a route's regional load balancer is not drained."),
+    "dns_points_to": OperationDescriptor("dns_points_to", (F("record"), F("region")), "Requires or asserts that a DNS record points at a region."),
+    "dns_ttl_elapsed": OperationDescriptor("dns_ttl_elapsed", (F("record"),), "Requires or asserts that the record's TTL propagation window has elapsed."),
+    "dns_health_check_converged": OperationDescriptor("dns_health_check_converged", (F("record"), F("region")), "Requires or asserts health-check convergence before DNS cutover."),
+    "dns_no_split_brain": OperationDescriptor("dns_no_split_brain", (F("record"),), "Requires or asserts no active DNS split-brain window for stateful records."),
 }
 
 ACTION_SCHEMAS = {name: {"required": desc.required, "optional": desc.optional} for name, desc in ACTION_DESCRIPTORS.items()}

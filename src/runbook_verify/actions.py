@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from .descriptors import ACTION_SCHEMAS, CONDITION_SCHEMAS
-from .model import Alert, Database, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Database, DNSRecord, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
 
 
 class ActionError(ValueError):
@@ -21,6 +21,7 @@ def _copy_state(state: SystemState, **updates: Any) -> SystemState:
         "flags": state.flags,
         "deployments": state.deployments,
         "traffic_routes": state.traffic_routes,
+        "dns_records": state.dns_records,
         "clock_minute": state.clock_minute,
     }
     data.update(updates)
@@ -60,6 +61,13 @@ def _route(state: SystemState, name: str) -> TrafficRoute:
         return state.traffic_routes[name]
     except KeyError as exc:
         raise ActionError(f"unknown traffic route {name!r}") from exc
+
+
+def _dns_record(state: SystemState, name: str) -> DNSRecord:
+    try:
+        return state.dns_records[name]
+    except KeyError as exc:
+        raise ActionError(f"unknown DNS record {name!r}") from exc
 
 
 def _with_service(state: SystemState, service: Service) -> SystemState:
@@ -226,6 +234,35 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         routes = dict(state.traffic_routes)
         routes[route.name] = replace(route, drained_regions=route.drained_regions - {region})
         return _copy_state(state, traffic_routes=routes)
+    if action == "update_dns_record":
+        record = _dns_record(state, str(p["record"]))
+        target = str(p["target_region"])
+        if target not in state.regions:
+            raise ActionError(f"unknown region {target!r}")
+        if target == record.region:
+            return state
+        records = dict(state.dns_records)
+        records[record.name] = replace(record, region=target, previous_region=record.region, last_changed_minute=state.clock_minute)
+        return _copy_state(state, dns_records=records)
+    if action == "mark_dns_health_check":
+        record = _dns_record(state, str(p["record"]))
+        region = str(p["region"])
+        if region not in state.regions:
+            raise ActionError(f"unknown region {region!r}")
+        converged = bool(p["converged"])
+        regions = set(record.health_check_converged_regions)
+        if converged:
+            regions.add(region)
+        else:
+            regions.discard(region)
+        records = dict(state.dns_records)
+        records[record.name] = replace(record, health_check_converged_regions=frozenset(regions))
+        return _copy_state(state, dns_records=records)
+    if action == "finalize_dns_record":
+        record = _dns_record(state, str(p["record"]))
+        records = dict(state.dns_records)
+        records[record.name] = replace(record, previous_region=None)
+        return _copy_state(state, dns_records=records)
     raise ActionError(f"unsupported action {action!r}")
 
 
@@ -270,4 +307,16 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
     if kind == "load_balancer_active":
         route = _route(state, str(condition["route"]))
         return str(condition["region"]) not in route.drained_regions
+    if kind == "dns_points_to":
+        record = _dns_record(state, str(condition["record"]))
+        return record.region == str(condition["region"])
+    if kind == "dns_ttl_elapsed":
+        record = _dns_record(state, str(condition["record"]))
+        return record.ttl_elapsed(state.clock_minute)
+    if kind == "dns_health_check_converged":
+        record = _dns_record(state, str(condition["record"]))
+        return str(condition["region"]) in record.health_check_converged_regions
+    if kind == "dns_no_split_brain":
+        record = _dns_record(state, str(condition["record"]))
+        return record.allow_split_brain or record.ttl_elapsed(state.clock_minute)
     raise ActionError(f"unsupported condition kind {kind!r}")

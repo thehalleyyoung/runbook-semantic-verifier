@@ -34,10 +34,6 @@ class ParserTests(unittest.TestCase):
                 ],
             })
 
-
-if __name__ == "__main__":
-    unittest.main()
-
 class ParserValidationTests(unittest.TestCase):
     def test_rejects_unknown_action_and_params(self):
         with self.assertRaisesRegex(RunbookParseError, "unsupported action"):
@@ -198,3 +194,45 @@ class ParserValidationTests(unittest.TestCase):
                 "system": {"regions": {"east": {}}, "traffic_routes": {}},
                 "steps": [{"id": "shift", "action": "shift_traffic", "params": {"route": "api-public", "region": "east", "percent": 101}}],
             })
+
+    def test_parses_and_validates_dns_record_references(self):
+        runbook = parse_runbook({
+            "system": {
+                "regions": {"east": {}, "west": {}},
+                "services": {"api": {"min_available": 1, "replicas": [{"id": "api-east", "region": "east"}]}},
+                "dns_records": {"api.example.com": {
+                    "service": "api",
+                    "region": "east",
+                    "ttl_minutes": 5,
+                    "health_check_converged_regions": ["east"],
+                }},
+            },
+            "steps": [{"id": "dns", "action": "update_dns_record", "params": {"record": "api.example.com", "target_region": "west"}}],
+        })
+        self.assertEqual(runbook.state.dns_records["api.example.com"].ttl_minutes, 5)
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown DNS record"):
+            parse_runbook({
+                "system": {"regions": {"west": {}}},
+                "steps": [{"id": "dns", "action": "update_dns_record", "params": {"record": "missing", "target_region": "west"}}],
+            })
+
+    def test_rejects_invalid_dns_entity_references(self):
+        with self.assertRaisesRegex(RunbookParseError, "unknown service"):
+            parse_runbook({
+                "system": {"regions": {"east": {}}, "dns_records": {"api.example.com": {"service": "api", "region": "east"}}},
+                "steps": [],
+            })
+        with self.assertRaisesRegex(RunbookParseError, "unknown region"):
+            parse_runbook({
+                "system": {
+                    "regions": {"east": {}},
+                    "services": {"api": {"min_available": 0, "replicas": []}},
+                    "dns_records": {"api.example.com": {"service": "api", "region": "west"}},
+                },
+                "steps": [],
+            })
+
+
+if __name__ == "__main__":
+    unittest.main()

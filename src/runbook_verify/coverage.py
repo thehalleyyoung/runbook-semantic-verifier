@@ -81,6 +81,7 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
         f"- Databases covered: {summary['covered_databases']}/{summary['databases']}",
         f"- Queues covered: {summary['covered_queues']}/{summary['queues']}",
         f"- Alerts covered: {summary['covered_alerts']}/{summary['alerts']}",
+        f"- DNS records covered: {summary['covered_dns_records']}/{summary['dns_records']}",
         f"- Credentials covered: {summary['covered_credentials']}/{summary['credentials']} (credential state is not implemented in the current DSL)",
         f"- Regions covered: {summary['covered_regions']}/{summary['regions']}",
         f"- Owners: {_csv(summary['owners']) or 'none'}",
@@ -91,10 +92,10 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
         "",
     ]
     if report["properties"]:
-        lines.extend(["| Property | Runbook | Owners | Services | Databases | Queues | Alerts | Credentials | Regions | Steps/sections |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| Property | Runbook | Owners | Services | Databases | Queues | Alerts | DNS records | Credentials | Regions | Steps/sections |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"])
         for item in report["properties"]:
             lines.append(
-                "| `{property}` | `{path}` | {owners} | {services} | {databases} | {queues} | {alerts} | {credentials} | {regions} | {steps} |".format(
+                "| `{property}` | `{path}` | {owners} | {services} | {databases} | {queues} | {alerts} | {dns_records} | {credentials} | {regions} | {steps} |".format(
                     property=item["property"],
                     path=item["path"],
                     owners=_csv(item["owners"]),
@@ -102,6 +103,7 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
                     databases=_csv(item["databases"]),
                     queues=_csv(item["queues"]),
                     alerts=_csv(item["alerts"]),
+                    dns_records=_csv(item["dns_records"]),
                     credentials=_csv(item["credentials"]),
                     regions=_csv(item["regions"]),
                     steps=_step_summary(item["steps"]),
@@ -121,7 +123,7 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
         for item in report["uncovered_entities"]:
             lines.append(f"- `{item['kind']}` `{item['name']}` in `{item['path']}`: {item['message']}")
     else:
-        lines.append("Every modeled service, database, queue, alert, region, and prose obligation is linked to a current invariant template.")
+        lines.append("Every modeled service, database, queue, alert, DNS record, region, and prose obligation is linked to a current invariant template.")
     return "\n".join(lines) + "\n"
 
 
@@ -183,11 +185,19 @@ def _properties_for(runbook: Runbook) -> list[str]:
         "no_traffic_to_drained_load_balancer",
         "no_draining_load_balancer_with_traffic",
         "traffic_requires_regional_capacity",
+        "dns_target_region_healthy",
+        "dns_health_check_converged_before_cutover",
+        "dns_requires_regional_capacity",
+        "dns_ttl_elapsed_before_finalize",
+        "dns_ttl_elapsed_before_recursion",
+        "dns_no_split_brain_during_ttl",
         "declared_precondition",
         "declared_effect",
     }
     if not runbook.state.traffic_routes and not any(step.action in {"shift_traffic", "failover_traffic", "drain_load_balancer", "restore_load_balancer"} for step in runbook.steps):
         properties -= {"traffic_weights_sum_to_100", "no_traffic_to_unhealthy_region", "no_traffic_to_drained_load_balancer", "no_draining_load_balancer_with_traffic", "traffic_requires_regional_capacity"}
+    if not runbook.state.dns_records and not any("record" in step.params or step.action in {"update_dns_record", "mark_dns_health_check", "finalize_dns_record"} for step in runbook.steps):
+        properties -= {"dns_target_region_healthy", "dns_health_check_converged_before_cutover", "dns_requires_regional_capacity", "dns_ttl_elapsed_before_finalize", "dns_ttl_elapsed_before_recursion", "dns_no_split_brain_during_ttl"}
     if not runbook.state.queues and not any("queue" in step.params for step in runbook.steps):
         properties -= {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog"}
     if not runbook.state.alerts and not any("alert" in step.params for step in runbook.steps):
@@ -212,6 +222,7 @@ def _property_record(item: _LoadedRunbook, prop: str) -> dict[str, Any]:
         "databases": sorted(_databases_for_property(item.runbook, prop, steps)),
         "queues": sorted(_queues_for_property(item.runbook, prop, steps)),
         "alerts": sorted(_alerts_for_property(item.runbook, prop, steps)),
+        "dns_records": sorted(_dns_records_for_property(item.runbook, prop, steps)),
         "credentials": [],
         "regions": sorted(_regions_for_property(item.runbook, prop, steps)),
         "steps": [_step_record(item, step) for step in steps],
@@ -232,6 +243,8 @@ def _steps_for_property(runbook: Runbook, prop: str) -> list[Step]:
         return [step for step in runbook.steps if "queue" in step.params]
     if prop.startswith("traffic_") or prop in {"no_traffic_to_unhealthy_region", "no_traffic_to_drained_load_balancer", "no_draining_load_balancer_with_traffic"}:
         return [step for step in runbook.steps if "route" in step.params or step.action in {"shift_traffic", "failover_traffic", "drain_load_balancer", "restore_load_balancer"}]
+    if prop.startswith("dns_"):
+        return [step for step in runbook.steps if "record" in step.params or step.action in {"update_dns_record", "mark_dns_health_check", "finalize_dns_record", "wait"}]
     if prop == "declared_precondition":
         return [step for step in runbook.steps if step.requires]
     if prop == "declared_effect":
@@ -249,6 +262,8 @@ def _services_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> se
         names.update(runbook.state.services)
     if prop.startswith("traffic_") or prop.startswith("no_traffic"):
         names.update(route.service for route in runbook.state.traffic_routes.values())
+    if prop.startswith("dns_"):
+        names.update(record.service for record in runbook.state.dns_records.values())
     for step in steps:
         if "service" in step.params:
             names.add(str(step.params["service"]))
@@ -287,6 +302,16 @@ def _alerts_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set[
     return names
 
 
+def _dns_records_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set[str]:
+    names: set[str] = set()
+    if prop.startswith("dns_"):
+        names.update(runbook.state.dns_records)
+    for step in steps:
+        if "record" in step.params:
+            names.add(str(step.params["record"]))
+    return names
+
+
 def _regions_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set[str]:
     names: set[str] = set()
     if prop in {"service_min_available", "no_draining_all_replicas", "traffic_requires_regional_capacity"}:
@@ -300,6 +325,12 @@ def _regions_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set
         for route in runbook.state.traffic_routes.values():
             names.update(route.weights)
             names.update(route.drained_regions)
+    if prop.startswith("dns_"):
+        for record in runbook.state.dns_records.values():
+            names.add(record.region)
+            if record.previous_region:
+                names.add(record.previous_region)
+            names.update(record.health_check_converged_regions)
     for step in steps:
         for key in ("region", "target_region"):
             if key in step.params:
@@ -312,6 +343,8 @@ def _formal_obligation(prop: str) -> str:
         return "Hoare-style local assertion over step pre/postconditions"
     if prop in {"bounded_alert_suppression", "quorum_before_data_loss_action"}:
         return "safety invariant checked before the action transition"
+    if prop.startswith("dns_"):
+        return "DNS temporal safety invariant over health-check convergence, TTL propagation, and split-brain windows"
     return "temporal safety invariant checked over bounded small-step traces"
 
 
@@ -349,6 +382,7 @@ def _runbook_record(item: _LoadedRunbook) -> dict[str, Any]:
         "databases": sorted(item.runbook.state.databases),
         "queues": sorted(item.runbook.state.queues),
         "alerts": sorted(item.runbook.state.alerts),
+        "dns_records": sorted(item.runbook.state.dns_records),
         "credentials": [],
         "regions": sorted(item.runbook.state.regions),
     }
@@ -379,6 +413,7 @@ def _uncovered_records(loaded: list[_LoadedRunbook], property_records: list[dict
         "databases": {name for record in property_records for name in record["databases"]},
         "queues": {name for record in property_records for name in record["queues"]},
         "alerts": {name for record in property_records for name in record["alerts"]},
+        "dns_records": {name for record in property_records for name in record["dns_records"]},
         "regions": {name for record in property_records for name in record["regions"]},
     }
     records: list[dict[str, Any]] = []
@@ -388,9 +423,10 @@ def _uncovered_records(loaded: list[_LoadedRunbook], property_records: list[dict
             ("database", item.runbook.state.databases),
             ("queue", item.runbook.state.queues),
             ("alert", item.runbook.state.alerts),
+            ("dns_record", item.runbook.state.dns_records),
             ("region", item.runbook.state.regions),
         ):
-            plural = f"{kind}s" if kind != "queue" else "queues"
+            plural = f"{kind}s" if kind not in {"queue", "dns_record"} else ("queues" if kind == "queue" else "dns_records")
             for name in names:
                 if name not in covered[plural]:
                     records.append({"kind": kind, "name": name, "path": str(item.path), "message": "entity is declared but no current invariant template references it"})
@@ -405,6 +441,7 @@ def _summary(root: Path, loaded: list[_LoadedRunbook], parse_errors: list[dict[s
         "databases": {name for item in loaded for name in item.runbook.state.databases},
         "queues": {name for item in loaded for name in item.runbook.state.queues},
         "alerts": {name for item in loaded for name in item.runbook.state.alerts},
+        "dns_records": {name for item in loaded for name in item.runbook.state.dns_records},
         "regions": {name for item in loaded for name in item.runbook.state.regions},
         "credentials": set(),
     }
@@ -413,6 +450,7 @@ def _summary(root: Path, loaded: list[_LoadedRunbook], parse_errors: list[dict[s
         "databases": {name for record in properties for name in record["databases"]},
         "queues": {name for record in properties for name in record["queues"]},
         "alerts": {name for record in properties for name in record["alerts"]},
+        "dns_records": {name for record in properties for name in record["dns_records"]},
         "regions": {name for record in properties for name in record["regions"]},
         "credentials": {name for record in properties for name in record["credentials"]},
     }
@@ -429,6 +467,8 @@ def _summary(root: Path, loaded: list[_LoadedRunbook], parse_errors: list[dict[s
         "covered_queues": len(entities["queues"] & covered["queues"]),
         "alerts": len(entities["alerts"]),
         "covered_alerts": len(entities["alerts"] & covered["alerts"]),
+        "dns_records": len(entities["dns_records"]),
+        "covered_dns_records": len(entities["dns_records"] & covered["dns_records"]),
         "credentials": len(entities["credentials"]),
         "covered_credentials": len(entities["credentials"] & covered["credentials"]),
         "regions": len(entities["regions"]),

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, OperationDescriptor
-from .model import Alert, Database, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Database, DNSRecord, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute
 
 
 @dataclass
@@ -66,6 +66,7 @@ def _normalize_field(field: str | None) -> str | None:
     normalized = normalized.replace("alert ", "system.alerts.")
     normalized = normalized.replace("flag ", "system.feature_flags.")
     normalized = normalized.replace("traffic route ", "system.traffic_routes.")
+    normalized = normalized.replace("DNS record ", "system.dns_records.")
     normalized = normalized.replace("step ", "steps.")
     return normalized
 
@@ -238,7 +239,35 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
         if unknown_drained:
             raise RunbookParseError(f"traffic route {name}.drained_regions references unknown region(s): {', '.join(unknown_drained)}", field=f"system.traffic_routes.{name}.drained_regions")
         traffic_routes[name] = TrafficRoute(name=name, service=service, weights=weights, drained_regions=drained_regions)
-    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
+    dns_records: dict[str, DNSRecord] = {}
+    for name, cfg_any in _require_mapping(raw.get("dns_records", {}), "system.dns_records").items():
+        name = str(name)
+        cfg = _require_mapping(cfg_any, f"system.dns_records.{name}")
+        service = str(_require_key(cfg, "service", f"DNS record {name}"))
+        if service not in services:
+            raise RunbookParseError(f"DNS record {name}.service references unknown service {service!r}", field=f"system.dns_records.{name}.service")
+        region = str(_require_key(cfg, "region", f"DNS record {name}"))
+        if regions and region not in regions:
+            raise RunbookParseError(f"DNS record {name}.region references unknown region {region!r}", field=f"system.dns_records.{name}.region")
+        previous_region_raw = cfg.get("previous_region")
+        previous_region = str(previous_region_raw) if previous_region_raw is not None else None
+        if previous_region is not None and regions and previous_region not in regions:
+            raise RunbookParseError(f"DNS record {name}.previous_region references unknown region {previous_region!r}", field=f"system.dns_records.{name}.previous_region")
+        converged_regions = frozenset(str(item) for item in _require_list(cfg.get("health_check_converged_regions", []), f"DNS record {name}.health_check_converged_regions"))
+        unknown_converged = sorted(region_name for region_name in converged_regions if regions and region_name not in regions)
+        if unknown_converged:
+            raise RunbookParseError(f"DNS record {name}.health_check_converged_regions references unknown region(s): {', '.join(unknown_converged)}", field=f"system.dns_records.{name}.health_check_converged_regions")
+        dns_records[name] = DNSRecord(
+            name=name,
+            service=service,
+            region=region,
+            ttl_minutes=_non_negative_int(cfg.get("ttl_minutes", 5), f"DNS record {name}.ttl_minutes"),
+            last_changed_minute=_non_negative_int(cfg.get("last_changed_minute", 0), f"DNS record {name}.last_changed_minute"),
+            previous_region=previous_region,
+            health_check_converged_regions=converged_regions,
+            allow_split_brain=bool(cfg.get("allow_split_brain", False)),
+        )
+    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
@@ -412,6 +441,8 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
             require_entity("queue", str(params["queue"]), state.queues)
         if "route" in params:
             require_entity("traffic route", str(params["route"]), state.traffic_routes)
+        if "record" in params:
+            require_entity("DNS record", str(params["record"]), state.dns_records)
         if "region" in params:
             require_entity("region", str(params["region"]), state.regions)
         if "target_region" in params:
@@ -436,6 +467,7 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         ("region", state.regions, "region"),
         ("flag", state.flags, "feature flag"),
         ("route", state.traffic_routes, "traffic route"),
+        ("record", state.dns_records, "DNS record"),
     ):
         if key in condition and str(condition[key]) not in collection:
             raise RunbookParseError(f"step {step_id} condition references unknown {label} {condition[key]!r}", field=f"step {step_id}.condition.{key}")

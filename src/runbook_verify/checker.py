@@ -167,6 +167,21 @@ class Checker:
                 violations.append(_violation("no_traffic_to_drained_load_balancer", f"route {route.name} target {target} load balancer is drained", trace + (step.id,), step.id))
             if target not in state.regions or not state.regions[target].healthy:
                 violations.append(_violation("no_traffic_to_unhealthy_region", f"route {route.name} target {target} region is unhealthy", trace + (step.id,), step.id))
+        if step.action == "update_dns_record":
+            record = state.dns_records[str(step.params["record"])]
+            target = str(step.params["target_region"])
+            if target not in state.regions or not state.regions[target].healthy:
+                violations.append(_violation("dns_target_region_healthy", f"DNS record {record.name} target {target} region is unhealthy", trace + (step.id,), step.id))
+            if target not in record.health_check_converged_regions:
+                violations.append(_violation("dns_health_check_converged_before_cutover", f"DNS record {record.name} target {target} health check has not converged", trace + (step.id,), step.id))
+            if not _service_has_capacity_in_region(state, record.service, target):
+                violations.append(_violation("dns_requires_regional_capacity", f"DNS record {record.name} targets {target} but service {record.service} has no available replica there", trace + (step.id,), step.id))
+            if record.previous_region is not None and not record.ttl_elapsed(state.clock_minute) and not record.allow_split_brain:
+                violations.append(_violation("dns_ttl_elapsed_before_recursion", f"DNS record {record.name} is still inside prior TTL window before another cutover", trace + (step.id,), step.id))
+        if step.action == "finalize_dns_record":
+            record = state.dns_records[str(step.params["record"])]
+            if not record.ttl_elapsed(state.clock_minute):
+                violations.append(_violation("dns_ttl_elapsed_before_finalize", f"DNS record {record.name} TTL window has not elapsed before finalize", trace + (step.id,), step.id))
         return violations
 
     def _post_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...]) -> list[Violation]:
@@ -193,6 +208,13 @@ class Checker:
                     violations.append(_violation("no_traffic_to_unhealthy_region", f"route {route.name} sends {weight}% traffic to unhealthy region {region}", trace, step.id))
                 if svc is not None and not any(r.region == region and r.healthy and not r.drained for r in svc.replicas):
                     violations.append(_violation("traffic_requires_regional_capacity", f"route {route.name} sends {weight}% traffic to {region} but service {svc.name} has no available replica there", trace, step.id))
+        for record in state.dns_records.values():
+            if record.region not in state.regions or not state.regions[record.region].healthy:
+                violations.append(_violation("dns_target_region_healthy", f"DNS record {record.name} points to unhealthy region {record.region}", trace, step.id))
+            if not _service_has_capacity_in_region(state, record.service, record.region):
+                violations.append(_violation("dns_requires_regional_capacity", f"DNS record {record.name} points to {record.region} but service {record.service} has no available replica there", trace, step.id))
+            if record.previous_region is not None and not record.ttl_elapsed(state.clock_minute) and not record.allow_split_brain:
+                violations.append(_violation("dns_no_split_brain_during_ttl", f"DNS record {record.name} may answer both {record.previous_region} and {record.region} until minute {record.last_changed_minute + record.ttl_minutes}", trace, step.id))
         for condition in step.effects:
             try:
                 holds = condition_holds(state, condition)
@@ -223,7 +245,7 @@ def _record_obligations(result: CheckResult, group: str, checked: int, failures:
 
 
 def _safety_obligation_count(state: SystemState) -> int:
-    return len(state.services) * 2 + len(state.queues) + len(state.traffic_routes)
+    return len(state.services) * 2 + len(state.queues) + len(state.traffic_routes) + len(state.dns_records) * 3
 
 
 def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
@@ -253,11 +275,24 @@ REMEDIATIONS = {
     "no_traffic_to_drained_load_balancer": "Restore the regional load balancer or shift traffic away before relying on that route.",
     "no_draining_load_balancer_with_traffic": "Shift traffic weight to 0% for the region before draining its load balancer.",
     "traffic_requires_regional_capacity": "Scale or restore service replicas in the target region before assigning traffic there.",
+    "dns_target_region_healthy": "Require region_healthy and restore DNS target health before cutover.",
+    "dns_health_check_converged_before_cutover": "Run or wait for DNS health-check convergence before changing the record.",
+    "dns_requires_regional_capacity": "Scale or restore service replicas in the DNS target region before cutover.",
+    "dns_ttl_elapsed_before_recursion": "Wait for the prior DNS TTL window to elapse before issuing another cutover.",
+    "dns_ttl_elapsed_before_finalize": "Insert a wait step long enough to cover the record TTL before finalizing DNS migration.",
+    "dns_no_split_brain_during_ttl": "Use an active-active-safe record (allow_split_brain=true) or avoid stateful writes until the TTL window elapses.",
 }
 
 
 def _violation(property: str, message: str, trace: tuple[str, ...], step: str | None = None) -> Violation:
     return Violation(property, message, _minimize_trace(trace, step), step, REMEDIATIONS.get(property))
+
+
+def _service_has_capacity_in_region(state: SystemState, service: str, region: str) -> bool:
+    svc = state.services.get(service)
+    if svc is None:
+        return False
+    return any(replica.region == region and replica.healthy and not replica.drained for replica in svc.replicas)
 
 
 def _minimize_trace(trace: tuple[str, ...], step: str | None) -> tuple[str, ...]:

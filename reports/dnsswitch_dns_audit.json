@@ -1,0 +1,126 @@
+{
+  "findings": [
+    {
+      "id": "finding-001",
+      "line": null,
+      "message": "DNS record checkout.example.com target west health check has not converged",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "rank": 3,
+      "recommendation": "Run or wait for DNS health-check convergence before changing the record.",
+      "rule": "dns_health_check_converged_before_cutover",
+      "semantic_obligation": "dns_health_check_converged_before_cutover",
+      "severity": "error",
+      "step": "cutover-dns-west",
+      "trace": [
+        "cutover-dns-west"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-002",
+      "line": null,
+      "message": "DNS record checkout.example.com may answer both east and west until minute 5",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "rank": 3,
+      "recommendation": "Use an active-active-safe record (allow_split_brain=true) or avoid stateful writes until the TTL window elapses.",
+      "rule": "dns_no_split_brain_during_ttl",
+      "semantic_obligation": "dns_no_split_brain_during_ttl",
+      "severity": "error",
+      "step": "cutover-dns-west",
+      "trace": [
+        "cutover-dns-west"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-003",
+      "line": null,
+      "message": "DNS record checkout.example.com targets west but service checkout has no available replica there",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "rank": 3,
+      "recommendation": "Scale or restore service replicas in the DNS target region before cutover.",
+      "rule": "dns_requires_regional_capacity",
+      "semantic_obligation": "dns_requires_regional_capacity",
+      "severity": "error",
+      "step": "cutover-dns-west",
+      "trace": [
+        "cutover-dns-west"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-004",
+      "line": null,
+      "message": "DNS record checkout.example.com points to west but service checkout has no available replica there",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "rank": 3,
+      "recommendation": "Scale or restore service replicas in the DNS target region before cutover.",
+      "rule": "dns_requires_regional_capacity",
+      "semantic_obligation": "dns_requires_regional_capacity",
+      "severity": "error",
+      "step": "cutover-dns-west",
+      "trace": [
+        "cutover-dns-west"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-005",
+      "line": null,
+      "message": "DNS record checkout.example.com points to west but service checkout has no available replica there",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "rank": 3,
+      "recommendation": "Scale or restore service replicas in the DNS target region before cutover.",
+      "rule": "dns_requires_regional_capacity",
+      "semantic_obligation": "dns_requires_regional_capacity",
+      "severity": "error",
+      "step": "finalize-before-ttl",
+      "trace": [
+        "cutover-dns-west",
+        "finalize-before-ttl"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-006",
+      "line": null,
+      "message": "DNS record checkout.example.com TTL window has not elapsed before finalize",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "rank": 3,
+      "recommendation": "Insert a wait step long enough to cover the record TTL before finalizing DNS migration.",
+      "rule": "dns_ttl_elapsed_before_finalize",
+      "semantic_obligation": "dns_ttl_elapsed_before_finalize",
+      "severity": "error",
+      "step": "finalize-before-ttl",
+      "trace": [
+        "cutover-dns-west",
+        "finalize-before-ttl"
+      ],
+      "type": "semantic"
+    }
+  ],
+  "runbooks": [
+    {
+      "name": "Reconstructed public DNS failover with missing TTL guards",
+      "path": "case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "safe": false,
+      "states_explored": 3,
+      "terminal_traces": 1,
+      "violations": 6
+    }
+  ],
+  "summary": {
+    "findings": 6,
+    "findings_by_rule": {
+      "dns_health_check_converged_before_cutover": 1,
+      "dns_no_split_brain_during_ttl": 1,
+      "dns_requires_regional_capacity": 3,
+      "dns_ttl_elapsed_before_finalize": 1
+    },
+    "findings_by_severity": {
+      "error": 6
+    },
+    "runbooks": 1,
+    "safe_runbooks": 0
+  }
+}

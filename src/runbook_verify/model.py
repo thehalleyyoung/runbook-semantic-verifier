@@ -79,6 +79,23 @@ class TrafficRoute:
 
 
 @dataclass(frozen=True)
+class DNSRecord:
+    name: str
+    service: str
+    region: str
+    ttl_minutes: int = 5
+    last_changed_minute: int = 0
+    previous_region: str | None = None
+    health_check_converged_regions: frozenset[str] = frozenset()
+    allow_split_brain: bool = False
+
+    def ttl_elapsed(self, clock_minute: int) -> bool:
+        if self.previous_region is None:
+            return True
+        return clock_minute - self.last_changed_minute >= self.ttl_minutes
+
+
+@dataclass(frozen=True)
 class SystemState:
     regions: dict[str, Region]
     services: dict[str, Service]
@@ -88,6 +105,7 @@ class SystemState:
     flags: dict[str, FeatureFlag]
     deployments: dict[str, Deployment]
     traffic_routes: dict[str, TrafficRoute]
+    dns_records: dict[str, DNSRecord]
     clock_minute: int = 0
 
     def fingerprint(self) -> tuple[Any, ...]:
@@ -109,7 +127,17 @@ class SystemState:
         traffic_routes = tuple(sorted((
             n, route.service, tuple(sorted(route.weights.items())), tuple(sorted(route.drained_regions))
         ) for n, route in self.traffic_routes.items()))
-        return (self.clock_minute, regions, services, databases, queues, alerts, flags, deployments, traffic_routes)
+        dns_records = tuple(sorted((
+            n,
+            record.service,
+            record.region,
+            record.ttl_minutes,
+            record.last_changed_minute,
+            record.previous_region,
+            tuple(sorted(record.health_check_converged_regions)),
+            record.allow_split_brain,
+        ) for n, record in self.dns_records.items()))
+        return (self.clock_minute, regions, services, databases, queues, alerts, flags, deployments, traffic_routes, dns_records)
 
 
 @dataclass(frozen=True)

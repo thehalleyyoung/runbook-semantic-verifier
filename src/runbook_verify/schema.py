@@ -160,6 +160,23 @@ def _system_schema() -> dict[str, Any]:
                     },
                 },
             },
+            "dns_records": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["service", "region"],
+                    "properties": {
+                        "service": {"type": "string"},
+                        "region": {"type": "string"},
+                        "ttl_minutes": {"type": "integer", "minimum": 0},
+                        "last_changed_minute": {"type": "integer", "minimum": 0},
+                        "previous_region": {"type": ["string", "null"]},
+                        "health_check_converged_regions": {"type": "array", "items": {"type": "string"}},
+                        "allow_split_brain": {"type": "boolean"},
+                    },
+                },
+            },
         },
     }
 
@@ -235,7 +252,7 @@ def _field_schema(field: FieldDescriptor | str) -> dict[str, Any]:
         if name == "percent":
             schema["maximum"] = 100
         return schema
-    if name in {"enabled", "healthy", "active", "data_loss_risk", "compatible", "in_progress"}:
+    if name in {"enabled", "healthy", "active", "data_loss_risk", "compatible", "in_progress", "converged", "allow_split_brain"}:
         return {"type": "boolean"}
     if name == "services":
         return {"type": "array", "items": {"type": "string"}}

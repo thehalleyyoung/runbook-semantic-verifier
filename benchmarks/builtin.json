@@ -81,6 +81,30 @@
       "responsible_disclosure": { "status": "public-information", "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim." },
       "validity_threats": ["Public runbook excerpts are incomplete", "Executable model is derived, not maintainer-authored", "Result is advisory and bounded to modeled queue fallback behavior."],
       "semantic_features": ["public_current_case", "markdown_prose_lint", "queue_pause", "benchmark_expected_prose_rules"]
+    },
+    {
+      "path": "../case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+      "provenance": {
+        "kind": "public-current",
+        "source_url": "https://github.com/Hotpirsch/dnsswitch",
+        "retrieved": "2026-05-29",
+        "notes": "Independently authored bounded model from public DNS failover guidance discussing health checks and TTL behavior."
+      },
+      "license": { "status": "public-license", "notes": "Benchmark stores original model/prose with link to public source; no project code copied." },
+      "abstraction_level": "derived-public-runbook",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "dns_health_check_converged_before_cutover",
+          "dns_no_split_brain_during_ttl",
+          "dns_requires_regional_capacity",
+          "dns_ttl_elapsed_before_finalize"
+        ],
+        "prose_rules": []
+      },
+      "responsible_disclosure": { "status": "public-information", "notes": "Defensive model of a documented DNS failover pattern; not an undisclosed vulnerability claim." },
+      "validity_threats": ["Derived from public documentation rather than an operator's private runbook", "DNS client caching behavior is abstracted to a bounded TTL window", "Service state is intentionally small."],
+      "semantic_features": ["public_current_case", "dns_failover", "ttl_window", "health_check_convergence", "split_brain"]
     }
   ]
 }

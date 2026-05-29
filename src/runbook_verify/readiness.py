@@ -13,8 +13,8 @@ from .model import Runbook, Step
 from .parser import RunbookParseError, load_document, parse_runbook
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
-ROLLBACK_ACTIONS = {"restore_replica", "restore_load_balancer", "resume_queue", "rollback_deployment", "failover_traffic", "shift_traffic"}
-HIGH_RISK_ACTIONS = {"drain_replica", "drain_region", "drain_load_balancer", "failover_database", "pause_queue", "run_migration"}
+ROLLBACK_ACTIONS = {"restore_replica", "restore_load_balancer", "resume_queue", "rollback_deployment", "failover_traffic", "shift_traffic", "update_dns_record"}
+HIGH_RISK_ACTIONS = {"drain_replica", "drain_region", "drain_load_balancer", "failover_database", "pause_queue", "run_migration", "update_dns_record"}
 
 
 @dataclass(frozen=True)
@@ -203,6 +203,7 @@ def _matches_scope(runbook: Runbook, options: ReadinessOptions) -> bool:
 def _services(runbook: Runbook) -> set[str]:
     names = set(runbook.state.services)
     names.update(route.service for route in runbook.state.traffic_routes.values())
+    names.update(record.service for record in runbook.state.dns_records.values())
     for step in runbook.steps:
         if "service" in step.params:
             names.add(str(step.params["service"]))
@@ -221,6 +222,11 @@ def _regions(runbook: Runbook) -> set[str]:
     for route in runbook.state.traffic_routes.values():
         names.update(route.weights)
         names.update(route.drained_regions)
+    for record in runbook.state.dns_records.values():
+        names.add(record.region)
+        if record.previous_region:
+            names.add(record.previous_region)
+        names.update(record.health_check_converged_regions)
     for step in runbook.steps:
         for key in ("region", "target_region"):
             if key in step.params:

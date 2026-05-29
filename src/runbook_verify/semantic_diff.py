@@ -312,6 +312,14 @@ def _state_signature(state: SystemState) -> dict[str, Any]:
         data[f"traffic_routes.{name}.service"] = route.service
         data[f"traffic_routes.{name}.weights"] = dict(sorted(route.weights.items()))
         data[f"traffic_routes.{name}.drained_regions"] = sorted(route.drained_regions)
+    for name, record in state.dns_records.items():
+        data[f"dns_records.{name}.service"] = record.service
+        data[f"dns_records.{name}.region"] = record.region
+        data[f"dns_records.{name}.ttl_minutes"] = record.ttl_minutes
+        data[f"dns_records.{name}.last_changed_minute"] = record.last_changed_minute
+        data[f"dns_records.{name}.previous_region"] = record.previous_region
+        data[f"dns_records.{name}.health_check_converged_regions"] = sorted(record.health_check_converged_regions)
+        data[f"dns_records.{name}.allow_split_brain"] = record.allow_split_brain
     return data
 
 
@@ -325,6 +333,10 @@ def _state_change_classification(field: str, old: Any, new: Any) -> str:
     if field.endswith(".depth") and isinstance(old, int) and isinstance(new, int) and new < old:
         return "assumption_weakening"
     if field.endswith(".consumers") and isinstance(old, int) and isinstance(new, int) and new > old:
+        return "assumption_weakening"
+    if field.endswith(".allow_split_brain") and old is False and new is True:
+        return "assumption_weakening"
+    if field.endswith(".ttl_minutes") and isinstance(old, int) and isinstance(new, int) and new < old:
         return "assumption_weakening"
     return "safety_relevant"
 
