@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **50/100** items in the local roadmap are complete. The
+Current roadmap status: **60/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces,
@@ -19,7 +19,10 @@ historical/current public case-study evidence.
 Benchmark reports now also carry validity-threat categories, workflow-baseline
 comparisons, semantic-diff remediation pairs, oracle-review labels, reproducible
 report-generation commands, contribution rules, and adoption-oriented risk/action
-summaries.
+summaries. The public docs now include an adoption/governance pack with CI and
+pre-commit templates, remediation playbooks, onboarding and migration guides,
+release criteria, an evidence ledger, responsible-claims guidance, and
+security/privacy handling notes.
 
 ## Quickstart
 
@@ -186,7 +189,7 @@ scripts/        reproducible benchmark-report regeneration helpers
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
 benchmarks/     reusable benchmark suite config files
-docs/           claims, evidence, and reproducibility notes
+docs/           claims, evidence, adoption templates, governance, and reproducibility notes
 tests/          parser, checker, CLI, exporter, and example tests
 ```
 
@@ -572,6 +575,31 @@ the reusable public benchmark config; `reports/builtin_benchmark_profile.md`
 records the same suite with the benchmark-reproduction profile metadata.
 `scripts/reproduce_benchmarks.py` regenerates these reports plus a reproduction
 manifest under `reports/`.
+
+## Adoption, governance, and evidence docs
+
+The repository includes public adoption material for teams evaluating semantic
+runbook checks without enabling every gate on day one:
+
+- `docs/templates/pre-commit-config.yaml` and
+  `docs/templates/github-actions-frv.yml` provide copy/adapt hooks for local and
+  pull-request validation.
+- `docs/onboarding_walkthrough.md` walks from a Tempo public-doc audit through
+  executable checking, CI gating, semantic diffing, readiness, owner-scorecard,
+  and coverage views.
+- `docs/remediation_playbooks.md` maps common counterexamples (quorum, queue,
+  DNS, cache, inventory, and alert-suppression obligations) to runbook edits and
+  verification commands.
+- `docs/migration_guide.md`, `docs/governance.md`, and
+  `docs/release_criteria.md` define staged adoption, waiver/severity policy,
+  benchmark-review requirements, and release checks.
+- `docs/responsible_claims.md`, `docs/security_privacy.md`, and
+  `docs/evidence_ledger.md` keep public claims bounded to checked models,
+  sanitized artifacts, and reproducible evidence.
+
+Artifact reviewers can start with `docs/artifact_evaluation.md`, which lists the
+required `make verify`, benchmark, audit, readiness, and semantic-diff commands
+and the expected bounded outcomes.
 
 External corpus:
 

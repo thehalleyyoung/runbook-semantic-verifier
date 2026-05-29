@@ -1,0 +1,47 @@
+# Copy to .github/workflows/frv.yml in a repository adopting this verifier.
+# The fast job runs on every pull request; the deep job is intended for protected branches.
+name: formal-runbook-verification
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "benchmarks/**"
+      - "case_studies/**"
+      - "examples/**"
+      - "src/**"
+      - "tests/**"
+  push:
+    branches: [main]
+
+jobs:
+  fast-runbook-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate representative executable models
+        run: |
+          PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
+          PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
+      - name: Gate high-risk runbook prose
+        run: |
+          PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks
+
+  protected-branch-bounded-checks:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run full verification suite
+        run: make verify
+      - name: Publish markdown benchmark evidence
+        run: PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown

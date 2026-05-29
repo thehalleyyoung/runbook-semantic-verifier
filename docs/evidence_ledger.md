@@ -1,0 +1,16 @@
+# Evidence ledger
+
+This ledger connects public README claims to concrete tests, commands, fixtures, or explicit assumptions. It is intentionally conservative: if evidence is advisory or bounded, the bound is named.
+
+| Claim | Evidence | Bound / assumption |
+| --- | --- | --- |
+| Parser/schema validation rejects malformed or inconsistent DSL inputs. | `python3 -m unittest tests.test_parser tests.test_benchmark`; `frv validate docs/schema/examples/complete_runbook.json`. | JSON Schema and parser cover the current DSL, not arbitrary prose. |
+| Bounded checking reports concrete semantic counterexamples. | `make verify`; `frv check examples/unsafe_runbook.json --expect-violations`; `frv check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations`. | Exhaustive only within each runbook's finite bound and abstraction. |
+| Markdown audit finds high-risk unmodeled operational prose. | `frv audit case_studies/current/grafana_tempo --format markdown --expect-findings`; tests in `tests/test_markdown_lint.py` and `tests/test_markdown_audit.py`. | Pattern-based rules do not prove all prose obligations. |
+| CI gates and annotations expose the same findings to review workflows. | `frv ci-gate case_studies/current/grafana_tempo --expect-blocks`; `frv annotate case_studies/current/grafana_tempo --format markdown --fail-on none`; tests in `tests/test_ci_gate.py` and `tests/test_pr_annotations.py`. | Gates block configured document findings, not live operations. |
+| Readiness and owner scorecards aggregate hazards, waivers, stale assumptions, and freshness. | `frv readiness case_studies/current/grafana_tempo ...`; `frv owner-scorecard case_studies/current/grafana_tempo ...`; tests in `tests/test_readiness.py` and `tests/test_owner_scorecard.py`. | Inventory checks compare against configured fixture data, not live discovery. |
+| Coverage reports map invariants to entities and source sections. | `frv coverage case_studies/current/grafana_tempo --format markdown`; tests in `tests/test_coverage.py`. | Uncovered prose is reported as a gap, not silently verified. |
+| Benchmark outputs include validity threats, workflow baselines, and adoption summaries. | `frv benchmark benchmarks/builtin.json --format markdown`; tests in `tests/test_benchmark.py`; checked-in `reports/builtin_benchmark.md`. | Adoption summaries are triage metadata unless measured studies are explicitly recorded. |
+| Public historical/current case studies are defensive, bounded artifacts. | `case_studies/` fixtures; `benchmarks/builtin.json`; `docs/claims_evidence.md`; generated reports in `reports/`. | Public facts, reconstructed assumptions, and synthetic mutants must remain distinguished. |
+| Workflow templates support pre-commit and GitHub Actions adoption. | `docs/templates/pre-commit-config.yaml`; `docs/templates/github-actions-frv.yml`; `tests/test_adoption_docs.py`. | Templates are copied and adapted by adopters; they are not enabled automatically in this repo. |
+| Governance, release, security, migration, and responsible-claims documents constrain public claims and releases. | `docs/governance.md`, `docs/release_criteria.md`, `docs/security_privacy.md`, `docs/migration_guide.md`, `docs/responsible_claims.md`. | Process documentation supports review; it does not replace maintainer judgment. |

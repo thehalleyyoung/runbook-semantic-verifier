@@ -38,7 +38,10 @@ runbook template.
 Benchmark evidence now includes categorized validity threats, workflow-baseline
 comparisons, semantic-diff remediation baselines, oracle-review label metadata,
 reproducible report-generation commands, and adoption-oriented risk/action
-summaries.
+summaries. Public adoption documentation now adds reusable CI/pre-commit
+templates, remediation playbooks, onboarding and migration guides, governance and
+release criteria, an evidence ledger, responsible-claims language, and
+security/privacy guidance for sanitized runbook artifacts.
 
 ## Bounded novelty claim
 
@@ -182,6 +185,9 @@ differently named system exists.
   oracle-review evidence.
 - The prior-art search cannot prove universal nonexistence; it only documents
   the public search performed for this repository.
+- The adoption and governance documents are process aids. They make bounded
+  evidence easier to reproduce and review, but do not prove that an adopting
+  organization's live systems are safe or compliant.
 
 ## Historical source
 
@@ -245,6 +251,17 @@ differently named system exists.
   - `docs/benchmark_contribution.md`
   - `docs/benchmark_reproducibility.md`
   - `docs/oracle_review_protocol.md`
+  - `docs/templates/pre-commit-config.yaml`
+  - `docs/templates/github-actions-frv.yml`
+  - `docs/remediation_playbooks.md`
+  - `docs/onboarding_walkthrough.md`
+  - `docs/migration_guide.md`
+  - `docs/responsible_claims.md`
+  - `docs/governance.md`
+  - `docs/artifact_evaluation.md`
+  - `docs/evidence_ledger.md`
+  - `docs/release_criteria.md`
+  - `docs/security_privacy.md`
 
 ## Prior-art search protocol for bounded novelty
 

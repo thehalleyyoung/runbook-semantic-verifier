@@ -1,0 +1,20 @@
+# Copy to .pre-commit-config.yaml in a repository that stores executable runbooks.
+# The hooks use only the Python standard library and the local formal-runbook-verification package.
+repos:
+  - repo: local
+    hooks:
+      - id: frv-validate-examples
+        name: frv validate executable runbook examples
+        entry: bash -c 'PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json && PYTHONPATH=src python3 -m runbook_verify.cli validate examples/queue_replay_safe.json && PYTHONPATH=src python3 -m runbook_verify.cli validate examples/cache_flush_safe.json'
+        language: system
+        pass_filenames: false
+      - id: frv-lint-runbook-markdown
+        name: frv lint Markdown runbooks for high-risk prose
+        entry: bash -c 'PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --format markdown --fail-on none >/dev/null'
+        language: system
+        pass_filenames: false
+      - id: frv-benchmark-smoke
+        name: frv built-in benchmark smoke
+        entry: bash -c 'PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json >/dev/null'
+        language: system
+        pass_filenames: false
