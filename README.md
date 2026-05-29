@@ -21,6 +21,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -118,6 +119,7 @@ src/runbook_verify/
   benchmark.py  benchmark harness and JSON/Markdown result renderers
   semantic_diff.py PR-oriented semantic diff and counterexample delta
   readiness.py  incident-readiness aggregation over checks, audits, freshness
+  owner_scorecard.py  owner/team scorecards for hazards, waivers, and remediation history
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -181,6 +183,24 @@ The checked-in outputs `reports/current_impact_readiness.md` and
 fixture because the model still has two bounded queue counterexamples and three
 unverified destructive/data-deletion prose claims.
 
+`frv owner-scorecard` groups the same bounded semantic and prose-audit evidence
+by owner metadata (`metadata.owners`, `metadata.owner`, `metadata.team`, or
+`metadata.service_owners`) and reports verified runbooks, open hazards, stale
+assumptions, waiver debt, proof-obligation failures, and recent remediation
+history:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard \
+  case_studies/current/grafana_tempo --as-of 2026-05-29 \
+  --format markdown --fail-on none
+```
+
+The checked-in outputs `reports/current_impact_owner_scorecard.md` and
+`reports/current_impact_owner_scorecard.json` assign the derived Tempo fixture to
+`grafana-tempo-public-fixture`, report `not_ready`, and show two bounded queue
+counterexamples plus one blocking data-deletion prose obligation as owner-visible
+remediation debt.
+
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, credential handling, customer-notification gaps, rollback ambiguity,
 alert suppression, failover, draining, and unmodeled escalation paths. Severity
@@ -201,7 +221,9 @@ combined audit report is checked in as `reports/current_impact_audit.md` and
 the first finding's explain report is checked in as `reports/current_impact_explain.md` and
 `reports/current_impact_explain.json`. The service/region-scoped readiness
 report is checked in as `reports/current_impact_readiness.md` and
-`reports/current_impact_readiness.json`.
+`reports/current_impact_readiness.json`; the owner-facing scorecard is checked in
+as `reports/current_impact_owner_scorecard.md` and
+`reports/current_impact_owner_scorecard.json`.
 
 ## Historical public case study
 

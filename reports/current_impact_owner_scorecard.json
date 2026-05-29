@@ -1,0 +1,118 @@
+{
+  "filters": {
+    "owner": null
+  },
+  "freshness": {
+    "as_of": "2026-05-29",
+    "max_age_days": 180
+  },
+  "owners": [
+    {
+      "active_waivers": 0,
+      "as_of": "2026-05-29",
+      "blocking_prose_findings": 1,
+      "expired_waivers": 0,
+      "missing_rollback_steps": 0,
+      "open_hazards": 3,
+      "owner": "grafana-tempo-public-fixture",
+      "parse_errors": 0,
+      "proof_obligations": {
+        "checked": {
+          "action_defined": 2,
+          "precondition": 1,
+          "promised_effect": 1,
+          "safety_postcondition": 6
+        },
+        "failures": {
+          "precondition": 1,
+          "safety_postcondition": 1
+        }
+      },
+      "prose_findings": 3,
+      "recent_remediation": "2026-05-29 open: Derived fixture recorded queue fallback backlog and destructive-deletion precondition findings from public documentation excerpts.",
+      "regions": [
+        "prod"
+      ],
+      "remediation_history": [
+        {
+          "date": "2026-05-29",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "status": "open",
+          "summary": "Derived fixture recorded queue fallback backlog and destructive-deletion precondition findings from public documentation excerpts."
+        }
+      ],
+      "runbooks": 1,
+      "score": 50,
+      "semantic_counterexamples": 2,
+      "services": [
+        "tempo-query"
+      ],
+      "stale_assumptions": 0,
+      "status": "not_ready",
+      "top_hazards": [
+        {
+          "kind": "semantic",
+          "message": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "property": "no_queue_pause_without_drain_plan",
+          "trace": [
+            "delete-stale-tenant-indexes"
+          ]
+        },
+        {
+          "kind": "semantic",
+          "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "property": "no_paused_queue_with_backlog",
+          "trace": [
+            "delete-stale-tenant-indexes"
+          ]
+        },
+        {
+          "kind": "prose",
+          "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "rule": "data-deletion-needs-restore-precondition",
+          "severity": "error"
+        },
+        {
+          "kind": "prose",
+          "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "rule": "destructive-delete-needs-targeting",
+          "severity": "warning"
+        },
+        {
+          "kind": "prose",
+          "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "rule": "destructive-delete-needs-targeting",
+          "severity": "warning"
+        }
+      ],
+      "unsafe_runbooks": 1,
+      "verified_runbooks": 0,
+      "waiver_debt": 0
+    }
+  ],
+  "parse_errors": [],
+  "path": "case_studies/current/grafana_tempo",
+  "semantics": {
+    "open_hazard": "parse error, failed Hoare-style/safety obligation, blocking prose finding, missing rollback, stale assumption, or expired waiver",
+    "owner_assignment": "metadata.owners, metadata.owner, metadata.team, or metadata.service_owners; otherwise unassigned",
+    "verified_runbook": "parsed executable model with no bounded semantic counterexamples",
+    "waiver_debt": "metadata.waivers entries with active or expired expiry dates; expired waivers are blocking debt"
+  },
+  "summary": {
+    "open_hazards": 3,
+    "owners": 1,
+    "parse_errors": 0,
+    "prose_findings": 3,
+    "runbooks": 1,
+    "semantic_counterexamples": 2,
+    "stale_assumptions": 0,
+    "status": "not_ready",
+    "verified_runbooks": 0,
+    "waiver_debt": 0
+  }
+}

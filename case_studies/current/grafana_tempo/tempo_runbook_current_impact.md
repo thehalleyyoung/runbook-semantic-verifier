@@ -38,6 +38,22 @@ not an undisclosed vulnerability claim about Grafana Tempo.
       "retrieved": "2026-05-29",
       "license_note": "AGPL-3.0 repository; short attributed excerpts plus independent model."
     },
+    "owners": [
+      {
+        "id": "grafana-tempo-public-fixture",
+        "role": "case-study-model-owner"
+      }
+    ],
+    "service_owners": {
+      "tempo-query": ["grafana-tempo-public-fixture"]
+    },
+    "remediation_history": [
+      {
+        "date": "2026-05-29",
+        "status": "open",
+        "summary": "Derived fixture recorded queue fallback backlog and destructive-deletion precondition findings from public documentation excerpts."
+      }
+    ],
     "labels": {
       "expected_safe": false,
       "expected_violation_properties": [

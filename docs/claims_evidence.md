@@ -40,6 +40,9 @@ differently named system exists.
 - The readiness report aggregates validation, bounded checker, Markdown audit,
   service/region coverage, rollback/restore coverage, source-freshness, and
   proof-obligation signals for a repository path or scoped service/region.
+- The owner scorecard groups bounded semantic counterexamples, blocking prose
+  obligations, stale assumptions, declared waiver debt, proof-obligation
+  failures, and remediation history by checked-in owner metadata.
 
 ## What is not proven
 
@@ -80,6 +83,8 @@ differently named system exists.
   - `reports/current_impact_lint.md`
   - `reports/current_impact_readiness.json`
   - `reports/current_impact_readiness.md`
+  - `reports/current_impact_owner_scorecard.json`
+  - `reports/current_impact_owner_scorecard.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -109,6 +114,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json -
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 ```
@@ -123,3 +129,7 @@ counterexamples and resolves the modeled `precondition` and
 `not_ready` with two bounded queue counterexamples, three unverified prose
 claims, no stale preconditions as of 2026-05-29, and aggregated
 proof-obligation counters.
+The current-impact owner scorecard reports one checked-in fixture owner,
+`grafana-tempo-public-fixture`, with zero verified runbooks, two bounded queue
+counterexamples, one blocking prose obligation, no stale assumptions, and no
+waiver debt as of 2026-05-29.

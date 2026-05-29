@@ -15,6 +15,7 @@ verify:
 	python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 	python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 	python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format json
+	python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format json --fail-on none
 	python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 
 export:

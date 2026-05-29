@@ -107,7 +107,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [x] Add `frv explain` for a finding id, returning the relevant small-step rule, state delta, source lines, weakest-precondition hint, and remediation examples.
 - [x] Add `frv diff old new` for semantic change review in pull requests, highlighting changed effects, assumptions, invariants, waivers, and reachable counterexamples.
 - [x] Add `frv readiness` to produce incident-readiness reports for a service, region, or repository path using validation, audit, benchmark, and freshness signals.
-- [ ] Add `frv owner-scorecard` to generate team-facing summaries of verified runbooks, open hazards, stale assumptions, waiver debt, and remediation history.
+- [x] Add `frv owner-scorecard` to generate team-facing summaries of verified runbooks, open hazards, stale assumptions, waiver debt, and remediation history.
 - [ ] Add pre-commit and GitHub Actions templates for fast validation on every edit and deeper bounded checks on protected branches.
 - [ ] Add remediation playbooks for common counterexamples: insufficient replicas, missing backup, skipped alert re-enable, premature DNS cutover, unsafe replay, and stale owner.
 - [ ] Add editor-friendly JSON diagnostic examples and documentation so language servers or GitHub annotations can present semantic findings inline.

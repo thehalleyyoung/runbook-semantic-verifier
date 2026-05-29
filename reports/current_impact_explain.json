@@ -18,7 +18,7 @@
   "small_step_rule": "PostInvariant.QueueBacklogProgress",
   "source": {
     "excerpt": "\"id\": \"delete-stale-tenant-indexes\",",
-    "line": 77,
+    "line": 93,
     "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
   },
   "state_delta": [

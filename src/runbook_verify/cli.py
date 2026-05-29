@@ -12,6 +12,7 @@ from .checker import Checker
 from .explanation import ExplainError, explain_finding, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
+from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
 from .parser import RunbookParseError, load_runbook
 from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
 from .schema import render_json_schema
@@ -59,6 +60,13 @@ def main(argv: list[str] | None = None) -> int:
     readiness_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
     readiness_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     readiness_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
+    owner_p = sub.add_parser("owner-scorecard", help="summarize runbook readiness, hazards, waivers, and remediation history by owner")
+    owner_p.add_argument("path")
+    owner_p.add_argument("--owner", help="limit scorecard to one owner id")
+    owner_p.add_argument("--freshness-days", type=int, default=180, help="maximum allowed age for source metadata or file mtime")
+    owner_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
+    owner_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    owner_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
     lint_p = sub.add_parser("lint-markdown", help="lint Markdown runbook prose for dangerous unmodeled operations")
     lint_p.add_argument("path")
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -115,6 +123,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"readiness error: {exc}", file=sys.stderr)
             return 2
         print(render_readiness_json(result) if args.format == "json" else render_readiness_markdown(result), end="")
+        if args.fail_on == "none":
+            return 0
+        return 1 if result["summary"]["status"] == "not_ready" else 0
+    if args.command == "owner-scorecard":
+        as_of = None
+        if args.as_of:
+            from datetime import date
+            try:
+                as_of = date.fromisoformat(args.as_of)
+            except ValueError as exc:
+                print(f"owner-scorecard error: invalid --as-of date {args.as_of!r}: {exc}", file=sys.stderr)
+                return 2
+        try:
+            result = build_owner_scorecard(args.path, OwnerScorecardOptions(owner=args.owner, freshness_days=args.freshness_days, as_of=as_of))
+        except OwnerScorecardError as exc:
+            print(f"owner-scorecard error: {exc}", file=sys.stderr)
+            return 2
+        print(render_owner_scorecard_json(result) if args.format == "json" else render_owner_scorecard_markdown(result), end="")
         if args.fail_on == "none":
             return 0
         return 1 if result["summary"]["status"] == "not_ready" else 0
