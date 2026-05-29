@@ -1,0 +1,95 @@
+{
+  "findings": [
+    {
+      "line": null,
+      "message": "queue tenant-index-fallback-scan is paused with depth=18000 and consumers=1",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 3,
+      "recommendation": "Resume the queue or prove backlog is drained and alternate consumers are active.",
+      "rule": "no_paused_queue_with_backlog",
+      "semantic_obligation": "no_paused_queue_with_backlog",
+      "severity": "error",
+      "step": "delete-stale-tenant-indexes",
+      "trace": [
+        "delete-stale-tenant-indexes"
+      ],
+      "type": "semantic"
+    },
+    {
+      "line": null,
+      "message": "queue tenant-index-fallback-scan has depth=18000 and consumers=1 before pause",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 3,
+      "recommendation": "Drain backlog or add queue_depth_at_most and queue_has_consumers preconditions before pausing.",
+      "rule": "no_queue_pause_without_drain_plan",
+      "semantic_obligation": "no_queue_pause_without_drain_plan",
+      "severity": "error",
+      "step": "delete-stale-tenant-indexes",
+      "trace": [
+        "delete-stale-tenant-indexes"
+      ],
+      "type": "semantic"
+    },
+    {
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "line": 20,
+      "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 3,
+      "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
+      "rule": "data-deletion-needs-restore-precondition",
+      "semantic_obligation": "restore_path_and_blast_radius_limited",
+      "severity": "error",
+      "type": "prose"
+    },
+    {
+      "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
+      "line": 18,
+      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 2,
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning",
+      "type": "prose"
+    },
+    {
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "line": 20,
+      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 2,
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning",
+      "type": "prose"
+    }
+  ],
+  "runbooks": [
+    {
+      "name": "Grafana Tempo current public runbook derived safety model",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "safe": false,
+      "states_explored": 3,
+      "terminal_traces": 1,
+      "violations": 2
+    }
+  ],
+  "summary": {
+    "findings": 5,
+    "findings_by_rule": {
+      "data-deletion-needs-restore-precondition": 1,
+      "destructive-delete-needs-targeting": 2,
+      "no_paused_queue_with_backlog": 1,
+      "no_queue_pause_without_drain_plan": 1
+    },
+    "findings_by_severity": {
+      "error": 3,
+      "warning": 2
+    },
+    "runbooks": 1,
+    "safe_runbooks": 0
+  }
+}

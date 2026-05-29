@@ -3,12 +3,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
 from .exporter import export_alloy, export_tla
-from .markdown_lint import lint_markdown_tree, render_lint_json, render_lint_markdown
+from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .parser import RunbookParseError, load_runbook
 from .schema import render_json_schema
 
@@ -32,6 +33,8 @@ def main(argv: list[str] | None = None) -> int:
     audit_p.add_argument("path")
     audit_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when at least one violation is found")
     audit_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
+    audit_p.add_argument("--format", choices=["text", "json", "markdown"], default="text", help="audit report format")
+    audit_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command when --expect-findings is not set")
     bench_p = sub.add_parser("benchmark", help="run a benchmark suite over built-in or user-provided runbooks")
     bench_p.add_argument("path", nargs="?", help="optional runbook file, runbook directory, or benchmark config JSON")
     bench_p.add_argument("--format", choices=["json", "markdown"], default="json")
@@ -39,10 +42,11 @@ def main(argv: list[str] | None = None) -> int:
     lint_p.add_argument("path")
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     lint_p.add_argument("--expect-findings", action="store_true", help="exit 0 only when prose findings are found")
+    lint_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command when --expect-findings is not set")
     args = parser.parse_args(argv)
 
     if args.command == "audit":
-        return _audit(args.path, args.expect_findings, args.diagnostics_format)
+        return _audit(args.path, args.expect_findings, args.diagnostics_format, args.format, args.fail_on)
     if args.command == "benchmark":
         try:
             result = run_benchmark(args.path)
@@ -56,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         print(render_lint_json(findings) if args.format == "json" else render_lint_markdown(findings), end="")
         if args.expect_findings:
             return 0 if findings else 1
-        return 1 if findings else 0
+        return 1 if has_findings_at_or_above(findings, args.fail_on) else 0
     if args.command == "schema":
         print(render_json_schema(), end="")
         return 0
@@ -92,35 +96,81 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
-def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text") -> int:
+def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", output_format: str = "text", fail_on: str = "warning") -> int:
     root = Path(path)
     if not root.exists():
         print(f"audit path does not exist: {root}", file=sys.stderr)
         return 2
-    files = _runbook_files(root)
-    if not files:
-        print(f"No runbook files found under {root}", file=sys.stderr)
+    executable_files = _executable_runbook_files(root)
+    markdown_findings = lint_markdown_tree(root)
+    if not executable_files and not markdown_findings:
+        print(f"No runbook files or Markdown findings found under {root}", file=sys.stderr)
         return 2
-    total_violations = 0
+    audit_findings = [_finding_from_markdown(finding) for finding in markdown_findings]
     parse_errors = 0
-    for file in files:
+    runbook_summaries = []
+    for file in executable_files:
         try:
             runbook = load_runbook(file)
         except RunbookParseError as exc:
             parse_errors += 1
-            _print_parse_error(exc.with_context(path=str(file)), diagnostics_format, prefix=str(file))
+            contextual = exc.with_context(path=str(file))
+            if output_format == "text":
+                _print_parse_error(contextual, diagnostics_format, prefix=str(file))
+            audit_findings.append({
+                "type": "parse",
+                "severity": "error",
+                "rank": SEVERITY_RANK["error"],
+                "path": str(file),
+                "line": contextual.diagnostic.line,
+                "rule": "parse_error",
+                "semantic_obligation": "well_formed_executable_model",
+                "message": str(contextual),
+                "recommendation": contextual.diagnostic.remediation,
+            })
             continue
         result = Checker(runbook).check()
-        total_violations += len(result.violations)
+        runbook_summaries.append({
+            "path": str(file),
+            "name": runbook.name,
+            "safe": not result.violations,
+            "states_explored": result.states_explored,
+            "terminal_traces": result.traces_explored,
+            "violations": len(result.violations),
+        })
         status = "UNSAFE" if result.violations else "SAFE"
-        print(f"{status} {file} states={result.states_explored} terminal_traces={result.traces_explored} violations={len(result.violations)}")
+        if output_format == "text":
+            print(f"{status} {file} states={result.states_explored} terminal_traces={result.traces_explored} violations={len(result.violations)}")
         for violation in result.violations:
-            print(f"  - [{violation.property}] trace={' -> '.join(violation.trace)}: {violation.message}")
+            if output_format == "text":
+                print(f"  - [{violation.property}] trace={' -> '.join(violation.trace)}: {violation.message}")
+            audit_findings.append({
+                "type": "semantic",
+                "severity": "error",
+                "rank": SEVERITY_RANK["error"],
+                "path": str(file),
+                "line": None,
+                "rule": violation.property,
+                "semantic_obligation": violation.property,
+                "step": violation.step,
+                "trace": list(violation.trace),
+                "message": violation.message,
+                "recommendation": violation.remediation,
+            })
+    audit_findings = _rank_audit_findings(audit_findings)
+    if output_format == "json":
+        print(json.dumps({"summary": _audit_summary(runbook_summaries, audit_findings), "runbooks": runbook_summaries, "findings": audit_findings}, indent=2, sort_keys=True))
+    elif output_format == "markdown":
+        print(_render_audit_markdown(root, runbook_summaries, audit_findings), end="")
+    elif markdown_findings:
+        print(f"Markdown prose findings: {len(markdown_findings)}")
+        for finding in markdown_findings:
+            print(f"  - [{finding.severity}] {finding.rule} {finding.path}:{finding.line} obligation={finding.semantic_obligation}: {finding.message}")
     if parse_errors:
         return 2
     if expect_findings:
-        return 0 if total_violations else 1
-    return 1 if total_violations else 0
+        return 0 if audit_findings else 1
+    return 1 if _has_audit_findings_at_or_above(audit_findings, fail_on) else 0
 
 
 def _print_parse_error(exc: RunbookParseError, diagnostics_format: str = "text", prefix: str | None = None) -> None:
@@ -137,6 +187,80 @@ def _print_parse_error(exc: RunbookParseError, diagnostics_format: str = "text",
 def _runbook_files(root: Path) -> list[Path]:
     candidates = [root] if root.is_file() else list(root.rglob("*"))
     return sorted(path for path in candidates if path.is_file() and path.suffix.lower() in {".json", ".yaml", ".yml", ".md"})
+
+
+def _executable_runbook_files(root: Path) -> list[Path]:
+    return [path for path in _runbook_files(root) if path.suffix.lower() != ".md" or _has_embedded_runbook(path)]
+
+
+def _has_embedded_runbook(path: Path) -> bool:
+    try:
+        text = path.read_text(encoding="utf-8").lower()
+    except OSError:
+        return False
+    return "```runbook-json" in text or "```json" in text
+
+
+def _finding_from_markdown(finding: object) -> dict[str, object]:
+    data = asdict(finding)
+    data["type"] = "prose"
+    data["rank"] = SEVERITY_RANK[str(data["severity"])]
+    return data
+
+
+def _rank_audit_findings(findings: list[dict[str, object]]) -> list[dict[str, object]]:
+    return sorted(findings, key=lambda item: (-int(item["rank"]), str(item.get("path", "")), int(item.get("line") or 0), str(item.get("rule", ""))))
+
+
+def _audit_summary(runbooks: list[dict[str, object]], findings: list[dict[str, object]]) -> dict[str, object]:
+    by_severity: dict[str, int] = {}
+    by_rule: dict[str, int] = {}
+    for finding in findings:
+        severity = str(finding["severity"])
+        rule = str(finding["rule"])
+        by_severity[severity] = by_severity.get(severity, 0) + 1
+        by_rule[rule] = by_rule.get(rule, 0) + 1
+    return {
+        "runbooks": len(runbooks),
+        "safe_runbooks": sum(1 for item in runbooks if item["safe"]),
+        "findings": len(findings),
+        "findings_by_severity": dict(sorted(by_severity.items())),
+        "findings_by_rule": dict(sorted(by_rule.items())),
+    }
+
+
+def _render_audit_markdown(root: Path, runbooks: list[dict[str, object]], findings: list[dict[str, object]]) -> str:
+    summary = _audit_summary(runbooks, findings)
+    lines = [
+        f"# Runbook audit: {root}",
+        "",
+        f"- Runbooks checked: {summary['runbooks']}",
+        f"- Safe runbooks: {summary['safe_runbooks']}",
+        f"- Findings: {summary['findings']}",
+        f"- Findings by severity: `{json.dumps(summary['findings_by_severity'], sort_keys=True)}`",
+        f"- Findings by rule: `{json.dumps(summary['findings_by_rule'], sort_keys=True)}`",
+        "",
+    ]
+    if runbooks:
+        lines.extend(["| Runbook | Safe | States | Traces | Violations |", "| --- | --- | ---: | ---: | ---: |"])
+        for item in runbooks:
+            lines.append(f"| `{item['path']}` | `{item['safe']}` | {item['states_explored']} | {item['terminal_traces']} | {item['violations']} |")
+        lines.append("")
+    if findings:
+        lines.extend(["| Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation |", "| ---: | --- | --- | --- | --- | --- | --- | --- |"])
+        for finding in findings:
+            location = f"{finding.get('path')}:{finding.get('line') or ''}"
+            message = str(finding.get("message", "")).replace("|", "\\|")
+            recommendation = str(finding.get("recommendation", "") or "").replace("|", "\\|")
+            lines.append(f"| {finding['rank']} | {finding['type']} | {finding['severity']} | {finding['rule']} | `{finding['semantic_obligation']}` | `{location}` | {message} | {recommendation} |")
+    return "\n".join(lines) + "\n"
+
+
+def _has_audit_findings_at_or_above(findings: list[dict[str, object]], threshold: str) -> bool:
+    if threshold == "none":
+        return False
+    minimum = SEVERITY_RANK[threshold]
+    return any(int(finding["rank"]) >= minimum for finding in findings)
 
 
 if __name__ == "__main__":

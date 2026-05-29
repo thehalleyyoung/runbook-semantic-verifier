@@ -15,6 +15,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/complete_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate tests/fixtures/invalid_json_syntax.json --diagnostics-format json
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format markdown --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -133,14 +134,31 @@ PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --ex
 
 `examples/real_world/kubernetes_region_failover.md` is a case-study fixture modeled on common cloud failover mistakes. The audit confirms three concrete bugs: suppressing an alert for longer than policy allows, draining all available API replicas in a region before replacement capacity exists, and performing a data-loss-risk database failover before quorum confirmation.
 
+`frv audit` now combines executable checking with severity-ranked Markdown/wiki
+prose findings. Each prose rule links to a semantic obligation or explicit
+limitation, and CI thresholds are tunable:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format json --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown path/to/runbooks --fail-on error
+```
+
+Expanded prose rules cover destructive data deletion, manual SQL, backfills or
+replays, credential handling, customer-notification gaps, rollback ambiguity,
+alert suppression, failover, draining, and unmodeled escalation paths. Severity
+levels are `audit-only`, `warning`, `error`, and `responsible-disclosure`, with
+`info` reserved for future advisory checks.
+
 ## Current public-doc case study
 
 `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` analyzes
 short, attributed excerpts from Grafana Tempo's public runbook at commit
 `ef18cc176e44dea795543f50cb2341f5ea9e7827` (retrieved 2026-05-29). The prose
-linter flags destructive `forget/remove/delete` operations that lack executable
-blast-radius/capacity preconditions, and the derived executable model reports a
-queue fallback/backlog hazard. Reports are checked in under `reports/`.
+linter flags destructive `forget/remove/delete` and data-deletion operations
+that lack executable blast-radius/capacity or restore-path preconditions, and
+the derived executable model reports a queue fallback/backlog hazard. The
+combined audit report is checked in as `reports/current_impact_audit.md` and
+`reports/current_impact_audit.json`.
 
 ## Historical public case study
 

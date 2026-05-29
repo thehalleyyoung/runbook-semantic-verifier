@@ -45,6 +45,7 @@ not an undisclosed vulnerability claim about Grafana Tempo.
         "no_paused_queue_with_backlog"
       ],
       "expected_prose_rules": [
+        "data-deletion-needs-restore-precondition",
         "destructive-delete-needs-targeting"
       ]
     }

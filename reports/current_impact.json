@@ -2,10 +2,11 @@
   "aggregate": {
     "pass": true,
     "prose_findings_by_rule": {
+      "data-deletion-needs-restore-precondition": 1,
       "destructive-delete-needs-targeting": 2
     },
     "runbooks": 1,
-    "runtime_seconds": 0.0007036659808363765,
+    "runtime_seconds": 0.001030833023833111,
     "states_explored": 3,
     "traces_explored": 1,
     "violations_by_property": {
@@ -19,6 +20,7 @@
       "errors": [],
       "expected_labels": {
         "expected_prose_rules": [
+          "data-deletion-needs-restore-precondition",
           "destructive-delete-needs-targeting"
         ],
         "expected_safe": false,
@@ -31,9 +33,10 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "prose_findings_by_rule": {
+        "data-deletion-needs-restore-precondition": 1,
         "destructive-delete-needs-targeting": 2
       },
-      "runtime_seconds": 0.0006959160091355443,
+      "runtime_seconds": 0.0010237499955110252,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,

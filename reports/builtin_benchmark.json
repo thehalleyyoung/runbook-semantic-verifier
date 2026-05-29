@@ -2,11 +2,12 @@
   "aggregate": {
     "pass": true,
     "prose_findings_by_rule": {
+      "data-deletion-needs-restore-precondition": 1,
       "destructive-delete-needs-targeting": 2,
       "failover-needs-health-and-quorum": 3
     },
     "runbooks": 5,
-    "runtime_seconds": 0.008620708016678691,
+    "runtime_seconds": 0.012914249993627891,
     "states_explored": 85,
     "traces_explored": 5,
     "violations_by_property": {
@@ -33,7 +34,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.003722249995917082,
+      "runtime_seconds": 0.005374208005378023,
       "safe": true,
       "states_explored": 36,
       "traces_explored": 1,
@@ -55,7 +56,7 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0031583330128341913,
+      "runtime_seconds": 0.00439504100359045,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -84,7 +85,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.0006975840078666806,
+      "runtime_seconds": 0.0012180829944554716,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -110,7 +111,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0005696660082321614,
+      "runtime_seconds": 0.0011702920019160956,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -123,6 +124,7 @@
       "errors": [],
       "expected_labels": {
         "expected_prose_rules": [
+          "data-deletion-needs-restore-precondition",
           "destructive-delete-needs-targeting"
         ],
         "expected_safe": false,
@@ -135,9 +137,10 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "prose_findings_by_rule": {
+        "data-deletion-needs-restore-precondition": 1,
         "destructive-delete-needs-targeting": 2
       },
-      "runtime_seconds": 0.00043149999692104757,
+      "runtime_seconds": 0.0007151669997256249,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,

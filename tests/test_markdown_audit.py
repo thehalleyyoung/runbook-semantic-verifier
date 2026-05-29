@@ -1,4 +1,7 @@
 from pathlib import Path
+import json
+import os
+import subprocess
 import sys
 import unittest
 
@@ -28,6 +31,35 @@ class MarkdownCaseStudyTests(unittest.TestCase):
 
         self.assertIn("precondition", properties)
         self.assertIn("quorum_before_data_loss_action", properties)
+
+    def test_audit_cli_emits_ranked_semantic_and_prose_findings(self):
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT / "src")
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "runbook_verify.cli",
+                "audit",
+                "case_studies/current/grafana_tempo",
+                "--format",
+                "json",
+                "--expect-findings",
+            ],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        data = json.loads(proc.stdout)
+        self.assertGreaterEqual(data["summary"]["findings"], 1)
+        self.assertIn("destructive-delete-needs-targeting", data["summary"]["findings_by_rule"])
+        self.assertIn("no_queue_pause_without_drain_plan", data["summary"]["findings_by_rule"])
+        self.assertGreaterEqual(data["findings"][0]["rank"], data["findings"][-1]["rank"])
+        self.assertIn("semantic_obligation", data["findings"][0])
 
 
 if __name__ == "__main__":

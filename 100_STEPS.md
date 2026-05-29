@@ -75,8 +75,8 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 
 ## Phase 6 — Markdown/wiki audit and CI gates for operations docs
 
-- [ ] Expand prose lint rules for data deletion, manual SQL, backfills, credential handling, customer notification gaps, rollback ambiguity, and unmodeled escalation paths.
-- [ ] Make prose lint findings severity-aware (`info`, `warning`, `error`, `audit-only`, `responsible-disclosure`) with CI policies that teams can tune.
+- [x] Expand prose lint rules for data deletion, manual SQL, backfills, credential handling, customer notification gaps, rollback ambiguity, and unmodeled escalation paths.
+- [x] Make prose lint findings severity-aware (`info`, `warning`, `error`, `audit-only`, `responsible-disclosure`) with CI policies that teams can tune.
 - [ ] Add prose suppressions requiring owner, expiry, reason, and link to a modeled invariant, waiver, or explicit limitation.
 - [ ] Add Markdown autofix suggestions for missing executable blocks, stale owners, missing preconditions, ambiguous operator instructions, and unsafe copy-paste shell snippets.
 - [ ] Add wiki/repository scanning that discovers runbook-like Markdown files, ranks them by dangerous-effect vocabulary, and recommends which documents need executable models first.
@@ -103,7 +103,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 
 ## Phase 8 — Developer and SRE workflows that ship value early
 
-- [ ] Add `frv audit` workflow that scans Markdown/wiki runbooks, emits ranked findings, and links each prose issue to a semantic obligation or explicit limitation.
+- [x] Add `frv audit` workflow that scans Markdown/wiki runbooks, emits ranked findings, and links each prose issue to a semantic obligation or explicit limitation.
 - [ ] Add `frv explain` for a finding id, returning the relevant small-step rule, state delta, source lines, weakest-precondition hint, and remediation examples.
 - [ ] Add `frv diff old new` for semantic change review in pull requests, highlighting changed effects, assumptions, invariants, waivers, and reachable counterexamples.
 - [ ] Add `frv readiness` to produce incident-readiness reports for a service, region, or repository path using validation, audit, benchmark, and freshness signals.
