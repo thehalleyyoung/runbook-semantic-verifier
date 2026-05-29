@@ -4,6 +4,7 @@
   "properties": [
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -23,19 +24,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -55,19 +57,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -89,6 +92,7 @@
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -108,19 +112,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -140,19 +145,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -172,19 +178,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -204,19 +211,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -236,19 +244,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -268,19 +277,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -300,19 +310,20 @@
         {
           "action": "replay_messages",
           "id": "delete-stale-tenant-indexes-trigger-fallback",
-          "line": 104,
+          "line": 105,
           "section": "Defensive interpretation"
         },
         {
           "action": "rebalance_consumers",
           "id": "rebalance-fallback-consumers",
-          "line": 113,
+          "line": 114,
           "section": "Defensive interpretation"
         }
       ]
     },
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -336,6 +347,7 @@
   "runbooks": [
     {
       "alerts": [],
+      "caches": [],
       "credentials": [],
       "databases": [],
       "dns_records": [],
@@ -357,7 +369,9 @@
   ],
   "summary": {
     "alerts": 0,
+    "caches": 0,
     "covered_alerts": 0,
+    "covered_caches": 0,
     "covered_credentials": 0,
     "covered_databases": 0,
     "covered_dns_records": 0,
@@ -383,37 +397,37 @@
   "uncovered_entities": [
     {
       "kind": "prose_obligation",
-      "line": 20,
+      "line": 21,
       "message": "Markdown section has unverified obligation restore_path_and_blast_radius_limited",
       "name": "data-deletion-needs-restore-precondition",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
     },
     {
       "kind": "prose_obligation",
-      "line": 18,
+      "line": 21,
       "message": "Markdown section has unverified obligation blast_radius_limited_or_explicit_limitation",
       "name": "destructive-delete-needs-targeting",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
     },
     {
       "kind": "prose_obligation",
-      "line": 20,
-      "message": "Markdown section has unverified obligation blast_radius_limited_or_explicit_limitation",
-      "name": "destructive-delete-needs-targeting",
-      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
-    },
-    {
-      "kind": "prose_obligation",
-      "line": 26,
+      "line": 27,
       "message": "Markdown section has unverified obligation queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
       "name": "backfill-needs-queue-capacity",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+    },
+    {
+      "kind": "prose_obligation",
+      "line": 18,
+      "message": "Markdown section has unverified obligation limitation:ring-forget-targeting",
+      "name": "prose-suppression-applied",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
     }
   ],
   "unverified_prose_obligations": [
     {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
-      "line": 20,
+      "line": 21,
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
       "rule": "data-deletion-needs-restore-precondition",
@@ -422,18 +436,8 @@
       "severity": "error"
     },
     {
-      "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
-      "line": 18,
-      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
-      "rule": "destructive-delete-needs-targeting",
-      "section": "Public prose excerpts analyzed",
-      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
-      "severity": "warning"
-    },
-    {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
-      "line": 20,
+      "line": 21,
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
       "rule": "destructive-delete-needs-targeting",
@@ -443,13 +447,23 @@
     },
     {
       "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
-      "line": 26,
+      "line": 27,
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "recommendation": "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
       "rule": "backfill-needs-queue-capacity",
       "section": "Defensive interpretation",
       "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
       "severity": "warning"
+    },
+    {
+      "excerpt": "frv-suppress rule=destructive-delete-needs-targeting",
+      "line": 18,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Review suppression owner, expiry, reason, and invariant/waiver/limitation link during runbook review.",
+      "rule": "prose-suppression-applied",
+      "section": "Public prose excerpts analyzed",
+      "semantic_obligation": "limitation:ring-forget-targeting",
+      "severity": "audit-only"
     }
   ]
 }

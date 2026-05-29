@@ -6,7 +6,8 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes repository/wiki runbook-priority scanning,
-incident-readiness, owner-scorecard, and property-coverage reports. The DSL also models queue replay/DLQ/consumer-group
+incident-readiness, owner-scorecard, property-coverage reports, and auditable
+prose suppressions with owner/expiry/reason/limitation metadata. The DSL also models queue replay/DLQ/consumer-group
 semantics, DNS cutovers with TTL and health-check convergence obligations, and
 cache flush/warmup/cold-start/capacity semantics.
 The historical fixture reconstructs the GitHub
@@ -36,7 +37,9 @@ differently named system exists.
   kinds, duplicate step ids, missing dependencies, and references to unknown
   modeled entities before state-space exploration.
 - The Markdown linter deterministically flags selected dangerous prose patterns
-  when the file lacks matching executable actions/preconditions/effects.
+  when the file lacks matching executable actions/preconditions/effects, and
+  refuses to silently hide prose findings unless a suppression has owner,
+  expiry, reason, and invariant/waiver/limitation metadata.
 - The benchmark records states explored, terminal traces explored, violations by
   property, prose findings by rule, expected labels when present, runtime, and
   pass/fail.
@@ -63,6 +66,22 @@ differently named system exists.
 - Cache write freezes, destructive flushes, warmup thresholds, capacity limits,
   and stale-read risk are checked as bounded small-step transitions with
   concrete cold-start and over-capacity counterexamples.
+
+## Auditable prose suppression evidence
+
+- Command:
+  `PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --format markdown --expect-findings`
+- Expected result: `reports/current_impact_lint.md` includes
+  `prose-suppression-applied` for the public Tempo ring-forget excerpt, with
+  owner, expiry, reason, and `limitation:ring-forget-targeting` metadata.
+  Invalid suppressions are tested in `tests/test_markdown_lint.py` and produce
+  `invalid-prose-suppression` without hiding the original finding.
+- Claim supported: the Markdown audit can represent an explicit
+  waiver/limitation contract for a prose-derived semantic obligation without
+  silently suppressing evidence.
+- Bound: suppression metadata is syntactically checked and reported; downstream
+  organizations still decide whether a linked invariant, waiver, or limitation
+  is acceptable policy.
 
 ## What is not proven
 
@@ -175,20 +194,23 @@ case-study runbook reports `precondition` and
 the GitHub semantic diff reports zero introduced counterexamples and resolves the
 modeled `precondition` and `quorum_before_data_loss_action` traces. The
 current-impact readiness report is `not_ready` with six bounded queue
-counterexamples, four unverified prose claims, no stale preconditions as of
-2026-05-29, and aggregated proof-obligation counters.
+counterexamples, three unsuppressed prose claims, one audited explicit-limitation
+suppression, no stale preconditions as of 2026-05-29, and aggregated
+proof-obligation counters.
 The current-impact owner scorecard reports one checked-in fixture owner,
 `grafana-tempo-public-fixture`, with zero verified runbooks, six bounded queue
-counterexamples, destructive-data/backfill prose obligations, no stale
-assumptions, and no waiver debt as of 2026-05-29.
+counterexamples, destructive-data/backfill prose obligations, one audited prose
+suppression, no stale assumptions, and no waiver debt as of 2026-05-29.
 The current-impact repository scan ranks the Grafana Tempo-derived fixture as
-`critical` with score 56 from destructive-delete, data-deletion, and
+`critical` with score 52 from destructive-delete, data-deletion, and
 backfill/replay dangerous-effect vocabulary plus uncovered blast-radius,
-restore-path, queue, consumer, and deduplication obligations. The
+restore-path, queue, consumer, deduplication, and explicit-limitation
+obligations. The
 current-impact coverage report maps eleven invariant/proof-obligation
 templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
 queue, `prod` region, owner metadata, and executable Markdown section, and
-keeps four destructive-data/backfill prose obligations as explicit coverage gaps.
+keeps three destructive-data/backfill prose obligations plus one explicit
+suppression as coverage gaps.
 The DNS case-study check reports bounded `dns_health_check_converged_before_cutover`,
 `dns_requires_regional_capacity`, `dns_no_split_brain_during_ttl`, and
 `dns_ttl_elapsed_before_finalize` counterexamples.

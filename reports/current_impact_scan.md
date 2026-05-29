@@ -3,7 +3,7 @@
 - Markdown files ranked: 1
 - Files with executable models: 1
 - Files needing first executable model: 0
-- Highest score: 56
+- Highest score: 52
 - Priority counts: `{"critical": 1}`
 - Dangerous-effect rules: `{"backfill-needs-queue-capacity": 1, "data-deletion-needs-restore-precondition": 1, "destructive-delete-needs-targeting": 2}`
 
@@ -13,4 +13,4 @@ Each rule maps prose evidence to a semantic obligation already used by lint/audi
 
 | Priority | Score | Executable model | Path | Matched dangerous-effect rules | Uncovered obligations | Recommendation |
 | --- | ---: | --- | --- | --- | --- | --- |
-| critical | 56 | `True` | `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` | `{"backfill-needs-queue-capacity": 1, "data-deletion-needs-restore-precondition": 1, "destructive-delete-needs-targeting": 2}` | `{"blast_radius_limited_or_explicit_limitation": 2, "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk": 1, "restore_path_and_blast_radius_limited": 1}` | Model or explicitly limit uncovered semantic obligations: blast_radius_limited_or_explicit_limitation, queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk, restore_path_and_blast_radius_limited. Review whether prose dangerous-effect matches refine to the existing executable model and coverage reports. |
+| critical | 52 | `True` | `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` | `{"backfill-needs-queue-capacity": 1, "data-deletion-needs-restore-precondition": 1, "destructive-delete-needs-targeting": 2}` | `{"blast_radius_limited_or_explicit_limitation": 1, "limitation:ring-forget-targeting": 1, "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk": 1, "restore_path_and_blast_radius_limited": 1}` | Model or explicitly limit uncovered semantic obligations: blast_radius_limited_or_explicit_limitation, limitation:ring-forget-targeting, queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk, restore_path_and_blast_radius_limited. Review whether prose dangerous-effect matches refine to the existing executable model and coverage reports. |

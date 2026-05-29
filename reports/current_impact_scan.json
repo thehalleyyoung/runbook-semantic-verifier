@@ -2,16 +2,18 @@
   "candidates": [
     {
       "findings_by_obligation": {
-        "blast_radius_limited_or_explicit_limitation": 2,
+        "blast_radius_limited_or_explicit_limitation": 1,
+        "limitation:ring-forget-targeting": 1,
         "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk": 1,
         "restore_path_and_blast_radius_limited": 1
       },
       "findings_by_severity": {
+        "audit-only": 1,
         "error": 1,
-        "warning": 3
+        "warning": 2
       },
       "has_executable_model": true,
-      "line_count": 123,
+      "line_count": 124,
       "matched_rules": {
         "backfill-needs-queue-capacity": 1,
         "data-deletion-needs-restore-precondition": 1,
@@ -20,10 +22,10 @@
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "priority": "critical",
       "recommendations": [
-        "Model or explicitly limit uncovered semantic obligations: blast_radius_limited_or_explicit_limitation, queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk, restore_path_and_blast_radius_limited.",
+        "Model or explicitly limit uncovered semantic obligations: blast_radius_limited_or_explicit_limitation, limitation:ring-forget-targeting, queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk, restore_path_and_blast_radius_limited.",
         "Review whether prose dangerous-effect matches refine to the existing executable model and coverage reports."
       ],
-      "score": 56
+      "score": 52
     }
   ],
   "path": "case_studies/current/grafana_tempo",
@@ -34,7 +36,7 @@
   },
   "summary": {
     "candidates": 1,
-    "highest_score": 56,
+    "highest_score": 52,
     "matched_rules": {
       "backfill-needs-queue-capacity": 1,
       "data-deletion-needs-restore-precondition": 1,

@@ -40,7 +40,7 @@ Operational runbooks are programs over infrastructure state, even when they are 
 - `frv validate`: fast schema, parser, entity, dependency, and type checks for pre-commit use.
 - `frv check`: bounded verification with minimized counterexample traces and remediation hints.
 - `frv scan`: repository/wiki triage that discovers runbook-like Markdown, ranks dangerous-effect vocabulary against semantic obligations, and recommends which docs need executable models first.
-- `frv audit`: Markdown/wiki scan for dangerous operations prose, stale assumptions, missing executable blocks, and unsafe suppressions.
+- `frv audit`: Markdown/wiki scan for dangerous operations prose, stale assumptions, missing executable blocks, and auditable prose suppressions with owner, expiry, reason, and invariant/waiver/limitation links.
 - `frv diff old new`: implemented semantic pull-request review for changed effects, assumptions, verification settings, proof-obligation deltas, and reachable counterexample deltas.
 - `frv explain FINDING`: show the rule, state delta, source lines, weakest-precondition hint, and suggested fix for one diagnostic.
 - `frv readiness`: implemented service or repository incident-readiness report covering validation, bounded-checking status, audit severity, stale preconditions, rollback/restore coverage, proof obligations, and uncovered service/region paths.
@@ -76,7 +76,7 @@ The repository can responsibly claim evidence about bounded models of runbooks, 
 1. Document formal objects, small-step rules, state transformers, Hoare obligations, and responsible claim boundaries.
 2. Extend types/effects, temporal invariants, source-preserving diagnostics, and semantic diffing.
 3. Improve bounded checking with reduction, abstraction, symbolic execution, counterexample minimization, and precondition synthesis.
-4. Ship Markdown/wiki audit, CI gate templates, incident-readiness reports, owner scorecards, and SARIF/JUnit outputs.
+4. Ship Markdown/wiki audit, auditable prose suppressions, CI gate templates, incident-readiness reports, owner scorecards, and SARIF/JUnit outputs.
 5. Build benchmark strata, historical/current case studies, synthetic mutants, validity-threat documentation, and reproducible reports.
 6. Harden formal exports, mechanization notes, proof-obligation tracking, artifact packaging, governance, and release criteria.
 

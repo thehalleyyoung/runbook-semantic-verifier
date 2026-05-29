@@ -27,10 +27,11 @@
     "prose_findings_by_rule": {
       "backfill-needs-queue-capacity": 1,
       "data-deletion-needs-restore-precondition": 1,
-      "destructive-delete-needs-targeting": 2
+      "destructive-delete-needs-targeting": 1,
+      "prose-suppression-applied": 1
     },
     "runbooks": 1,
-    "runtime_seconds": 0.001109042001189664,
+    "runtime_seconds": 0.001355499989585951,
     "states_explored": 3,
     "traces_explored": 1,
     "violations_by_property": {
@@ -49,7 +50,8 @@
         "expected_result": {
           "prose_rules": [
             "data-deletion-needs-restore-precondition",
-            "destructive-delete-needs-targeting"
+            "destructive-delete-needs-targeting",
+            "prose-suppression-applied"
           ],
           "safe": false,
           "violation_properties": [
@@ -83,7 +85,8 @@
           "dead_letter_queue",
           "dedupe_key",
           "consumer_group_rebalance",
-          "benchmark_expected_prose_rules"
+          "benchmark_expected_prose_rules",
+          "auditable_prose_suppressions"
         ],
         "validity_threats": [
           "Public runbook excerpts are incomplete",
@@ -95,7 +98,8 @@
       "expected_labels": {
         "expected_prose_rules": [
           "data-deletion-needs-restore-precondition",
-          "destructive-delete-needs-targeting"
+          "destructive-delete-needs-targeting",
+          "prose-suppression-applied"
         ],
         "expected_safe": false,
         "expected_violation_properties": [
@@ -135,9 +139,10 @@
       "prose_findings_by_rule": {
         "backfill-needs-queue-capacity": 1,
         "data-deletion-needs-restore-precondition": 1,
-        "destructive-delete-needs-targeting": 2
+        "destructive-delete-needs-targeting": 1,
+        "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.0010943750094156712,
+      "runtime_seconds": 0.0013383330078795552,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,

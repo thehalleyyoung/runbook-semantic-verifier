@@ -307,7 +307,8 @@
         ],
         "prose_rules": [
           "data-deletion-needs-restore-precondition",
-          "destructive-delete-needs-targeting"
+          "destructive-delete-needs-targeting",
+          "prose-suppression-applied"
         ]
       },
       "responsible_disclosure": {
@@ -326,7 +327,8 @@
         "dead_letter_queue",
         "dedupe_key",
         "consumer_group_rebalance",
-        "benchmark_expected_prose_rules"
+        "benchmark_expected_prose_rules",
+        "auditable_prose_suppressions"
       ]
     },
     {

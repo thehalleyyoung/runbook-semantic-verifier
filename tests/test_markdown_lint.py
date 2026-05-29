@@ -73,6 +73,32 @@ class MarkdownLintTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("unmodeled-escalation-path", proc.stdout)
 
+    def test_valid_prose_suppression_requires_auditable_contract(self):
+        text = "\n".join([
+            '<!-- frv-suppress rule=destructive-delete-needs-targeting owner=docs-sre expires=2099-12-31 reason="public template documents targeted ring forget" link=limitation:ring-forget-targeting -->',
+            'Use the "Forget" button to forget and remove the unhealthy distributor from the ring.',
+        ])
+        findings = lint_markdown_text(text, "suppressed.md")
+        by_rule = {finding.rule: finding for finding in findings}
+
+        self.assertNotIn("destructive-delete-needs-targeting", by_rule)
+        self.assertIn("prose-suppression-applied", by_rule)
+        self.assertEqual(by_rule["prose-suppression-applied"].severity, "audit-only")
+        self.assertIn("owner=docs-sre", by_rule["prose-suppression-applied"].message)
+        self.assertEqual(by_rule["prose-suppression-applied"].semantic_obligation, "limitation:ring-forget-targeting")
+
+    def test_invalid_prose_suppression_does_not_hide_finding(self):
+        text = "\n".join([
+            '<!-- frv-suppress rule=destructive-delete-needs-targeting owner=docs-sre reason="missing expiry and link" -->',
+            'Use the "Forget" button to forget and remove the unhealthy distributor from the ring.',
+        ])
+        findings = lint_markdown_text(text, "invalid-suppression.md")
+        by_rule = {finding.rule: finding for finding in findings}
+
+        self.assertIn("invalid-prose-suppression", by_rule)
+        self.assertIn("destructive-delete-needs-targeting", by_rule)
+        self.assertIn("missing required field", by_rule["invalid-prose-suppression"].message)
+
 
 if __name__ == "__main__":
     unittest.main()

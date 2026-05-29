@@ -124,17 +124,17 @@
         },
         {
           "kind": "prose",
-          "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
-          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-          "rule": "destructive-delete-needs-targeting",
-          "severity": "warning"
-        },
-        {
-          "kind": "prose",
           "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
           "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
           "rule": "backfill-needs-queue-capacity",
           "severity": "warning"
+        },
+        {
+          "kind": "prose",
+          "message": "Suppressed destructive-delete-needs-targeting at line 19 with owner=grafana-tempo-public-fixture, expires=2099-12-31, reason=public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof, link=limitation:ring-forget-targeting.",
+          "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+          "rule": "prose-suppression-applied",
+          "severity": "audit-only"
         }
       ],
       "unsafe_runbooks": 1,

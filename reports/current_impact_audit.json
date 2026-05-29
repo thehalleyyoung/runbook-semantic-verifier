@@ -103,7 +103,7 @@
     {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
       "id": "finding-007",
-      "line": 20,
+      "line": 21,
       "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 3,
@@ -114,22 +114,9 @@
       "type": "prose"
     },
     {
-      "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
-      "id": "finding-008",
-      "line": 18,
-      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
-      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "rank": 2,
-      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
-      "rule": "destructive-delete-needs-targeting",
-      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
-      "severity": "warning",
-      "type": "prose"
-    },
-    {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
-      "id": "finding-009",
-      "line": 20,
+      "id": "finding-008",
+      "line": 21,
       "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 2,
@@ -141,8 +128,8 @@
     },
     {
       "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
-      "id": "finding-010",
-      "line": 26,
+      "id": "finding-009",
+      "line": 27,
       "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "rank": 2,
@@ -150,6 +137,19 @@
       "rule": "backfill-needs-queue-capacity",
       "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
       "severity": "warning",
+      "type": "prose"
+    },
+    {
+      "excerpt": "frv-suppress rule=destructive-delete-needs-targeting",
+      "id": "finding-010",
+      "line": 18,
+      "message": "Suppressed destructive-delete-needs-targeting at line 19 with owner=grafana-tempo-public-fixture, expires=2099-12-31, reason=public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof, link=limitation:ring-forget-targeting.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "rank": 1,
+      "recommendation": "Review suppression owner, expiry, reason, and invariant/waiver/limitation link during runbook review.",
+      "rule": "prose-suppression-applied",
+      "semantic_obligation": "limitation:ring-forget-targeting",
+      "severity": "audit-only",
       "type": "prose"
     }
   ],
@@ -168,16 +168,18 @@
     "findings_by_rule": {
       "backfill-needs-queue-capacity": 1,
       "data-deletion-needs-restore-precondition": 1,
-      "destructive-delete-needs-targeting": 2,
+      "destructive-delete-needs-targeting": 1,
       "no_duplicate_processing_risk": 2,
       "no_rebalance_to_zero_consumers": 1,
       "no_replay_without_dedupe": 1,
       "no_unstable_consumer_group_with_backlog": 1,
+      "prose-suppression-applied": 1,
       "queue_backlog_requires_consumers": 1
     },
     "findings_by_severity": {
+      "audit-only": 1,
       "error": 7,
-      "warning": 3
+      "warning": 2
     },
     "runbooks": 1,
     "safe_runbooks": 0

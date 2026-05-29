@@ -15,6 +15,7 @@ validated by maintainers before operational use.
 
 ## Public prose excerpts analyzed
 
+<!-- frv-suppress rule=destructive-delete-needs-targeting owner=grafana-tempo-public-fixture expires=2099-12-31 reason="public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof" link=limitation:ring-forget-targeting -->
 > Use the "Forget" button to forget and remove any unhealthy distributors from the ring.
 
 > If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.

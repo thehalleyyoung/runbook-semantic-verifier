@@ -185,7 +185,7 @@
   "unverified_prose_claims": [
     {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
-      "line": 20,
+      "line": 21,
       "message": "Prose describes data deletion without executable restore/blast-radius preconditions. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
@@ -194,18 +194,8 @@
       "severity": "error"
     },
     {
-      "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
-      "line": 18,
-      "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
-      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
-      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
-      "rule": "destructive-delete-needs-targeting",
-      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
-      "severity": "warning"
-    },
-    {
       "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
-      "line": 20,
+      "line": 21,
       "message": "Prose describes destructive removal/forgetting without executable blast-radius checks. Missing condition(s): service_available_at_least.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
@@ -215,13 +205,23 @@
     },
     {
       "excerpt": "machine-checkable guardrails for deduplicated fallback replay, consumer-group",
-      "line": 26,
+      "line": 27,
       "message": "Prose mentions backfill/replay work without executable queue/backlog capacity guards. Missing condition(s): queue_depth_at_most, queue_has_consumers, queue_replay_deduplicated.",
       "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
       "recommendation": "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
       "rule": "backfill-needs-queue-capacity",
       "semantic_obligation": "queue_backlog_requires_consumers; no_replay_without_dedupe; no_duplicate_processing_risk",
       "severity": "warning"
+    },
+    {
+      "excerpt": "frv-suppress rule=destructive-delete-needs-targeting",
+      "line": 18,
+      "message": "Suppressed destructive-delete-needs-targeting at line 19 with owner=grafana-tempo-public-fixture, expires=2099-12-31, reason=public excerpt is retained as audit evidence while the fixture models this as an explicit limitation, not a verified blast-radius proof, link=limitation:ring-forget-targeting.",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Review suppression owner, expiry, reason, and invariant/waiver/limitation link during runbook review.",
+      "rule": "prose-suppression-applied",
+      "semantic_obligation": "limitation:ring-forget-targeting",
+      "severity": "audit-only"
     }
   ]
 }

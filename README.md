@@ -2,12 +2,13 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **31/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **32/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
-scorecards, property-coverage reports, repository/wiki runbook-priority scans, queue replay/DLQ/consumer-group
-semantics, DNS cutover semantics, cache flush/warmup/cold-start/capacity
-semantics, and checked-in historical/current public case-study evidence.
+scorecards, property-coverage reports, repository/wiki runbook-priority scans,
+auditable prose suppressions, queue replay/DLQ/consumer-group semantics, DNS
+cutover semantics, cache flush/warmup/cold-start/capacity semantics, and
+checked-in historical/current public case-study evidence.
 
 ## Quickstart
 
@@ -189,10 +190,10 @@ PYTHONPATH=src python3 -m runbook_verify.cli scan case_studies/current/grafana_t
 
 The checked-in outputs `reports/current_impact_scan.md` and
 `reports/current_impact_scan.json` rank the Grafana Tempo-derived public fixture
-as `critical` (score 56) because destructive-delete, data-deletion, and
+as `critical` (score 52) because destructive-delete, data-deletion, and
 backfill/replay prose map to uncovered blast-radius, restore-path, queue,
-consumer, and deduplication obligations. The scan is a triage signal, not proof
-of live-service risk.
+consumer, deduplication, and explicit-limitation obligations. The scan is a
+triage signal, not proof of live-service risk.
 
 `frv audit` now combines executable checking with severity-ranked Markdown/wiki
 prose findings. Each prose rule links to a semantic obligation or explicit
@@ -231,8 +232,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli readiness \
 The checked-in outputs `reports/current_impact_readiness.md` and
 `reports/current_impact_readiness.json` report `not_ready` for the derived Tempo
 fixture because the model has six bounded queue replay/consumer-group
-counterexamples and four unverified destructive/data-deletion/backfill prose
-claims.
+counterexamples, three unsuppressed destructive/data-deletion/backfill prose
+claims, and one audited explicit-limitation suppression.
 
 `frv owner-scorecard` groups the same bounded semantic and prose-audit evidence
 by owner metadata (`metadata.owners`, `metadata.owner`, `metadata.team`, or
@@ -249,7 +250,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard \
 The checked-in outputs `reports/current_impact_owner_scorecard.md` and
 `reports/current_impact_owner_scorecard.json` assign the derived Tempo fixture to
 `grafana-tempo-public-fixture`, report `not_ready`, and show six bounded queue
-counterexamples plus destructive-data/backfill prose obligations as
+counterexamples plus destructive-data/backfill prose obligations and one audited
+prose suppression as
 owner-visible remediation debt.
 
 `frv coverage` maps each current invariant template to the services, databases,
@@ -265,8 +267,8 @@ The checked-in coverage outputs `reports/current_impact_coverage.md` and
 `reports/current_impact_coverage.json` show that the Tempo-derived fixture's
 `tempo-query` service, `tenant-index-fallback-scan` queue, `prod` region, owner,
 and executable DSL section are covered by eleven invariant/proof-obligation
-templates, while four destructive-data/backfill prose obligations remain
-coverage gaps.
+templates, while three destructive-data/backfill prose obligations and one
+explicit-limitation suppression remain coverage gaps.
 
 The checked-in DNS case-study reports (`reports/dnsswitch_dns_audit.md`,
 `reports/dnsswitch_dns_audit.json`, and `reports/dnsswitch_dns_coverage.md`)
@@ -290,6 +292,19 @@ write-freeze, warmup, and capacity obligations. Severity
 levels are `audit-only`, `warning`, `error`, and `responsible-disclosure`, with
 `info` reserved for future advisory checks.
 
+Markdown prose suppressions are supported only when the suppression itself is
+auditable:
+
+```markdown
+<!-- frv-suppress rule=destructive-delete-needs-targeting owner=team-sre expires=2099-12-31 reason="public excerpt retained as an explicit limitation" link=limitation:ring-forget-targeting -->
+```
+
+Missing or malformed `owner`, `expires`, `reason`, or `link` metadata produces
+an `invalid-prose-suppression` error and does not hide the original prose
+finding. Valid suppressions are emitted as `prose-suppression-applied`
+`audit-only` findings so reviews, readiness reports, scorecards, and coverage
+reports can see the waiver/limitation contract.
+
 ## Current public-doc case study
 
 `case_studies/current/grafana_tempo/tempo_runbook_current_impact.md` analyzes
@@ -300,7 +315,9 @@ backfill operations that lack executable blast-radius/capacity, restore-path,
 consumer, or deduplication preconditions. The derived executable model reports
 bounded queue fallback replay hazards: replay without dedupe, duplicate
 processing risk, rebalancing to zero consumers, and an unstable consumer group
-with backlog. The
+with backlog. One public ring-forget excerpt is intentionally retained with an
+auditable `frv-suppress` limitation link, demonstrating that suppressions are
+reviewable artifacts rather than silent skips. The
 combined audit report is checked in as `reports/current_impact_audit.md` and
 `reports/current_impact_audit.json`, with code-scanning/CI equivalents in
 `reports/current_impact_audit.sarif` and `reports/current_impact_audit.junit.xml`;
