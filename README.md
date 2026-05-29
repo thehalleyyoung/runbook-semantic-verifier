@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **90/100** items in the local roadmap are complete. The
+Current roadmap status: **95/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces with synthesized precondition/JSON-patch candidates, multiline Markdown DSL source mapping, greedy dependency-preserving counterexample minimization,
@@ -19,9 +19,9 @@ cache flush/warmup/cold-start/capacity semantics, object-storage
 restore/failover semantics with RPO/RTO and multi-region durability checks, credential
 rotation/revocation semantics, high-risk effect annotations with auditable
 waivers, and checked-in
-historical/current public case-study evidence, and conservative partial-order reduction for independent actions with trace-equivalence tests. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
-Benchmark reports now also carry validity-threat categories, workflow-baseline
-comparisons, seeded/reproducible exploration metadata, semantic-diff remediation pairs, oracle-review labels, reproducible
+historical/current public case-study evidence, and conservative partial-order reduction, opt-in dominance pruning for monotone hazard abstractions, bounded symbolic-choice expansion, and native/exported trace-equivalence reports. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
+Benchmark and evaluation reports now also carry validity-threat categories, workflow-baseline
+comparisons, seeded/reproducible exploration metadata, semantic-diff remediation pairs, longitudinal gate evaluation over revision pairs, SRE-style usability task proxies, oracle-review labels, reproducible
 report-generation commands, contribution rules, and adoption-oriented risk/action
 summaries. The public docs now include an adoption/governance pack with CI and
 pre-commit templates, remediation playbooks, onboarding and migration guides,
@@ -77,6 +77,10 @@ PYTHONPATH=src python3 -m runbook_verify.cli formal-objects case_studies/current
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
+PYTHONPATH=src python3 -m runbook_verify.cli trace-equivalence --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli symbolic-check tests/fixtures/symbolic_capacity_runbook.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli longitudinal benchmarks/builtin.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli usability-tasks --format markdown
 ```
 
 Optional editable install:
@@ -205,6 +209,10 @@ src/runbook_verify/
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
   exporter.py   TLA+/Alloy starter exporters and proof-obligation reports
   benchmark.py  benchmark harness and JSON/Markdown result renderers
+  symbolic.py   bounded symbolic choice expansion for replica/count/region/wait variants
+  trace_equivalence.py native/exported counterexample projection checks
+  longitudinal.py semantic-gate evaluation over configured revision pairs
+  usability.py  SRE-style repair-task proxy metrics for minimized traces and hints
   runtime_verification.py observed event/chatops conformance checking
   mutations.py  synthetic benchmark mutation operators
   paper_tables.py paper-ready feature/result/ablation/adoption tables
@@ -230,7 +238,7 @@ The checker is deliberately small: it models a runbook as a finite set of steps,
 enumerates dependency-respecting traces up to `max_depth` using explicit FIFO or
 dependency fairness, breadth-first, depth-first, shortest-counterexample, or
 seeded randomized bounded strategies, applies action semantics to immutable
-system states, deduplicates canonical states, and records safety violations with
+system states, deduplicates canonical states, can optionally prune hazard-equivalent abstract states for monotone drained/paused/suppressed/frozen/revoked dimensions, and records safety violations with
 source-linked traces and remediation hints, then greedily replays subsequences to
 remove irrelevant independent steps while preserving the same property/step
 witness where the modeled dependency order permits. State and timeout budgets produce an
@@ -630,6 +638,10 @@ Reusable config:
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
+PYTHONPATH=src python3 -m runbook_verify.cli trace-equivalence --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli symbolic-check tests/fixtures/symbolic_capacity_runbook.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli longitudinal benchmarks/builtin.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli usability-tasks --format markdown
 make benchmark-reproduce
 ```
 

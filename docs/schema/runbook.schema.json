@@ -2507,6 +2507,9 @@
     "safety": {
       "additionalProperties": true,
       "properties": {
+        "dominance_pruning": {
+          "type": "boolean"
+        },
         "exploration_seed": {
           "type": "integer"
         },
@@ -2547,6 +2550,29 @@
         "$ref": "#/$defs/step"
       },
       "type": "array"
+    },
+    "symbolic": {
+      "additionalProperties": false,
+      "properties": {
+        "choices": {
+          "additionalProperties": {
+            "items": {
+              "type": [
+                "string",
+                "integer",
+                "boolean",
+                "array",
+                "object",
+                "null"
+              ]
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
     },
     "system": {
       "$ref": "#/$defs/system"

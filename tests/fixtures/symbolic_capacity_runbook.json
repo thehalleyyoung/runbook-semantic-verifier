@@ -1,0 +1,19 @@
+{
+  "name": "Symbolic capacity failover",
+  "allow_reordering": false,
+  "symbolic": {
+    "choices": {
+      "system.services.api.min_available": [1, 2],
+      "steps[scale].params.replicas": [1, 2],
+      "steps[wait].params.minutes": [0, 5]
+    }
+  },
+  "system": {
+    "regions": {"east": {"healthy": true}},
+    "services": {"api": {"min_available": 1, "allow_unachievable_min_available": true, "replicas": [{"id": "api-0", "region": "east"}]}}
+  },
+  "steps": [
+    {"id": "scale", "action": "scale_service", "params": {"service": "api", "replicas": 1, "region": "east"}},
+    {"id": "wait", "action": "wait", "after": ["scale"], "params": {"minutes": 0}}
+  ]
+}

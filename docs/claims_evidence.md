@@ -28,7 +28,7 @@ TTL and health-check convergence obligations, cache flush/warmup/cold-start/
 capacity semantics, object-storage restore/failover with write-freeze, RPO/RTO,
 and multi-region durability obligations, credential rotation/revocation state,
 reviewed high-risk effect annotations, and auditable model waivers.
-Formal-export evidence now includes docs separating starter specs from hand-strengthened proofs, mechanized-semantics notes, exporter conformance fixtures, formal-methods limitation notes, and a shared SRE/security/PL/formal-methods glossary.
+Formal-export evidence now includes docs separating starter specs from hand-strengthened proofs, mechanized-semantics notes, exporter conformance fixtures, native/exported counterexample projection reports, formal-methods limitation notes, and a shared SRE/security/PL/formal-methods glossary.
 Action descriptors now carry generated denotational state-transformer text, and
 semantic findings carry Hoare triples, weakest-precondition hints, source lines,
 causal dependencies, and state deltas in `frv check --format json`.
@@ -40,7 +40,7 @@ guidance, and a bounded Redis cache-flush mutant derived from a public Redis
 runbook template.
 Benchmark evidence now includes categorized validity threats, workflow-baseline
 comparisons, semantic-diff remediation baselines, oracle-review label metadata,
-seeded exploration metadata, reproducible report-generation commands, and adoption-oriented risk/action
+seeded exploration metadata, opt-in dominance-pruning counters, bounded symbolic-choice reports, longitudinal semantic-gate evaluation, SRE-style usability task proxies, reproducible report-generation commands, and adoption-oriented risk/action
 summaries. Public adoption documentation now adds reusable CI/pre-commit
 templates, remediation playbooks, onboarding and migration guides, governance and
 release criteria, an evidence ledger, responsible-claims language, and
@@ -186,6 +186,26 @@ differently named system exists.
   data, not live discovery. A mismatch means the artifact and configured
   inventory disagree; it does not prove the external service catalog is complete
   or current.
+
+- `frv trace-equivalence` checks that representative failover, queue, data-restore,
+  and credential runbooks preserve every native counterexample key in the
+  exporter conformance projection used by generated TLA+/Alloy starter models.
+  This is a label/trace preservation check, not an external model-checker proof.
+- `frv symbolic-check` expands bounded symbolic choices declared under
+  `symbolic.choices` (for example replica counts, min-availability thresholds,
+  traffic weights, queue depths, and waits) into concrete variants and runs the
+  native checker on each variant.
+- Opt-in `safety.dominance_pruning=true` records abstract-state and
+  dominance-pruned counters for monotone hazards such as drained replicas,
+  paused/backlogged queues, suppressed alerts, frozen writes, and revoked
+  credentials. The default checker remains exact-state deduplicating.
+- `frv longitudinal` evaluates configured semantic-diff revision pairs and
+  reports whether semantic gates would have blocked unsafe pre-merge states or
+  regressions. Current checked-in evidence is bounded to benchmark revision
+  pairs, not the full public Git history.
+- `frv usability-tasks` measures an instrumented SRE-style repair-task proxy: raw
+  versus minimized trace steps plus generated precondition and JSON-patch hints.
+  It is not a human-subjects speedup claim.
 
 ## Auditable prose suppression evidence
 

@@ -14,6 +14,7 @@ from .coverage import CoverageError, build_coverage_report, render_coverage_json
 from .explanation import ExplainError, explain_finding, explain_violation, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla, render_proof_obligations_json, render_proof_obligations_markdown
 from .formal_objects import FormalObjectsError, build_formal_objects_report, render_formal_objects_json, render_formal_objects_markdown
+from .longitudinal import build_longitudinal_report, render_longitudinal_json, render_longitudinal_markdown
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
 from .mutations import render_mutations_json, render_mutations_markdown, run_mutations
@@ -26,8 +27,11 @@ from .repository_scan import RepositoryScanError, ScanOptions, build_repository_
 from .runtime_verification import RuntimeVerificationError, render_runtime_json, render_runtime_markdown, verify_runtime_log
 from .schema import render_json_schema
 from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
+from .symbolic import render_symbolic_json, render_symbolic_markdown, run_symbolic_check
 from .temporal_invariants import render_temporal_invariants_json, render_temporal_invariants_markdown
+from .trace_equivalence import build_trace_equivalence, default_trace_equivalence_paths, render_trace_equivalence_json, render_trace_equivalence_markdown
 from .type_system import build_type_inventory, render_type_inventory_json, render_type_inventory_markdown
+from .usability import build_usability_report, default_usability_paths, render_usability_json, render_usability_markdown
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -135,6 +139,18 @@ def main(argv: list[str] | None = None) -> int:
     paper_p = sub.add_parser("paper-tables", help="render paper-ready benchmark, feature, ablation, usefulness, and adoption tables")
     paper_p.add_argument("path", nargs="?", help="optional benchmark config, runbook file, or directory")
     paper_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    trace_eq_p = sub.add_parser("trace-equivalence", help="compare native counterexamples with exported-model conformance projections")
+    trace_eq_p.add_argument("paths", nargs="*", help="runbook paths; defaults cover failover, queue, data, and credential fixtures")
+    trace_eq_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    symbolic_p = sub.add_parser("symbolic-check", help="expand bounded symbolic choices and verify every concrete variant")
+    symbolic_p.add_argument("runbook")
+    symbolic_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    longitudinal_p = sub.add_parser("longitudinal", help="evaluate semantic gates across configured revision pairs")
+    longitudinal_p.add_argument("config", nargs="?", default="benchmarks/builtin.json")
+    longitudinal_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    usability_p = sub.add_parser("usability-tasks", help="measure minimized traces and generated precondition hints on SRE-style repair tasks")
+    usability_p.add_argument("paths", nargs="*", help="runbook paths; defaults to checked-in unsafe public/synthetic tasks")
+    usability_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     args = parser.parse_args(raw_argv)
 
     if args.command == "audit":
@@ -230,6 +246,36 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(render_paper_tables_json(report) if args.format == "json" else render_paper_tables_markdown(report), end="")
         return 0 if report["benchmark"]["aggregate"]["pass"] else 1
+    if args.command == "trace-equivalence":
+        paths = args.paths or default_trace_equivalence_paths()
+        report = build_trace_equivalence(paths)
+        print(render_trace_equivalence_json(report) if args.format == "json" else render_trace_equivalence_markdown(report), end="")
+        return 0 if report.pass_ else 1
+    if args.command == "symbolic-check":
+        try:
+            report = run_symbolic_check(args.runbook)
+        except (RunbookParseError, ValueError) as exc:
+            print(f"symbolic-check error: {exc}", file=sys.stderr)
+            return 2
+        print(render_symbolic_json(report) if args.format == "json" else render_symbolic_markdown(report), end="")
+        return 0 if report.pass_ else 1
+    if args.command == "longitudinal":
+        try:
+            report = build_longitudinal_report(args.config)
+        except BenchmarkConfigError as exc:
+            print(f"longitudinal error: {exc}", file=sys.stderr)
+            return 2
+        print(render_longitudinal_json(report) if args.format == "json" else render_longitudinal_markdown(report), end="")
+        return 0 if report.pass_ else 1
+    if args.command == "usability-tasks":
+        paths = args.paths or default_usability_paths()
+        try:
+            report = build_usability_report(paths)
+        except RunbookParseError as exc:
+            _print_parse_error(exc, "text")
+            return 2
+        print(render_usability_json(report) if args.format == "json" else render_usability_markdown(report), end="")
+        return 0 if report.pass_ else 1
     if args.command == "explain":
         try:
             explanation = explain_finding(args.path, args.finding_id)

@@ -1,0 +1,408 @@
+{
+  "pass": true,
+  "path": "tests/fixtures/symbolic_capacity_runbook.json",
+  "summary": {
+    "safe_variants": 6,
+    "symbolic_splits": 7,
+    "unsafe_variants": 2,
+    "variants": 8
+  },
+  "variants": [
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 1,
+        "steps[wait].params.minutes": 0,
+        "system.services.api.min_available": 1
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": true,
+      "states_explored": 3,
+      "violations_by_property": {}
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 1,
+        "steps[wait].params.minutes": 0,
+        "system.services.api.min_available": 2
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 1,
+          "safety_postcondition": 2
+        },
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 1,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "ActionPreserves.ServiceAvailability": 3,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": false,
+      "states_explored": 3,
+      "violations_by_property": {
+        "service_min_available": 3
+      }
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 1,
+        "steps[wait].params.minutes": 5,
+        "system.services.api.min_available": 1
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": true,
+      "states_explored": 3,
+      "violations_by_property": {}
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 1,
+        "steps[wait].params.minutes": 5,
+        "system.services.api.min_available": 2
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 1,
+          "safety_postcondition": 2
+        },
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 1,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "ActionPreserves.ServiceAvailability": 3,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": false,
+      "states_explored": 3,
+      "violations_by_property": {
+        "service_min_available": 3
+      }
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 2,
+        "steps[wait].params.minutes": 0,
+        "system.services.api.min_available": 1
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": true,
+      "states_explored": 3,
+      "violations_by_property": {}
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 2,
+        "steps[wait].params.minutes": 0,
+        "system.services.api.min_available": 2
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": true,
+      "states_explored": 3,
+      "violations_by_property": {}
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 2,
+        "steps[wait].params.minutes": 5,
+        "system.services.api.min_available": 1
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": true,
+      "states_explored": 3,
+      "violations_by_property": {}
+    },
+    {
+      "bindings": {
+        "steps[scale].params.replicas": 2,
+        "steps[wait].params.minutes": 5,
+        "system.services.api.min_available": 2
+      },
+      "pass": true,
+      "performance_counters": {
+        "abstract_states": 0,
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 2,
+        "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "dominance_pruned_states": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 2,
+          "precondition": 0,
+          "promised_effect": 0,
+          "safety_postcondition": 4
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 1,
+          "Action.Wait": 1,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 2
+        },
+        "states_explored": 3,
+        "symbolic_splits": 3,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 2,
+        "waivers_applied": 0
+      },
+      "safe": true,
+      "states_explored": 3,
+      "violations_by_property": {}
+    }
+  ]
+}

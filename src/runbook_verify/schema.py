@@ -41,6 +41,21 @@ def build_json_schema() -> dict[str, Any]:
                     "max_states": {"type": "integer", "minimum": 1},
                     "timeout_seconds": {"type": "integer", "minimum": 0},
                     "fairness": {"type": "string", "enum": ["dependency", "fifo"]},
+                    "dominance_pruning": {"type": "boolean"},
+                },
+            },
+            "symbolic": {
+                "type": "object",
+                "additionalProperties": False,
+                "properties": {
+                    "choices": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {"type": ["string", "integer", "boolean", "array", "object", "null"]},
+                        },
+                    },
                 },
             },
             "system": {"$ref": "#/$defs/system"},

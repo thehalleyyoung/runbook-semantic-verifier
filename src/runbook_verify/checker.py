@@ -65,6 +65,8 @@ class CheckResult:
     semantic_rule_counts: dict[str, int] = field(default_factory=dict)
     annotation_warnings: list[Violation] = field(default_factory=list)
     waivers_applied: list[dict[str, Any]] = field(default_factory=list)
+    abstract_states: int = 0
+    dominance_pruned_states: int = 0
 
     @property
     def avg_branch_factor(self) -> float:
@@ -101,6 +103,8 @@ class CheckResult:
             "semantic_rule_counts": dict(sorted(self.semantic_rule_counts.items())),
             "annotation_warnings": len(self.annotation_warnings),
             "waivers_applied": len(self.waivers_applied),
+            "abstract_states": self.abstract_states,
+            "dominance_pruned_states": self.dominance_pruned_states,
         }
 
 
@@ -121,6 +125,7 @@ class Checker:
         self.timeout_seconds = int(timeout) if isinstance(timeout, int) else None
         self.fairness_model = str(runbook.safety.get("fairness", "dependency" if runbook.allow_reordering else "fifo"))
         self.partial_order_reduction = bool(runbook.safety.get("partial_order_reduction", True))
+        self.dominance_pruning = bool(runbook.safety.get("dominance_pruning", False))
         self._rng = random.Random(self.seed)
 
     def check(self) -> CheckResult:
@@ -133,6 +138,7 @@ class Checker:
         initial = (self.runbook.state, frozenset(), tuple(), tuple())
         queue: deque[tuple[SystemState, frozenset[str], tuple[str, ...], tuple[str, ...]]] = deque([initial])
         seen = set()
+        abstract_seen: set[tuple[Any, ...]] = set()
         while queue:
             if deadline is not None and time.monotonic() >= deadline:
                 result.max_depth_reached = True
@@ -149,8 +155,18 @@ class Checker:
             state, done, trace, semantic_trace = self._pop_frontier(queue)
             key = (state.fingerprint(), done)
             if key in seen:
+                if self.dominance_pruning:
+                    result.dominance_pruned_states += 1
                 continue
             seen.add(key)
+            if self.dominance_pruning:
+                abstract_key = (_monotone_hazard_signature(state), done)
+                if abstract_key in abstract_seen:
+                    result.dominance_pruned_states += 1
+                    result.reductions_applied += 1
+                    continue
+                abstract_seen.add(abstract_key)
+                result.abstract_states = len(abstract_seen)
             result.states_explored += 1
             if len(trace) >= self.runbook.max_depth or len(done) == len(self.runbook.steps):
                 result.traces_explored += 1
@@ -718,6 +734,19 @@ def _service_has_capacity_in_region(state: SystemState, service: str, region: st
     if svc is None:
         return False
     return any(replica.region == region and replica.healthy and not replica.drained for replica in svc.replicas)
+
+
+def _monotone_hazard_signature(state: SystemState) -> tuple[Any, ...]:
+    """Conservative abstraction for opt-in dominance pruning of hazard-equivalent states."""
+    services = tuple(sorted((name, svc.available_count(), tuple(sorted(r.drained for r in svc.replicas))) for name, svc in state.services.items()))
+    queues = tuple(sorted((name, q.depth > 0, q.consumers <= 0, q.paused, q.duplicate_risk, q.consumer_group_stable) for name, q in state.queues.items()))
+    alerts = tuple(sorted((name, alert.suppressed_until_minute is not None and alert.suppressed_until_minute > state.clock_minute) for name, alert in state.alerts.items()))
+    caches = tuple(sorted((name, cache.warm, cache.write_frozen, cache.stale_read_risk, cache.entries >= cache.warmup_entries, cache.entries > cache.capacity_entries) for name, cache in state.caches.items()))
+    buckets = tuple(sorted((name, len(bucket.replicated_regions), bucket.writes_frozen, bucket.snapshot_available, bucket.restore_completed) for name, bucket in state.object_buckets.items()))
+    credentials = tuple(sorted((name, credential.revoked) for name, credential in state.credentials.items()))
+    routes = tuple(sorted((name, tuple(sorted(route.weights.items())), tuple(sorted(route.drained_regions))) for name, route in state.traffic_routes.items()))
+    dns = tuple(sorted((name, record.region, record.previous_region is not None and not record.ttl_elapsed(state.clock_minute)) for name, record in state.dns_records.items()))
+    return (services, queues, alerts, caches, buckets, credentials, routes, dns)
 
 
 def _normalize_trace(trace: tuple[str, ...], step: str | None) -> tuple[str, ...]:

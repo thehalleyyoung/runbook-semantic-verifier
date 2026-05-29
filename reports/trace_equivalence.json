@@ -1,0 +1,53 @@
+{
+  "cases": [
+    {
+      "exported_counterexamples": 2,
+      "matched_counterexamples": 2,
+      "missing_from_export": [],
+      "name": "GitHub Oct21 2018 MySQL failover reconstruction",
+      "native_counterexamples": 2,
+      "pass": true,
+      "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "unexpected_exported": []
+    },
+    {
+      "exported_counterexamples": 6,
+      "matched_counterexamples": 6,
+      "missing_from_export": [],
+      "name": "Grafana Tempo current public runbook derived safety model",
+      "native_counterexamples": 6,
+      "pass": true,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "unexpected_exported": []
+    },
+    {
+      "exported_counterexamples": 9,
+      "matched_counterexamples": 9,
+      "missing_from_export": [],
+      "name": "Unsafe object storage restore",
+      "native_counterexamples": 9,
+      "pass": true,
+      "path": "examples/object_storage_restore_unsafe.json",
+      "unexpected_exported": []
+    },
+    {
+      "exported_counterexamples": 0,
+      "matched_counterexamples": 0,
+      "missing_from_export": [],
+      "name": "Credential rotation with reviewed revocation effect",
+      "native_counterexamples": 0,
+      "pass": true,
+      "path": "examples/credential_rotation_runbook.json",
+      "unexpected_exported": []
+    }
+  ],
+  "pass": true,
+  "summary": {
+    "cases": 4,
+    "exported_counterexamples": 17,
+    "matched_counterexamples": 17,
+    "missing_from_export": 0,
+    "native_counterexamples": 17,
+    "unexpected_exported": 0
+  }
+}

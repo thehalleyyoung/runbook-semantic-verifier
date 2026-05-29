@@ -1,0 +1,65 @@
+{
+  "cases": [
+    {
+      "counterexamples": 121,
+      "generated_json_patches": 110,
+      "generated_precondition_hints": 110,
+      "hinted_counterexamples": 110,
+      "minimized_trace_steps": 346,
+      "path": "examples/unsafe_runbook.json",
+      "properties": [
+        "bounded_alert_suppression",
+        "no_draining_all_replicas",
+        "no_failover_to_unhealthy_region",
+        "no_rollback_during_incompatible_migration",
+        "quorum_before_data_loss_action",
+        "service_min_available"
+      ],
+      "raw_trace_steps": 402,
+      "task": "repair Unsafe emergency rollback and evacuation",
+      "trace_step_reduction": 56
+    },
+    {
+      "counterexamples": 2,
+      "generated_json_patches": 1,
+      "generated_precondition_hints": 1,
+      "hinted_counterexamples": 1,
+      "minimized_trace_steps": 2,
+      "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "properties": [
+        "precondition",
+        "quorum_before_data_loss_action"
+      ],
+      "raw_trace_steps": 2,
+      "task": "repair GitHub Oct21 2018 MySQL failover reconstruction",
+      "trace_step_reduction": 0
+    },
+    {
+      "counterexamples": 6,
+      "generated_json_patches": 2,
+      "generated_precondition_hints": 2,
+      "hinted_counterexamples": 2,
+      "minimized_trace_steps": 10,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "properties": [
+        "no_duplicate_processing_risk",
+        "no_rebalance_to_zero_consumers",
+        "no_replay_without_dedupe",
+        "no_unstable_consumer_group_with_backlog",
+        "queue_backlog_requires_consumers"
+      ],
+      "raw_trace_steps": 10,
+      "task": "repair Grafana Tempo current public runbook derived safety model",
+      "trace_step_reduction": 0
+    }
+  ],
+  "pass": true,
+  "summary": {
+    "generated_json_patches": 113,
+    "generated_precondition_hints": 113,
+    "minimized_trace_steps": 358,
+    "raw_trace_steps": 414,
+    "sre_tasks": 3,
+    "trace_step_reduction": 56
+  }
+}
