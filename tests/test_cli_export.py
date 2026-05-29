@@ -7,7 +7,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from runbook_verify.exporter import export_tla
+from runbook_verify.checker import Checker
+from runbook_verify.exporter import export_tla, export_alloy, export_conformance_manifest, render_proof_obligations_json
 from runbook_verify.descriptors import render_action_reference_markdown
 from runbook_verify.contracts import render_weakest_preconditions_markdown
 from runbook_verify.parser import load_runbook
@@ -44,6 +45,40 @@ class CliAndExportTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
         self.assertIn("module runbook_verification", proc.stdout)
         self.assertIn("denotation:", proc.stdout)
+
+
+    def test_cli_proof_obligations_markdown(self):
+        proc = self._run("proof-obligations", "examples/safe_runbook.json", "--format", "markdown")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("# Proof obligations: Safe regional database failover", proc.stdout)
+        self.assertIn("exporter:tla-abstraction", proc.stdout)
+        self.assertIn("runtime logs should preserve modeled wait/expiry/TTL ordering", proc.stdout)
+
+    def test_exporter_round_trip_conformance_cases(self):
+        fixture = json.loads((ROOT / "tests" / "fixtures" / "exporter_conformance_cases.json").read_text(encoding="utf-8"))
+        for case in fixture["cases"]:
+            with self.subTest(path=case["path"]):
+                runbook = load_runbook(ROOT / case["path"])
+                manifest = export_conformance_manifest(runbook)
+                tla = export_tla(runbook)
+                alloy = export_alloy(runbook)
+                obligations = json.loads(render_proof_obligations_json(runbook))
+                native_properties = {violation.property for violation in Checker(runbook).check().violations}
+                self.assertEqual(manifest["action_sequence"], [step.id for step in runbook.steps])
+                self.assertIn("dependencies", manifest["variables"])
+                for action in case["expected_actions"]:
+                    self.assertIn(action, {entry["action"] for entry in manifest["action_comments"]})
+                    self.assertIn(f"action={action}", tla)
+                    self.assertIn(f"{action}(", tla)
+                for prop in case["expected_native_properties"]:
+                    self.assertIn(prop, native_properties)
+                for prop in case["expected_properties"]:
+                    self.assertIn(prop, manifest["property_identifiers"])
+                    self.assertIn(f"property={prop}", tla)
+                    self.assertIn(f"native property label: {prop}", alloy)
+                    self.assertTrue(any(item["id"] == f"invariant:{prop}" for item in obligations["proof_obligations"]))
+                for dep, step in manifest["enabledness_edges"]:
+                    self.assertIn(f"<<\"{dep}\", \"{step}\">>", tla)
 
     def test_cli_schema_exports_runbook_contract(self):
         proc = self._run("schema")

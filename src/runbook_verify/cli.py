@@ -12,7 +12,7 @@ from .checker import Checker
 from .ci_gate import build_ci_gate_report, render_ci_gate_json, render_ci_gate_markdown
 from .coverage import CoverageError, build_coverage_report, render_coverage_json, render_coverage_markdown
 from .explanation import ExplainError, explain_finding, explain_violation, render_explanation_json, render_explanation_markdown
-from .exporter import export_alloy, export_tla
+from .exporter import export_alloy, export_tla, render_proof_obligations_json, render_proof_obligations_markdown
 from .formal_objects import FormalObjectsError, build_formal_objects_report, render_formal_objects_json, render_formal_objects_markdown
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
@@ -37,10 +37,14 @@ def main(argv: list[str] | None = None) -> int:
     validate_p = sub.add_parser("validate", help="parse and validate a runbook without state-space exploration")
     validate_p.add_argument("runbook")
     validate_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
-    export_p = sub.add_parser("export", help="export a formal-ish model")
+    export_p = sub.add_parser("export", help="export a formal starter model")
     export_p.add_argument("runbook")
     export_p.add_argument("--format", choices=["tla", "alloy"], default="tla")
     export_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
+    obligations_p = sub.add_parser("proof-obligations", help="emit invariant/refinement/exporter proof obligations")
+    obligations_p.add_argument("runbook")
+    obligations_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    obligations_p.add_argument("--diagnostics-format", choices=["text", "json"], default="text", help="format for parse diagnostics on failure")
     sub.add_parser("schema", help="print the JSON Schema for the runbook DSL")
     audit_p = sub.add_parser("audit", help="verify every runbook file in a directory tree")
     audit_p.add_argument("path")
@@ -283,6 +287,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "export":
         print(export_tla(runbook) if args.format == "tla" else export_alloy(runbook), end="")
+        return 0
+    if args.command == "proof-obligations":
+        print(render_proof_obligations_json(runbook) if args.format == "json" else render_proof_obligations_markdown(runbook), end="")
         return 0
     return 2
 

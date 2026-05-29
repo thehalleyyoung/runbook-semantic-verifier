@@ -5,7 +5,7 @@
 This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
-case study. The CLI also includes repository/wiki runbook-priority scanning,
+case study. The CLI also includes TLA+/Alloy starter exports, explicit proof-obligation reports, repository/wiki runbook-priority scanning,
 small-step semantic rule traces, formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
 prose suppressions with owner/expiry/reason/limitation metadata. Markdown
 findings also include manual autofix suggestions for missing executable models,
@@ -27,6 +27,7 @@ The DSL also models queue replay/DLQ/consumer-group semantics, DNS cutovers with
 TTL and health-check convergence obligations, cache flush/warmup/cold-start/
 capacity semantics, credential rotation/revocation state, reviewed high-risk
 effect annotations, and auditable model waivers.
+Formal-export evidence now includes docs separating starter specs from hand-strengthened proofs, mechanized-semantics notes, exporter conformance fixtures, formal-methods limitation notes, and a shared SRE/security/PL/formal-methods glossary.
 Action descriptors now carry generated denotational state-transformer text, and
 semantic findings carry Hoare triples, weakest-precondition hints, source lines,
 causal dependencies, and state deltas in `frv check --format json`.
@@ -125,6 +126,15 @@ differently named system exists.
   `docs/weakest_preconditions.md`. They explain the bounded proof obligation
   that failed for a DSL trace; they are not machine-checked program-logic proofs
   over production infrastructure.
+- `frv export` preserves runbook step ids, dependency edges, modeled entity names,
+  action signatures/denotations, waiver ids, state-variable names, and native
+  safety-property labels in TLA+/Alloy starter models. These exports are
+  conformance-tested artifacts, not complete proofs until reviewers strengthen
+  invariant bodies and environment assumptions.
+- `frv proof-obligations` emits invariant, declared precondition/effect,
+  temporal-monitor, exporter-abstraction, and checker-optimization obligations in
+  Markdown or JSON so public case-study reports can cite exactly what is checked,
+  exported as a label, or left to external logs/hand proofs.
 - `frv check --format json` emits explanation records with `semantic_trace`,
   `state_delta`, `causal_dependencies`, `source`, `hoare_triple`, and
   `weakest_precondition_hint` for editor/review integration. The data is derived
@@ -174,6 +184,7 @@ differently named system exists.
 ## What is not proven
 
 - This is not a full temporal model checker for arbitrary distributed systems.
+- Generated TLA+/Alloy artifacts are starter specifications preserving labels and bounded relations; they do not prove production infrastructure safety without hand-strengthened predicates and reviewed environment assumptions.
 - The historical fixture is reconstructed from public facts, not exact original
   runbook text.
 - The GitHub quorum-guard remediation fixture is a bounded counterfactual model
@@ -255,6 +266,12 @@ differently named system exists.
   - `examples/credential_rotation_runbook.json`
   - `reports/credential_rotation_check.json`
   - `reports/credential_rotation_check.md`
+  - `docs/formal_exports.md`
+  - `docs/mechanized_semantics.md`
+  - `docs/exporter_conformance.md`
+  - `docs/verification_glossary.md`
+  - `reports/formal_export_obligations_github_oct21.md`
+  - `reports/formal_export_obligations_tempo.md`
   - `reports/builtin_benchmark.md`
   - `reports/builtin_benchmark_profile.md`
   - `reports/benchmark_reproduction_manifest.json`
@@ -317,6 +334,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/redis
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
+PYTHONPATH=src python3 -m runbook_verify.cli proof-obligations case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli proof-obligations case_studies/current/grafana_tempo/tempo_runbook_current_impact.md --format markdown
 ```
 
 Expected result: tests pass; benchmark `aggregate.pass` is `true` and includes
@@ -360,4 +379,7 @@ The Redis cache-flush case-study audit reports bounded
 `cache_flush_requires_write_freeze`, `cache_warmup_before_traffic`,
 `cache_warmup_within_capacity`, and `no_stale_reads_after_cache_flush`
 counterexamples plus cache-flush prose obligations for write-freeze, warmup, and
-capacity.
+capacity. The formal-export conformance fixture covers synthetic safe, GitHub
+Oct. 21, Grafana Tempo, and credential-rotation runbooks and asserts preservation
+of action names, dependency edges, state variables, expected safety-property
+labels, and proof-obligation ids.

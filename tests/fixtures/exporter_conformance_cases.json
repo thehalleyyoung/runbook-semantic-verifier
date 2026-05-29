@@ -1,0 +1,67 @@
+{
+  "description": "Representative round-trip exporter conformance cases covering synthetic, public historical, and current public fixtures.",
+  "cases": [
+    {
+      "path": "examples/safe_runbook.json",
+      "expected_properties": [],
+      "expected_actions": [
+        "scale_service",
+        "drain_region",
+        "confirm_quorum",
+        "failover_database",
+        "toggle_flag",
+        "suppress_alert"
+      ],
+      "expected_native_properties": []
+    },
+    {
+      "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "expected_properties": [
+        "precondition",
+        "quorum_before_data_loss_action"
+      ],
+      "expected_actions": [
+        "pause_queue",
+        "failover_database"
+      ],
+      "expected_native_properties": [
+        "precondition",
+        "quorum_before_data_loss_action"
+      ]
+    },
+    {
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "expected_properties": [
+        "no_duplicate_processing_risk",
+        "no_rebalance_to_zero_consumers",
+        "no_replay_without_dedupe",
+        "no_unstable_consumer_group_with_backlog",
+        "queue_backlog_requires_consumers"
+      ],
+      "expected_actions": [
+        "replay_messages",
+        "rebalance_consumers"
+      ],
+      "expected_native_properties": [
+        "no_duplicate_processing_risk",
+        "no_rebalance_to_zero_consumers",
+        "no_replay_without_dedupe",
+        "no_unstable_consumer_group_with_backlog",
+        "queue_backlog_requires_consumers"
+      ]
+    },
+    {
+      "path": "examples/credential_rotation_runbook.json",
+      "expected_properties": [
+        "credential_active",
+        "effect_annotation_required",
+        "unsafe_retry_annotation"
+      ],
+      "expected_actions": [
+        "rotate_credential",
+        "revoke_credential"
+      ],
+      "expected_native_properties": []
+    }
+  ]
+}

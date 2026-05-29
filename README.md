@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **65/100** items in the local roadmap are complete. The
+Current roadmap status: **74/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces,
@@ -17,7 +17,7 @@ queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
 cache flush/warmup/cold-start/capacity semantics, credential
 rotation/revocation semantics, high-risk effect annotations with auditable
 waivers, and checked-in
-historical/current public case-study evidence.
+historical/current public case-study evidence. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
 Benchmark reports now also carry validity-threat categories, workflow-baseline
 comparisons, semantic-diff remediation pairs, oracle-review labels, reproducible
 report-generation commands, contribution rules, and adoption-oriented risk/action
@@ -38,6 +38,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_unsafe.
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/cache_flush_safe.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/cache_flush_unsafe.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
+PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format alloy
+PYTHONPATH=src python3 -m runbook_verify.cli proof-obligations examples/safe_runbook.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli validate docs/schema/examples/complete_runbook.json
@@ -102,7 +104,7 @@ Top-level fields:
 
 The parser validates supported actions using typed field descriptors shared by
 parser checks, JSON Schema generation, the action semantics reference, and
-formal exporter comments. It rejects missing/unknown parameters, type errors,
+formal exporter comments and proof-obligation reports. It rejects missing/unknown parameters, type errors,
 numeric bounds, condition kinds, duplicate step ids, duplicate replica ids,
 unachievable `min_available` targets unless explicitly waived, acyclic
 dependencies, entity references, generated scale-replica id collisions, and
@@ -114,12 +116,13 @@ schema` prints the JSON Schema for editor, registry, and CI integration; the
 canonical checked-in artifact lives at `docs/schema/runbook.schema.json`. See
 `docs/schema/examples.md`, `docs/schema/examples/complete_runbook.json`,
 `docs/schema/compatibility_policy.md`, `docs/action_semantics.md`,
-`docs/small_step_semantics.md`, `docs/weakest_preconditions.md`, and
-`docs/diagnostic_examples.md` for a commented prose walkthrough, strict JSON
+`docs/small_step_semantics.md`, `docs/weakest_preconditions.md`, `docs/formal_exports.md`,
+`docs/mechanized_semantics.md`, `docs/exporter_conformance.md`,
+`docs/verification_glossary.md`, and `docs/diagnostic_examples.md` for a commented prose walkthrough, strict JSON
 fixture covering every supported top-level field, schema versioning/deprecation
 guarantees, generated action/condition semantics tables with denotational state
 transformers, scheduling / action / wait / failure / budget rules mirrored in
-traces, weakest-precondition templates, and editor-ready diagnostic payloads:
+traces, weakest-precondition templates, formal-export limitations, mechanized-semantics sketches, exporter conformance fixtures, shared terminology, and editor-ready diagnostic payloads:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema
@@ -181,7 +184,7 @@ src/runbook_verify/
   checker.py    bounded state-space explorer and safety checker
   explanation.py finding ids plus rule/source/state-delta explanations
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
-  exporter.py   TLA+/Alloy-like text exporters
+  exporter.py   TLA+/Alloy starter exporters and proof-obligation reports
   benchmark.py  benchmark harness and JSON/Markdown result renderers
   semantic_diff.py PR-oriented semantic diff and counterexample delta
   readiness.py  incident-readiness aggregation over checks, audits, freshness
