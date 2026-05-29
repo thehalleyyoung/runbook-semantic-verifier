@@ -8,7 +8,7 @@ from typing import Any
 
 from .markdown_lint import MarkdownFinding, lint_markdown_file
 from .model import Runbook, Step
-from .parser import RunbookParseError, load_document, parse_runbook
+from .parser import RunbookParseError, is_runbook_document, load_document, parse_runbook
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
 
@@ -35,6 +35,8 @@ def build_coverage_report(path: str | Path) -> dict[str, Any]:
     for file in _executable_runbook_files(root):
         try:
             doc = load_document(file)
+            if not is_runbook_document(doc):
+                continue
             runbook = parse_runbook(doc, source_path=file)
         except RunbookParseError as exc:
             contextual = exc.with_context(path=str(file))

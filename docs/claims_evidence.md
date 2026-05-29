@@ -6,7 +6,7 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes repository/wiki runbook-priority scanning,
-incident-readiness, owner-scorecard, property-coverage reports, and auditable
+formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
 prose suppressions with owner/expiry/reason/limitation metadata. Markdown
 findings also include manual autofix suggestions for missing executable models,
 missing preconditions/effects, stale owner placeholders, ambiguous operator
@@ -67,6 +67,11 @@ differently named system exists.
 - The semantic diff reports model-level changes, assumption weakenings,
   proof-obligation deltas, and introduced/resolved/persisting counterexample
   traces between two bounded executable runbook models.
+- The formal-object report maps syntax, entity universe, immutable store,
+  bounded trace set, hazards, prose observations, diagnostics, waivers, and
+  benchmark labels to concrete CLI JSON fields. This is an evidence ledger for
+  what the tool reasons about; it does not add proof beyond parser, linter, and
+  checker results.
 - The readiness report aggregates validation, bounded checker, Markdown audit,
   service/region coverage, rollback/restore coverage, source-freshness, and
   proof-obligation signals for a repository path or scoped service/region. With
@@ -178,6 +183,8 @@ differently named system exists.
   - `reports/current_impact_annotations.github.txt`
   - `reports/current_impact_scan.json`
   - `reports/current_impact_scan.md`
+  - `reports/current_impact_formal_objects.json`
+  - `reports/current_impact_formal_objects.md`
   - `reports/current_impact_readiness.json`
   - `reports/current_impact_readiness.md`
   - `case_studies/current/grafana_tempo/tempo_inventory_current_impact.json`

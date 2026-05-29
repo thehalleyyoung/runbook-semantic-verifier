@@ -13,9 +13,10 @@ from .ci_gate import build_ci_gate_report, render_ci_gate_json, render_ci_gate_m
 from .coverage import CoverageError, build_coverage_report, render_coverage_json, render_coverage_markdown
 from .explanation import ExplainError, explain_finding, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla
+from .formal_objects import FormalObjectsError, build_formal_objects_report, render_formal_objects_json, render_formal_objects_markdown
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
-from .parser import RunbookParseError, load_runbook
+from .parser import RunbookParseError, is_runbook_document, load_document, load_runbook, parse_runbook
 from .pr_annotations import build_annotation_report, render_annotations_github, render_annotations_json, render_annotations_markdown
 from .profiles import get_profile, profile_names, render_profiles_json, render_profiles_markdown
 from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
@@ -53,6 +54,9 @@ def main(argv: list[str] | None = None) -> int:
     bench_p.add_argument("--profile", choices=profile_names(), help="record a verification profile in benchmark output")
     profiles_p = sub.add_parser("profiles", help="list named verification policy profiles")
     profiles_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    objects_p = sub.add_parser("formal-objects", help="map formal runbook objects to CLI JSON fields for a path")
+    objects_p.add_argument("path")
+    objects_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     explain_p = sub.add_parser("explain", help="explain an audit/check finding with rule, trace, source, and remediation context")
     explain_p.add_argument("path", help="runbook file or directory used to produce the finding")
     explain_p.add_argument("finding_id", help="finding id such as finding-001 from `frv audit --format json`")
@@ -121,6 +125,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "profiles":
         print(render_profiles_json() if args.format == "json" else render_profiles_markdown(), end="")
         return 0
+    if args.command == "formal-objects":
+        try:
+            result = build_formal_objects_report(args.path)
+        except FormalObjectsError as exc:
+            print(f"formal-objects error: {exc}", file=sys.stderr)
+            return 2
+        print(render_formal_objects_json(result) if args.format == "json" else render_formal_objects_markdown(result), end="")
+        return 0 if not result["diagnostics"]["parse"] else 2
     if args.command == "lint-markdown":
         fail_on = _profiled_fail_on(args.profile, args.fail_on, raw_argv, "lint_fail_on")
         findings = lint_markdown_tree(args.path)
@@ -271,7 +283,10 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
     runbook_summaries = []
     for file in executable_files:
         try:
-            runbook = load_runbook(file)
+            doc = load_document(file)
+            if not is_runbook_document(doc):
+                continue
+            runbook = parse_runbook(doc, source_path=file)
         except RunbookParseError as exc:
             parse_errors += 1
             contextual = exc.with_context(path=str(file))

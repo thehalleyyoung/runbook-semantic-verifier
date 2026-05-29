@@ -8,7 +8,7 @@ from .actions import ActionError, apply_action
 from .checker import Checker, Violation
 from .markdown_lint import SEVERITY_RANK, lint_markdown_tree
 from .model import Runbook, SystemState
-from .parser import RunbookParseError, load_runbook
+from .parser import RunbookParseError, is_runbook_document, load_document, parse_runbook
 
 
 RULE_EXPLANATIONS: dict[str, dict[str, object]] = {
@@ -158,7 +158,10 @@ def collect_explain_findings(path: str | Path) -> list[dict[str, Any]]:
         findings.append({"finding": data, "runbook": None})
     for file in _executable_runbook_files(root):
         try:
-            runbook = load_runbook(file)
+            doc = load_document(file)
+            if not is_runbook_document(doc):
+                continue
+            runbook = parse_runbook(doc, source_path=file)
         except RunbookParseError as exc:
             contextual = exc.with_context(path=str(file))
             findings.append({

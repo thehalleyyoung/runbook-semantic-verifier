@@ -121,6 +121,10 @@ def load_document(path: str | Path) -> dict[str, Any]:
     return doc
 
 
+def is_runbook_document(doc: dict[str, Any]) -> bool:
+    return "steps" in doc or "system" in doc
+
+
 def _load_markdown_runbook(text: str, path: Path) -> dict[str, Any]:
     matches = list(re.finditer(r"```(?:runbook-json|json)\s*\n(.*?)\n```", text, flags=re.DOTALL | re.IGNORECASE))
     blocks = [match.group(1) for match in matches]

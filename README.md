@@ -2,9 +2,9 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **37/100** items in the local roadmap are complete. The
+Current roadmap status: **38/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
-Markdown audits, semantic diffs, explanations, readiness reports, owner
+formal object maps, Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
 CI gates and pull-request annotations for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
@@ -49,6 +49,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafan
 PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
 PYTHONPATH=src python3 -m runbook_verify.cli annotate case_studies/current/grafana_tempo --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli formal-objects case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
@@ -165,6 +166,7 @@ src/runbook_verify/
   repository_scan.py  Markdown/wiki runbook discovery and model-first prioritization
   ci_gate.py    CI gate for new high-risk operations prose and owner-approved waivers
   pr_annotations.py  pull-request annotations grouped by obligation and source span
+  formal_objects.py  object-to-CLI map for syntax, stores, traces, hazards, diagnostics, waivers, and benchmark labels
   profiles.py   named CLI exit-policy profiles for production/advisory/docs/benchmark use
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
@@ -286,6 +288,25 @@ while exiting successfully for non-blocking advisory review. The checked-in
 `reports/builtin_benchmark_profile.md` records the benchmark-reproduction
 profile alongside the public benchmark metrics. See
 `docs/configuration_profiles.md`.
+
+`frv formal-objects` makes the verifier's mathematical boundary inspectable. It
+maps syntax, entity universe, immutable store, bounded traces, hazards, prose
+observations, diagnostics, waivers, and benchmark labels to concrete CLI JSON
+fields so reviewers can see which public-case evidence is a checked semantic
+object and which evidence is advisory metadata:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli formal-objects \
+  case_studies/current/grafana_tempo --format markdown
+```
+
+The checked-in `reports/current_impact_formal_objects.md` and
+`reports/current_impact_formal_objects.json` validate this on the
+Tempo-derived public fixture: one executable runbook maps two queue-action
+steps, one `tenant-index-fallback-scan` queue, six bounded hazard
+counterexamples, four prose observations, and one auditable limitation waiver to
+the same JSON-field families consumed by audit, readiness, coverage, and
+benchmark workflows.
 
 `frv readiness` turns validation, bounded checking, Markdown audit, service and
 region coverage, rollback/restore coverage, source freshness, optional inventory

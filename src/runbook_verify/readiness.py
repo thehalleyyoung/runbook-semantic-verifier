@@ -10,7 +10,7 @@ from typing import Any
 from .checker import Checker, CheckResult, Violation
 from .markdown_lint import SEVERITY_RANK, MarkdownFinding, lint_markdown_file
 from .model import Runbook, Step
-from .parser import RunbookParseError, load_document, parse_runbook
+from .parser import RunbookParseError, is_runbook_document, load_document, parse_runbook
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
 ROLLBACK_ACTIONS = {"restore_replica", "restore_load_balancer", "resume_queue", "rollback_deployment", "failover_traffic", "shift_traffic", "update_dns_record", "warm_cache", "resume_cache_writes"}
@@ -48,6 +48,8 @@ def build_readiness_report(path: str | Path, options: ReadinessOptions | None = 
     for file in executable_paths:
         try:
             doc = load_document(file)
+            if not is_runbook_document(doc):
+                continue
             runbook = parse_runbook(doc, source_path=file)
         except RunbookParseError as exc:
             contextual = exc.with_context(path=str(file))
