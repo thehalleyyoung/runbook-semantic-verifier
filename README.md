@@ -10,6 +10,7 @@ python3 -m unittest discover -s tests
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
+PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 ```
 
 Optional editable install:
@@ -30,7 +31,7 @@ The unsafe example intentionally contains: draining all service replicas, failov
 
 ## DSL
 
-Executable examples use JSON so the repository runs with the Python standard library. YAML files are accepted only when `PyYAML` is installed; otherwise the parser raises a clear error rather than silently falling back.
+Executable examples use JSON so the repository runs with the Python standard library. YAML files are accepted only when `PyYAML` is installed; otherwise the parser raises a clear error rather than silently falling back. Markdown files are also accepted when they contain one fenced `runbook-json` block, which lets teams audit wiki-style runbooks without abandoning prose documentation.
 
 Top-level fields:
 
@@ -64,11 +65,21 @@ src/runbook_verify/
   checker.py    bounded state-space explorer and safety checker
   exporter.py   TLA+/Alloy-like text exporters
   cli.py        command-line interface
-examples/       safe and unsafe benchmark runbooks
+examples/       safe, unsafe, and real-world-style benchmark runbooks
 tests/          parser, checker, CLI, exporter, and example tests
 ```
 
 The checker is deliberately small: it models a runbook as a finite set of steps, enumerates all dependency-respecting traces up to `max_depth`, applies action semantics to immutable system states, and records safety violations with traces.
+
+## Real-world finding workflow
+
+The repo is designed to audit real operational material, not only toy JSON examples. For a Markdown runbook in a wiki, incident-response repo, or service catalog, add a single executable `runbook-json` block that models the system state and operational steps, then run:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli audit path/to/runbooks --expect-findings
+```
+
+`examples/real_world/kubernetes_region_failover.md` is a case-study fixture modeled on common cloud failover mistakes. The audit confirms three concrete bugs: suppressing an alert for longer than policy allows, draining all available API replicas in a region before replacement capacity exists, and performing a data-loss-risk database failover before quorum confirmation.
 
 ## Paper angle
 
@@ -85,6 +96,7 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - Concurrency is represented as permissible step reordering, not real-time interleavings.
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
 - The benchmark examples are synthetic and should be expanded before empirical claims.
+- The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.
 
 ## License
 

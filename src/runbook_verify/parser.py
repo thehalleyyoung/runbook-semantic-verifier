@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -30,9 +31,27 @@ def load_document(path: str | Path) -> dict[str, Any]:
         except Exception as exc:  # PyYAML exposes several parser exception classes.
             raise RunbookParseError(f"invalid YAML in {p}: {exc}") from exc
     else:
-        raise RunbookParseError(f"unsupported runbook extension {p.suffix!r}; use .json, .yaml, or .yml")
+        if suffix == ".md":
+            doc = _load_markdown_runbook(text, p)
+        else:
+            raise RunbookParseError(f"unsupported runbook extension {p.suffix!r}; use .json, .yaml, .yml, or .md")
     if not isinstance(doc, dict):
         raise RunbookParseError("runbook document must be an object")
+    return doc
+
+
+def _load_markdown_runbook(text: str, path: Path) -> dict[str, Any]:
+    blocks = re.findall(r"```(?:runbook-json|json)\s*\n(.*?)\n```", text, flags=re.DOTALL | re.IGNORECASE)
+    if not blocks:
+        raise RunbookParseError(f"Markdown runbook {path} must contain a fenced ```runbook-json block")
+    if len(blocks) > 1:
+        raise RunbookParseError(f"Markdown runbook {path} contains multiple runbook-json blocks; keep one executable model per file")
+    try:
+        doc = json.loads(blocks[0])
+    except json.JSONDecodeError as exc:
+        raise RunbookParseError(f"invalid runbook-json block in {path}: {exc}") from exc
+    if not isinstance(doc, dict):
+        raise RunbookParseError(f"runbook-json block in {path} must be an object")
     return doc
 
 
