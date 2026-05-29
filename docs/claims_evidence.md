@@ -6,9 +6,9 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes TLA+/Alloy starter exports, explicit proof-obligation reports, repository/wiki runbook-priority scanning,
-small-step semantic rule traces, dependency-preserving counterexample minimization, runtime log conformance checks, synthetic mutation calibration, paper-ready benchmark tables, formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
+small-step semantic rule traces, multiline source maps for nested Markdown DSL fields, synthesized precondition/JSON-patch candidates, conservative partial-order reduction, dependency-preserving counterexample minimization, runtime log conformance checks, synthetic mutation calibration, paper-ready benchmark tables, formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
 prose suppressions with owner/expiry/reason/limitation metadata. Markdown
-findings also include manual autofix suggestions for missing executable models,
+findings also include prose-to-DSL refinement status plus manual autofix suggestions for missing executable models,
 missing preconditions/effects, stale owner placeholders, ambiguous operator
 instructions, and unsafe copy-paste shell snippets. `frv ci-gate` turns those
 findings into a baseline-aware CI policy for newly introduced high-risk deletion,
@@ -90,9 +90,7 @@ differently named system exists.
 - Oracle-review metadata defines the allowed review labels (`true_hazard`,
   `useful_warning`, `false_positive`, and `unsupported_claim`) but does not claim
   an independent review unless a benchmark entry explicitly records one.
-- The semantic diff reports model-level changes, assumption weakenings,
-  proof-obligation deltas, and introduced/resolved/persisting counterexample
-  traces between two bounded executable runbook models.
+- The semantic diff reports model-level changes classified as behavior-preserving, proof-obligation-strengthening, assumption-weakening, or safety-relevant, plus proof-obligation deltas and introduced/resolved/persisting counterexample traces between two bounded executable runbook models.
 - The formal-object report maps syntax, entity universe, immutable store,
   bounded trace set, hazards, prose observations, diagnostics, waivers, and
   benchmark labels to concrete CLI JSON fields. This is an evidence ledger for
@@ -137,7 +135,7 @@ differently named system exists.
   Markdown or JSON so public case-study reports can cite exactly what is checked,
   exported as a label, or left to external logs/hand proofs.
 - `frv check --format json` emits explanation records with `semantic_trace`,
-  `state_delta`, `causal_dependencies`, `source`, `hoare_triple`, and
+  `state_delta`, `causal_dependencies`, nested `source.field`, `hoare_triple`, synthesized precondition candidates, JSON-patch snippets, and
   `weakest_precondition_hint` for editor/review integration. The data is derived
   from the same bounded checker result. Counterexample traces include a
   minimization record when greedy dependency-preserving replay can remove
@@ -175,6 +173,7 @@ differently named system exists.
   owners, waits, and step metadata; `frv invariants` emits LTL-style templates
   that document checker property names and scopes. These are documentation and
   review surfaces over parsed models, not live-discovery or theorem-proving tools.
+- Conservative partial-order reduction explores one representative ordering when all enabled actions touch disjoint modeled resources; trace-equivalence tests compare reduced and unreduced results on independent service actions.
 - Seeded randomized exploration strategies use deterministic local seeds and
   report strategy/seed/max-state-budget metadata. They improve regression
   reproducibility for bounded search, but do not make the checker exhaustive

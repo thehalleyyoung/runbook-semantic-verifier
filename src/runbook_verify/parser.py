@@ -102,7 +102,9 @@ def load_document(path: str | Path) -> dict[str, Any]:
         except json.JSONDecodeError as exc:
             raise RunbookParseError(f"invalid JSON in {p}: {exc}", path=str(p), line=exc.lineno, field=None) from exc
         if isinstance(doc, dict):
-            doc.setdefault("__source_lines", _json_step_source_lines(text, 1))
+            source_map = _json_step_source_map(text, 1)
+            doc.setdefault("__source_lines", {sid: fields.get("step") for sid, fields in source_map.items() if fields.get("step") is not None})
+            doc.setdefault("__source_map", source_map)
     elif suffix in {".yaml", ".yml"}:
         try:
             import yaml  # type: ignore[import-not-found]
@@ -140,7 +142,9 @@ def _load_markdown_runbook(text: str, path: Path) -> dict[str, Any]:
         raise RunbookParseError(f"invalid runbook-json block in {path}: {exc}", path=str(path), line=block_start_line + exc.lineno - 1) from exc
     if not isinstance(doc, dict):
         raise RunbookParseError(f"runbook-json block in {path} must be an object", path=str(path), line=block_start_line)
-    doc.setdefault("__source_lines", _json_step_source_lines(blocks[0], block_start_line))
+    source_map = _json_step_source_map(blocks[0], block_start_line)
+    doc.setdefault("__source_lines", {sid: fields.get("step") for sid, fields in source_map.items() if fields.get("step") is not None})
+    doc.setdefault("__source_map", source_map)
     return doc
 
 
@@ -366,6 +370,9 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
     source_lines = doc.get("__source_lines", {})
     if not isinstance(source_lines, dict):
         source_lines = {}
+    source_map_raw = doc.get("__source_map", {})
+    if not isinstance(source_map_raw, dict):
+        source_map_raw = {}
     steps = []
     seen: set[str] = set()
     for idx, raw_step_any in enumerate(_require_list(doc.get("steps", []), "steps")):
@@ -374,7 +381,8 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
         if sid in seen:
             raise RunbookParseError(f"duplicate step id {sid!r}", field=f"steps[{idx}].id")
         seen.add(sid)
-        step_line = int(source_lines[sid]) if sid in source_lines else None
+        step_source_map = _coerce_source_map(source_map_raw.get(sid))
+        step_line = step_source_map.get("step") or (int(source_lines[sid]) if sid in source_lines and source_lines[sid] is not None else None)
         try:
             action = str(raw_step.get("action", ""))
             if not action:
@@ -397,6 +405,8 @@ def _parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -
             effect_annotations=effect_annotations,
             source_path=str(source_path) if source_path is not None else None,
             source_line=step_line,
+            source_map=step_source_map,
+            source_index=idx,
         ))
     missing = sorted(dep for step in steps for dep in step.after if dep not in seen)
     if missing:
@@ -704,14 +714,64 @@ def _validate_generated_scale_replicas(state: SystemState, steps: list[Step]) ->
 
 
 def _json_step_source_lines(text: str, base_line: int) -> dict[str, int]:
-    lines: dict[str, int] = {}
+    return {sid: fields["step"] for sid, fields in _json_step_source_map(text, base_line).items() if "step" in fields}
+
+
+def _json_step_source_map(text: str, base_line: int) -> dict[str, dict[str, int]]:
+    """Best-effort source map for JSON/Markdown DSL blocks.
+
+    The parser still validates the parsed JSON object. This scanner only records
+    line numbers for review output: whole steps, nested requires/effects entries,
+    and effect_annotations fields. It is deliberately conservative; if a compact
+    one-line JSON document prevents a precise nested line, the step line remains
+    available as a fallback.
+    """
+    source: dict[str, dict[str, int]] = {}
+    current_step: str | None = None
+    current_section: str | None = None
+    section_index = -1
+    pending_step_line: int | None = None
     in_steps = False
+    depth_after_steps = 0
     for offset, line in enumerate(text.splitlines(), start=base_line):
-        if '"steps"' in line:
+        stripped = line.strip()
+        if not in_steps and '"steps"' in line:
             in_steps = True
+            depth_after_steps = 0
         if not in_steps:
             continue
-        match = re.search(r'"id"\s*:\s*"([^"]+)"', line)
-        if match:
-            lines.setdefault(match.group(1), offset)
-    return lines
+        if pending_step_line is None and stripped.startswith("{"):
+            pending_step_line = offset
+        id_match = re.search(r'"id"\s*:\s*"([^"]+)"', line)
+        if id_match:
+            current_step = id_match.group(1)
+            source.setdefault(current_step, {})["step"] = pending_step_line or offset
+            pending_step_line = None
+            current_section = None
+            section_index = -1
+        if current_step:
+            for field in ("action", "params", "after", "requires", "effects", "effect_annotations"):
+                if re.search(rf'"{field}"\s*:', line):
+                    source[current_step].setdefault(field, offset)
+                    if field in {"requires", "effects"}:
+                        current_section = field
+                        section_index = -1
+            if current_section and '"kind"' in line:
+                section_index += 1
+                source[current_step].setdefault(f"{current_section}[{section_index}]", offset)
+            if '"effect_annotations"' in line:
+                source[current_step].setdefault("effect_annotations", offset)
+            if current_section and stripped.startswith("]"):
+                current_section = None
+        depth_after_steps += line.count("[") + line.count("{") - line.count("]") - line.count("}")
+    return source
+
+
+def _coerce_source_map(raw: Any) -> dict[str, int]:
+    if not isinstance(raw, dict):
+        return {}
+    result: dict[str, int] = {}
+    for key, value in raw.items():
+        if isinstance(key, str) and isinstance(value, int):
+            result[key] = value
+    return result

@@ -1,4 +1,48 @@
 {
+  "annotation_warnings": [
+    {
+      "action": "failover_database",
+      "action_error": null,
+      "causal_dependencies": {
+        "declared_after": [],
+        "prior_trace_steps": []
+      },
+      "hoare_triple": "{ high-risk actions declare reviewed effect metadata } action_effect: operator action may delete, revoke, drain, replay, degrade users, or make irreversible state changes { effect annotations make retry/reversal/blast-radius assumptions auditable }",
+      "id": "warning-001",
+      "json_patches": [],
+      "message": "step orchestrator-failover-to-west action failover_database must declare reviewed effect_annotations including irreversible_state_change",
+      "remediation": "Add reviewed effect_annotations with effect_types, idempotency, reversibility, retry_safety, blast_radius, and expected_user_impact.",
+      "remediation_examples": [],
+      "rule": "effect_annotation_required",
+      "semantic_obligation": "effect_annotation_required",
+      "semantic_trace": [
+        "Schedule.SequenceNext(orchestrator-failover-to-west)",
+        "SafetyInvariant.effect_annotation_required(orchestrator-failover-to-west)"
+      ],
+      "severity": "error",
+      "small_step_rule": "SafetyInvariant.effect_annotation_required",
+      "source": {
+        "excerpt": "{",
+        "field": "effect_annotations",
+        "line": 86,
+        "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md"
+      },
+      "state_delta": [
+        {
+          "after": "us-west",
+          "before": "us-east",
+          "field": "databases.mysql-metadata.primary_region"
+        }
+      ],
+      "step": "orchestrator-failover-to-west",
+      "suggested_preconditions": [],
+      "trace": [
+        "orchestrator-failover-to-west"
+      ],
+      "type": "semantic",
+      "weakest_precondition_hint": "Add effect_annotations with effect_types, idempotency, reversibility, retry_safety, blast_radius, and expected_user_impact."
+    }
+  ],
   "findings": [
     {
       "action": "failover_database",
@@ -9,6 +53,7 @@
       },
       "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
       "id": "finding-001",
+      "json_patches": [],
       "message": "step orchestrator-failover-to-west requires {'kind': 'database_quorum_confirmed', 'database': 'mysql-metadata'}",
       "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
       "remediation_examples": [
@@ -24,8 +69,9 @@
       "severity": "error",
       "small_step_rule": "StepEnabled.Requires",
       "source": {
-        "excerpt": "\"id\": \"orchestrator-failover-to-west\",",
-        "line": 87,
+        "excerpt": "{",
+        "field": "requires[0]",
+        "line": 86,
         "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md"
       },
       "state_delta": [
@@ -36,6 +82,7 @@
         }
       ],
       "step": "orchestrator-failover-to-west",
+      "suggested_preconditions": [],
       "trace": [
         "orchestrator-failover-to-west"
       ],
@@ -51,6 +98,16 @@
       },
       "hoare_triple": "{ database_quorum_confirmed(database) when data_loss_risk=true } action_effect: failover_database may risk data loss { data-loss-risk failover has quorum evidence }",
       "id": "finding-002",
+      "json_patches": [
+        {
+          "op": "add",
+          "path": "/steps/0/requires/-",
+          "value": {
+            "database": "mysql-metadata",
+            "kind": "database_quorum_confirmed"
+          }
+        }
+      ],
       "message": "database mysql-metadata failover has data-loss risk before quorum confirmation",
       "remediation": "Confirm quorum or explicit data-loss approval before failover.",
       "remediation_examples": [
@@ -66,8 +123,9 @@
       "severity": "error",
       "small_step_rule": "ActionGuard.DatabaseFailoverQuorum",
       "source": {
-        "excerpt": "\"id\": \"orchestrator-failover-to-west\",",
-        "line": 87,
+        "excerpt": "{",
+        "field": "params",
+        "line": 86,
         "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md"
       },
       "state_delta": [
@@ -78,6 +136,12 @@
         }
       ],
       "step": "orchestrator-failover-to-west",
+      "suggested_preconditions": [
+        {
+          "database": "mysql-metadata",
+          "kind": "database_quorum_confirmed"
+        }
+      ],
       "trace": [
         "orchestrator-failover-to-west"
       ],
@@ -86,9 +150,16 @@
     }
   ],
   "performance_counters": {
+    "annotation_warnings": 1,
     "avg_branch_factor": 1.0,
     "branch_factor_total": 5,
     "branch_points": 5,
+    "counterexamples_minimized": 0,
+    "exploration_seed": null,
+    "exploration_strategy": "breadth_first",
+    "fairness_model": "fifo",
+    "inconclusive": false,
+    "inconclusive_reason": null,
     "max_branch_factor": 1,
     "max_depth_reached": false,
     "minimized_counterexample_trace_length": 1,
@@ -112,8 +183,11 @@
     "states_explored": 6,
     "symbolic_splits": 0,
     "terminal_traces": 1,
-    "transitions_explored": 5
+    "timeout_seconds": null,
+    "transitions_explored": 5,
+    "waivers_applied": 0
   },
   "runbook": "GitHub Oct21 2018 MySQL failover reconstruction",
-  "safe": false
+  "safe": false,
+  "waivers_applied": []
 }

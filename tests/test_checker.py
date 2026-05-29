@@ -372,6 +372,41 @@ class CheckerExplanationTests(unittest.TestCase):
         self.assertIn("timeout_seconds=0", result.inconclusive_reason)
         self.assertEqual(counters["timeout_seconds"], 0)
 
+    def test_markdown_nested_precondition_source_mapping_and_patch_synthesis(self):
+        runbook = load_runbook(ROOT / "tests" / "fixtures" / "source_mapping_runbook.md")
+        result = Checker(runbook).check()
+        precondition = next(v for v in result.violations if v.property == "precondition")
+        self.assertEqual(precondition.source_field, "requires[0]")
+        self.assertGreater(precondition.source_line or 0, runbook.steps[0].source_line or 0)
+        self.assertEqual(precondition.source_path, str(ROOT / "tests" / "fixtures" / "source_mapping_runbook.md"))
+
+        quorum = next(v for v in result.violations if v.property == "quorum_before_data_loss_action")
+        # The failover checker can synthesize a reviewable JSON-patch candidate for a missing guard.
+        self.assertIn({"kind": "database_quorum_confirmed", "database": "orders"}, list(quorum.suggested_preconditions))
+        self.assertTrue(quorum.json_patches)
+
+    def test_partial_order_reduction_preserves_safe_trace_equivalence_for_independent_actions(self):
+        base = {
+            "allow_reordering": True,
+            "system": {
+                "regions": {"east": {}},
+                "services": {
+                    "api": {"min_available": 0, "replicas": []},
+                    "worker": {"min_available": 0, "replicas": []},
+                },
+            },
+            "steps": [
+                {"id": "restart-api", "action": "restart_service", "params": {"service": "api"}},
+                {"id": "restart-worker", "action": "restart_service", "params": {"service": "worker"}},
+            ],
+        }
+        reduced = Checker(parse_runbook({**base, "safety": {"partial_order_reduction": True}})).check()
+        exhaustive = Checker(parse_runbook({**base, "safety": {"partial_order_reduction": False}})).check()
+        self.assertEqual({v.property for v in reduced.violations}, {v.property for v in exhaustive.violations})
+        self.assertEqual(reduced.safe, exhaustive.safe)
+        self.assertGreater(reduced.reductions_applied, 0)
+        self.assertLess(reduced.transitions_explored, exhaustive.transitions_explored)
+
 
 if __name__ == "__main__":
     unittest.main()

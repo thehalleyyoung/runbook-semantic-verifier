@@ -1,7 +1,7 @@
 {
   "commands": [
     {
-      "bytes": 73682,
+      "bytes": 89501,
       "command": [
         "/opt/homebrew/opt/python@3.14/bin/python3.14",
         "-m",
@@ -15,7 +15,7 @@
       "output": "reports/builtin_benchmark.json"
     },
     {
-      "bytes": 33500,
+      "bytes": 38864,
       "command": [
         "/opt/homebrew/opt/python@3.14/bin/python3.14",
         "-m",
@@ -29,7 +29,7 @@
       "output": "reports/builtin_benchmark.md"
     },
     {
-      "bytes": 33550,
+      "bytes": 38914,
       "command": [
         "/opt/homebrew/opt/python@3.14/bin/python3.14",
         "-m",

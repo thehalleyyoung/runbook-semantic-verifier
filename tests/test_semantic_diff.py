@@ -73,6 +73,21 @@ class SemanticDiffTests(unittest.TestCase):
             {(change["kind"], change["object"], change["field"], change["classification"]) for change in changes},
         )
 
+    def test_effect_addition_is_proof_obligation_strengthening(self):
+        old = parse_runbook({
+            "system": {"regions": {"east": {"healthy": True}}, "services": {"api": {"min_available": 0, "replicas": []}}},
+            "steps": [{"id": "restart", "action": "restart_service", "params": {"service": "api"}}],
+        })
+        new = parse_runbook({
+            "system": {"regions": {"east": {"healthy": True}}, "services": {"api": {"min_available": 0, "replicas": []}}},
+            "steps": [{"id": "restart", "action": "restart_service", "params": {"service": "api"}, "effects": [{"kind": "service_available_at_least", "service": "api", "count": 0}]}],
+        })
+        changes = _diff_models(old, new)
+        self.assertIn(
+            ("step_changed", "restart", "effects", "proof_obligation_strengthening"),
+            {(change["kind"], change["object"], change["field"], change["classification"]) for change in changes},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

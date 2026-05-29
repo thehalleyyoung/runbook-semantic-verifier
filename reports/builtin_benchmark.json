@@ -2,10 +2,10 @@
   "aggregate": {
     "adoption_summary": {
       "oracle_review_labels": {
-        "false_positive": 12,
-        "true_hazard": 12,
-        "unsupported_claim": 12,
-        "useful_warning": 12
+        "false_positive": 14,
+        "true_hazard": 14,
+        "unsupported_claim": 14,
+        "useful_warning": 14
       },
       "remediation_actions": [
         "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
@@ -29,6 +29,12 @@
         "no_rollback_during_incompatible_migration",
         "no_stale_reads_after_cache_flush",
         "no_unstable_consumer_group_with_backlog",
+        "object_bucket_replication_min_regions",
+        "object_replication_target_region_healthy",
+        "object_restore_requires_snapshot",
+        "object_restore_requires_write_freeze",
+        "object_restore_within_rpo",
+        "object_restore_within_rto",
         "precondition",
         "prose-suppression-applied",
         "queue_backlog_requires_consumers",
@@ -38,26 +44,26 @@
     },
     "pass": true,
     "performance_counters": {
-      "avg_branch_factor": 2.09375,
-      "branch_factor_total": 201,
-      "branch_points": 96,
+      "avg_branch_factor": 1.7282608695652173,
+      "branch_factor_total": 159,
+      "branch_points": 92,
       "max_branch_factor": 5,
       "max_depth_reached": true,
       "minimized_counterexample_trace_length": 1,
       "proof_obligation_failures": {
-        "precondition": 107,
+        "precondition": 103,
         "safety_postcondition": 91
       },
       "proof_obligations_checked": {
-        "action_defined": 201,
-        "precondition": 124,
-        "promised_effect": 20,
-        "safety_postcondition": 1328
+        "action_defined": 159,
+        "precondition": 119,
+        "promised_effect": 12,
+        "safety_postcondition": 999
       },
-      "reductions_applied": 0,
+      "reductions_applied": 22,
       "semantic_rule_counts": {
-        "Action.Execute": 201,
-        "ActionGuard.AlertSuppressionBound": 20,
+        "Action.Execute": 159,
+        "ActionGuard.AlertSuppressionBound": 15,
         "ActionGuard.CacheFlushWriteFreeze": 2,
         "ActionGuard.CacheWarmupBeforeTraffic": 6,
         "ActionGuard.CacheWarmupCapacity": 4,
@@ -65,28 +71,35 @@
         "ActionGuard.DNSHealthCheckConverged": 1,
         "ActionGuard.DNSRegionalCapacity": 3,
         "ActionGuard.DNSTTLBeforeFinalize": 1,
-        "ActionGuard.DatabaseFailoverQuorum": 21,
-        "ActionGuard.DatabaseTargetHealth": 16,
+        "ActionGuard.DatabaseFailoverQuorum": 16,
+        "ActionGuard.DatabaseTargetHealth": 12,
         "ActionGuard.MessageReplayDeduplication": 2,
         "ActionGuard.RollbackMigrationCompatibility": 16,
-        "ActionPreserves.ServiceAvailability": 56,
+        "ActionPreserves.ServiceAvailability": 54,
         "Explore.BudgetReached": 4,
-        "Explore.Terminal": 10,
+        "Explore.Terminal": 12,
         "PostInvariant.ConsumerGroupStableForBacklog": 2,
         "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
         "PostInvariant.NoDuplicateReplayProcessing": 4,
         "PostInvariant.NoStaleReadsAfterCacheFlush": 2,
         "PostInvariant.QueueBacklogHasConsumers": 2,
-        "PostInvariant.ServiceHasReplica": 36,
-        "Schedule.DependencyReady": 184,
-        "Schedule.OperatorChoice": 166,
-        "Schedule.SequenceNext": 17,
+        "PostInvariant.ServiceHasReplica": 34,
+        "SafetyInvariant.object_bucket_replication_min_regions": 1,
+        "SafetyInvariant.object_bucket_replication_regions_healthy": 3,
+        "SafetyInvariant.object_replication_target_region_healthy": 2,
+        "SafetyInvariant.object_restore_requires_snapshot": 2,
+        "SafetyInvariant.object_restore_requires_write_freeze": 2,
+        "SafetyInvariant.object_restore_within_rpo": 2,
+        "SafetyInvariant.object_restore_within_rto": 2,
+        "Schedule.DependencyReady": 138,
+        "Schedule.OperatorChoice": 103,
+        "Schedule.SequenceNext": 21,
         "StepEnabled.Requires": 1
       },
-      "states_explored": 110,
+      "states_explored": 108,
       "symbolic_splits": 0,
-      "terminal_traces": 14,
-      "transitions_explored": 201
+      "terminal_traces": 16,
+      "transitions_explored": 159
     },
     "prose_findings_by_rule": {
       "backfill-needs-queue-capacity": 1,
@@ -96,18 +109,18 @@
       "failover-needs-health-and-quorum": 3,
       "prose-suppression-applied": 1
     },
-    "runbooks": 12,
-    "runtime_seconds": 0.01906416699057445,
-    "states_explored": 110,
-    "traces_explored": 14,
+    "runbooks": 14,
+    "runtime_seconds": 0.05623020901111886,
+    "states_explored": 108,
+    "traces_explored": 16,
     "validity_threat_categories": {
       "abstraction_bias": 4,
-      "bounded_search_limits": 7,
+      "bounded_search_limits": 8,
       "public_data_incompleteness": 5,
-      "synthetic_mutant_bias": 7
+      "synthetic_mutant_bias": 9
     },
     "violations_by_property": {
-      "bounded_alert_suppression": 20,
+      "bounded_alert_suppression": 15,
       "cache_flush_requires_write_freeze": 2,
       "cache_warmup_before_traffic": 6,
       "cache_warmup_within_capacity": 4,
@@ -115,35 +128,42 @@
       "dns_no_split_brain_during_ttl": 1,
       "dns_requires_regional_capacity": 3,
       "dns_ttl_elapsed_before_finalize": 1,
-      "no_draining_all_replicas": 36,
+      "no_draining_all_replicas": 34,
       "no_duplicate_processing_risk": 4,
-      "no_failover_to_unhealthy_region": 16,
+      "no_failover_to_unhealthy_region": 12,
       "no_rebalance_to_zero_consumers": 2,
       "no_replay_without_dedupe": 2,
       "no_rollback_during_incompatible_migration": 16,
       "no_stale_reads_after_cache_flush": 2,
       "no_unstable_consumer_group_with_backlog": 2,
+      "object_bucket_replication_min_regions": 1,
+      "object_bucket_replication_regions_healthy": 3,
+      "object_replication_target_region_healthy": 2,
+      "object_restore_requires_snapshot": 2,
+      "object_restore_requires_write_freeze": 2,
+      "object_restore_within_rpo": 2,
+      "object_restore_within_rto": 2,
       "precondition": 1,
       "queue_backlog_requires_consumers": 2,
-      "quorum_before_data_loss_action": 21,
-      "service_min_available": 56
+      "quorum_before_data_loss_action": 16,
+      "service_min_available": 54
     },
     "workflow_baselines": {
       "bounded_checking": {
-        "fail": 8,
-        "pass": 4
+        "fail": 9,
+        "pass": 5
       },
       "combined_workflow": {
         "fail": 0,
-        "pass": 12
+        "pass": 14
       },
       "prose_linting": {
         "fail": 4,
-        "pass": 8
+        "pass": 10
       },
       "schema_only_validation": {
         "fail": 0,
-        "pass": 12
+        "pass": 14
       },
       "semantic_diffing": {
         "configured_pairs": 1,
@@ -151,8 +171,8 @@
         "pass": 1
       },
       "type_effect_checking": {
-        "fail": 8,
-        "pass": 4
+        "fail": 9,
+        "pass": 5
       }
     }
   },
@@ -231,37 +251,44 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
       "performance_counters": {
-        "annotation_warnings": 24,
-        "avg_branch_factor": 2.4,
-        "branch_factor_total": 84,
-        "branch_points": 35,
+        "annotation_warnings": 20,
+        "avg_branch_factor": 1.8333333333333333,
+        "branch_factor_total": 44,
+        "branch_points": 24,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 4,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": null,
         "proof_obligation_failures": {},
         "proof_obligations_checked": {
-          "action_defined": 84,
-          "precondition": 12,
-          "promised_effect": 12,
-          "safety_postcondition": 588
+          "action_defined": 44,
+          "precondition": 8,
+          "promised_effect": 1,
+          "safety_postcondition": 308
         },
-        "reductions_applied": 0,
+        "reductions_applied": 12,
         "semantic_rule_counts": {
-          "Action.Execute": 84,
+          "Action.Execute": 44,
           "Explore.Terminal": 1,
-          "Schedule.DependencyReady": 84,
-          "Schedule.OperatorChoice": 78
+          "Schedule.DependencyReady": 44,
+          "Schedule.OperatorChoice": 31
         },
-        "states_explored": 36,
+        "states_explored": 25,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 84,
+        "timeout_seconds": null,
+        "transitions_explored": 44,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0028255000070203096,
+      "runtime_seconds": 0.005969833000563085,
       "safe": true,
-      "states_explored": 36,
+      "states_explored": 25,
       "traces_explored": 1,
       "violations_by_property": {},
       "workflow_baselines": {
@@ -384,66 +411,73 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
       "performance_counters": {
-        "annotation_warnings": 64,
-        "avg_branch_factor": 2.5806451612903225,
-        "branch_factor_total": 80,
+        "annotation_warnings": 60,
+        "avg_branch_factor": 2.2903225806451615,
+        "branch_factor_total": 71,
         "branch_points": 31,
+        "counterexamples_minimized": 42,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 5,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
         "proof_obligation_failures": {
-          "precondition": 80,
-          "safety_postcondition": 56
+          "precondition": 67,
+          "safety_postcondition": 54
         },
         "proof_obligations_checked": {
-          "action_defined": 80,
-          "precondition": 80,
+          "action_defined": 71,
+          "precondition": 67,
           "promised_effect": 0,
-          "safety_postcondition": 560
+          "safety_postcondition": 497
         },
-        "reductions_applied": 0,
+        "reductions_applied": 9,
         "semantic_rule_counts": {
-          "Action.Execute": 80,
-          "ActionGuard.AlertSuppressionBound": 16,
-          "ActionGuard.DatabaseFailoverQuorum": 16,
-          "ActionGuard.DatabaseTargetHealth": 16,
+          "Action.Execute": 71,
+          "ActionGuard.AlertSuppressionBound": 11,
+          "ActionGuard.DatabaseFailoverQuorum": 12,
+          "ActionGuard.DatabaseTargetHealth": 12,
           "ActionGuard.RollbackMigrationCompatibility": 16,
-          "ActionPreserves.ServiceAvailability": 44,
+          "ActionPreserves.ServiceAvailability": 43,
           "Explore.Terminal": 1,
-          "PostInvariant.ServiceHasReplica": 28,
-          "Schedule.DependencyReady": 80,
-          "Schedule.OperatorChoice": 75
+          "PostInvariant.ServiceHasReplica": 27,
+          "Schedule.DependencyReady": 71,
+          "Schedule.OperatorChoice": 59
         },
         "states_explored": 32,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 80,
+        "timeout_seconds": null,
+        "transitions_explored": 71,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.003740917018149048,
+      "runtime_seconds": 0.014351915975566953,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
       "violations_by_property": {
-        "bounded_alert_suppression": 16,
-        "no_draining_all_replicas": 28,
-        "no_failover_to_unhealthy_region": 16,
+        "bounded_alert_suppression": 11,
+        "no_draining_all_replicas": 27,
+        "no_failover_to_unhealthy_region": 12,
         "no_rollback_during_incompatible_migration": 16,
-        "quorum_before_data_loss_action": 16,
-        "service_min_available": 44
+        "quorum_before_data_loss_action": 12,
+        "service_min_available": 43
       },
       "workflow_baselines": {
         "bounded_checking": {
-          "counterexamples": 136,
+          "counterexamples": 121,
           "pass": false,
           "violations_by_property": {
-            "bounded_alert_suppression": 16,
-            "no_draining_all_replicas": 28,
-            "no_failover_to_unhealthy_region": 16,
+            "bounded_alert_suppression": 11,
+            "no_draining_all_replicas": 27,
+            "no_failover_to_unhealthy_region": 12,
             "no_rollback_during_incompatible_migration": 16,
-            "quorum_before_data_loss_action": 16,
-            "service_min_available": 44
+            "quorum_before_data_loss_action": 12,
+            "service_min_available": 43
           }
         },
         "combined_workflow": {
@@ -468,8 +502,8 @@
         "type_effect_checking": {
           "pass": false,
           "proof_obligation_failures": {
-            "precondition": 80,
-            "safety_postcondition": 56
+            "precondition": 67,
+            "safety_postcondition": 54
           }
         }
       }
@@ -549,6 +583,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": null,
@@ -568,11 +608,12 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 2,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0007244169828481972,
+      "runtime_seconds": 0.00165275001199916,
       "safe": true,
       "states_explored": 3,
       "traces_explored": 1,
@@ -700,6 +741,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
@@ -727,11 +774,12 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 2,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0007067080005072057,
+      "runtime_seconds": 0.0018102079920936376,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -857,6 +905,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 4,
         "branch_points": 4,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": null,
@@ -876,11 +930,12 @@
         "states_explored": 5,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 4,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0006395420059561729,
+      "runtime_seconds": 0.0019604999979492277,
       "safe": true,
       "states_explored": 5,
       "traces_explored": 1,
@@ -1006,6 +1061,12 @@
         "avg_branch_factor": 1.5,
         "branch_factor_total": 3,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 2,
         "max_depth_reached": true,
         "minimized_counterexample_trace_length": 1,
@@ -1033,11 +1094,12 @@
         "states_explored": 4,
         "symbolic_splits": 0,
         "terminal_traces": 2,
+        "timeout_seconds": null,
         "transitions_explored": 3,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0006420410063583404,
+      "runtime_seconds": 0.0027213749999646097,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,
@@ -1160,6 +1222,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": null,
@@ -1179,11 +1247,12 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 2,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0005264579958748072,
+      "runtime_seconds": 0.0022443339985329658,
       "safe": true,
       "states_explored": 3,
       "traces_explored": 1,
@@ -1301,62 +1370,69 @@
       "pass": true,
       "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/real_world/kubernetes_region_failover.md",
       "performance_counters": {
-        "annotation_warnings": 8,
-        "avg_branch_factor": 1.7142857142857142,
-        "branch_factor_total": 12,
+        "annotation_warnings": 7,
+        "avg_branch_factor": 1.5714285714285714,
+        "branch_factor_total": 11,
         "branch_points": 7,
+        "counterexamples_minimized": 7,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 3,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
         "proof_obligation_failures": {
-          "precondition": 12,
-          "safety_postcondition": 16
+          "precondition": 11,
+          "safety_postcondition": 14
         },
         "proof_obligations_checked": {
-          "action_defined": 12,
-          "precondition": 12,
+          "action_defined": 11,
+          "precondition": 11,
           "promised_effect": 0,
-          "safety_postcondition": 24
+          "safety_postcondition": 22
         },
-        "reductions_applied": 0,
+        "reductions_applied": 1,
         "semantic_rule_counts": {
-          "Action.Execute": 12,
+          "Action.Execute": 11,
           "ActionGuard.AlertSuppressionBound": 4,
-          "ActionGuard.DatabaseFailoverQuorum": 4,
-          "ActionPreserves.ServiceAvailability": 12,
+          "ActionGuard.DatabaseFailoverQuorum": 3,
+          "ActionPreserves.ServiceAvailability": 11,
           "Explore.Terminal": 1,
-          "PostInvariant.ServiceHasReplica": 8,
-          "Schedule.DependencyReady": 12,
-          "Schedule.OperatorChoice": 9
+          "PostInvariant.ServiceHasReplica": 7,
+          "Schedule.DependencyReady": 11,
+          "Schedule.OperatorChoice": 7
         },
         "states_explored": 8,
         "symbolic_splits": 0,
         "terminal_traces": 1,
-        "transitions_explored": 12,
+        "timeout_seconds": null,
+        "transitions_explored": 11,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.0018319999799132347,
+      "runtime_seconds": 0.0049954169953707606,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
       "violations_by_property": {
         "bounded_alert_suppression": 4,
-        "no_draining_all_replicas": 8,
-        "quorum_before_data_loss_action": 4,
-        "service_min_available": 12
+        "no_draining_all_replicas": 7,
+        "quorum_before_data_loss_action": 3,
+        "service_min_available": 11
       },
       "workflow_baselines": {
         "bounded_checking": {
-          "counterexamples": 28,
+          "counterexamples": 25,
           "pass": false,
           "violations_by_property": {
             "bounded_alert_suppression": 4,
-            "no_draining_all_replicas": 8,
-            "quorum_before_data_loss_action": 4,
-            "service_min_available": 12
+            "no_draining_all_replicas": 7,
+            "quorum_before_data_loss_action": 3,
+            "service_min_available": 11
           }
         },
         "combined_workflow": {
@@ -1383,8 +1459,8 @@
         "type_effect_checking": {
           "pass": false,
           "proof_obligation_failures": {
-            "precondition": 12,
-            "safety_postcondition": 16
+            "precondition": 11,
+            "safety_postcondition": 14
           }
         }
       }
@@ -1477,6 +1553,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 5,
         "branch_points": 5,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
@@ -1500,13 +1582,14 @@
         "states_explored": 6,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 5,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.0015175000007729977,
+      "runtime_seconds": 0.0034974169975612313,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -1667,6 +1750,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
@@ -1694,6 +1783,7 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 2,
         "waivers_applied": 0
       },
@@ -1703,7 +1793,7 @@
         "destructive-delete-needs-targeting": 1,
         "prose-suppression-applied": 1
       },
-      "runtime_seconds": 0.0020874590263701975,
+      "runtime_seconds": 0.003430749988183379,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -1854,6 +1944,12 @@
         "avg_branch_factor": 1.0,
         "branch_factor_total": 2,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 1,
         "max_depth_reached": false,
         "minimized_counterexample_trace_length": 1,
@@ -1880,11 +1976,12 @@
         "states_explored": 3,
         "symbolic_splits": 0,
         "terminal_traces": 1,
+        "timeout_seconds": null,
         "transitions_explored": 2,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.001213666022522375,
+      "runtime_seconds": 0.0029245420009829104,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,
@@ -2033,6 +2130,12 @@
         "avg_branch_factor": 1.5,
         "branch_factor_total": 3,
         "branch_points": 2,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
         "max_branch_factor": 2,
         "max_depth_reached": true,
         "minimized_counterexample_trace_length": 1,
@@ -2060,13 +2163,14 @@
         "states_explored": 4,
         "symbolic_splits": 0,
         "terminal_traces": 2,
+        "timeout_seconds": null,
         "transitions_explored": 3,
         "waivers_applied": 0
       },
       "prose_findings_by_rule": {
         "cache-flush-needs-warmup-capacity": 2
       },
-      "runtime_seconds": 0.001370416983263567,
+      "runtime_seconds": 0.0029140420083422214,
       "safe": false,
       "states_explored": 4,
       "traces_explored": 2,
@@ -2116,6 +2220,340 @@
           }
         }
       }
+    },
+    {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "adoption_summary": {
+          "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+          "remediation_actions": [
+            "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+          ],
+          "risk_classes_detected": []
+        },
+        "expected_result": {
+          "prose_rules": [],
+          "safe": true,
+          "violation_properties": []
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "oracle_review": {
+          "allowed_labels": [
+            "true_hazard",
+            "useful_warning",
+            "false_positive",
+            "unsupported_claim"
+          ],
+          "notes": "No independent SRE oracle review is claimed for this fixture.",
+          "status": "not-reviewed"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored safe object-storage restore regression fixture."
+        },
+        "reproduction": {
+          "budget": "standard-library Python; intended to run in seconds on a laptop",
+          "commands": [
+            "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+          ],
+          "expected_outputs": [
+            "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+          ]
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic object-storage fixture.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "object_storage_restore",
+          "rpo",
+          "rto",
+          "write_freeze",
+          "replication_durability"
+        ],
+        "validity_threat_categories": [
+          "bounded_search_limits",
+          "synthetic_mutant_bias"
+        ],
+        "validity_threats": [
+          "Small synthetic state space; not a production object store incident."
+        ]
+      },
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [],
+        "expected_safe": true,
+        "expected_violation_properties": []
+      },
+      "name": "Safe object storage restore",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/object_storage_restore_safe.json",
+      "performance_counters": {
+        "annotation_warnings": 0,
+        "avg_branch_factor": 1.0,
+        "branch_factor_total": 4,
+        "branch_points": 4,
+        "counterexamples_minimized": 0,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "fifo",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 1,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": null,
+        "proof_obligation_failures": {},
+        "proof_obligations_checked": {
+          "action_defined": 4,
+          "precondition": 3,
+          "promised_effect": 3,
+          "safety_postcondition": 8
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 4,
+          "Explore.Terminal": 1,
+          "Schedule.SequenceNext": 4
+        },
+        "states_explored": 5,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 4,
+        "waivers_applied": 0
+      },
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.0014513750211335719,
+      "safe": true,
+      "states_explored": 5,
+      "traces_explored": 1,
+      "violations_by_property": {},
+      "workflow_baselines": {
+        "bounded_checking": {
+          "counterexamples": 0,
+          "pass": true,
+          "violations_by_property": {}
+        },
+        "combined_workflow": {
+          "pass": true,
+          "uses": [
+            "schema_only_validation",
+            "prose_linting",
+            "bounded_checking",
+            "type_effect_checking",
+            "semantic_diffing_when_configured"
+          ]
+        },
+        "prose_linting": {
+          "finding_count": 0,
+          "findings_by_rule": {},
+          "pass": true
+        },
+        "schema_only_validation": {
+          "errors": [],
+          "pass": true
+        },
+        "type_effect_checking": {
+          "pass": true,
+          "proof_obligation_failures": {}
+        }
+      }
+    },
+    {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "adoption_summary": {
+          "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+          "remediation_actions": [
+            "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+          ],
+          "risk_classes_detected": [
+            "object_bucket_replication_min_regions",
+            "object_replication_target_region_healthy",
+            "object_restore_requires_snapshot",
+            "object_restore_requires_write_freeze",
+            "object_restore_within_rpo",
+            "object_restore_within_rto"
+          ]
+        },
+        "expected_result": {
+          "prose_rules": [],
+          "safe": false,
+          "violation_properties": [
+            "object_bucket_replication_min_regions",
+            "object_replication_target_region_healthy",
+            "object_restore_requires_snapshot",
+            "object_restore_requires_write_freeze",
+            "object_restore_within_rpo",
+            "object_restore_within_rto"
+          ]
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "oracle_review": {
+          "allowed_labels": [
+            "true_hazard",
+            "useful_warning",
+            "false_positive",
+            "unsupported_claim"
+          ],
+          "notes": "No independent SRE oracle review is claimed for this fixture.",
+          "status": "not-reviewed"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored unsafe object-storage restore mutant fixture."
+        },
+        "reproduction": {
+          "budget": "standard-library Python; intended to run in seconds on a laptop",
+          "commands": [
+            "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+          ],
+          "expected_outputs": [
+            "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+          ]
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic unsafe object-storage fixture.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "object_storage_restore",
+          "rpo",
+          "rto",
+          "write_freeze",
+          "replication_durability"
+        ],
+        "validity_threat_categories": [
+          "synthetic_mutant_bias"
+        ],
+        "validity_threats": [
+          "Designed mutant fixture; expected hazards are intentionally seeded."
+        ]
+      },
+      "errors": [],
+      "expected_labels": {
+        "expected_prose_rules": [],
+        "expected_safe": false,
+        "expected_violation_properties": [
+          "object_bucket_replication_min_regions",
+          "object_replication_target_region_healthy",
+          "object_restore_requires_snapshot",
+          "object_restore_requires_write_freeze",
+          "object_restore_within_rpo",
+          "object_restore_within_rto"
+        ]
+      },
+      "name": "Unsafe object storage restore",
+      "pass": true,
+      "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/object_storage_restore_unsafe.json",
+      "performance_counters": {
+        "annotation_warnings": 2,
+        "avg_branch_factor": 1.3333333333333333,
+        "branch_factor_total": 4,
+        "branch_points": 3,
+        "counterexamples_minimized": 5,
+        "exploration_seed": null,
+        "exploration_strategy": "breadth_first",
+        "fairness_model": "dependency",
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "max_branch_factor": 2,
+        "max_depth_reached": false,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 10,
+          "safety_postcondition": 4
+        },
+        "proof_obligations_checked": {
+          "action_defined": 4,
+          "precondition": 10,
+          "promised_effect": 0,
+          "safety_postcondition": 8
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 4,
+          "Explore.Terminal": 1,
+          "SafetyInvariant.object_bucket_replication_min_regions": 1,
+          "SafetyInvariant.object_bucket_replication_regions_healthy": 3,
+          "SafetyInvariant.object_replication_target_region_healthy": 2,
+          "SafetyInvariant.object_restore_requires_snapshot": 2,
+          "SafetyInvariant.object_restore_requires_write_freeze": 2,
+          "SafetyInvariant.object_restore_within_rpo": 2,
+          "SafetyInvariant.object_restore_within_rto": 2,
+          "Schedule.DependencyReady": 4,
+          "Schedule.OperatorChoice": 2
+        },
+        "states_explored": 4,
+        "symbolic_splits": 0,
+        "terminal_traces": 1,
+        "timeout_seconds": null,
+        "transitions_explored": 4,
+        "waivers_applied": 0
+      },
+      "prose_findings_by_rule": {},
+      "runtime_seconds": 0.0023489999875891954,
+      "safe": false,
+      "states_explored": 4,
+      "traces_explored": 1,
+      "violations_by_property": {
+        "object_bucket_replication_min_regions": 1,
+        "object_bucket_replication_regions_healthy": 3,
+        "object_replication_target_region_healthy": 2,
+        "object_restore_requires_snapshot": 2,
+        "object_restore_requires_write_freeze": 2,
+        "object_restore_within_rpo": 2,
+        "object_restore_within_rto": 2
+      },
+      "workflow_baselines": {
+        "bounded_checking": {
+          "counterexamples": 14,
+          "pass": false,
+          "violations_by_property": {
+            "object_bucket_replication_min_regions": 1,
+            "object_bucket_replication_regions_healthy": 3,
+            "object_replication_target_region_healthy": 2,
+            "object_restore_requires_snapshot": 2,
+            "object_restore_requires_write_freeze": 2,
+            "object_restore_within_rpo": 2,
+            "object_restore_within_rto": 2
+          }
+        },
+        "combined_workflow": {
+          "pass": true,
+          "uses": [
+            "schema_only_validation",
+            "prose_linting",
+            "bounded_checking",
+            "type_effect_checking",
+            "semantic_diffing_when_configured"
+          ]
+        },
+        "prose_linting": {
+          "finding_count": 0,
+          "findings_by_rule": {},
+          "pass": true
+        },
+        "schema_only_validation": {
+          "errors": [],
+          "pass": true
+        },
+        "type_effect_checking": {
+          "pass": false,
+          "proof_obligation_failures": {
+            "precondition": 10,
+            "safety_postcondition": 4
+          }
+        }
+      }
     }
   ],
   "semantic_diff_baselines": [
@@ -2133,6 +2571,7 @@
       "summary": {
         "assumption_changes": 0,
         "assumption_weakenings": 0,
+        "behavior_preserving_changes": 0,
         "changes": 1,
         "effect_changes": 0,
         "introduced_counterexamples": 0,
@@ -2140,6 +2579,7 @@
         "new_states_explored": 6,
         "old_states_explored": 6,
         "persisting_counterexamples": 0,
+        "proof_obligation_strengthenings": 0,
         "resolved_counterexamples": 2,
         "safety_relevant_changes": 1,
         "waiver_changes": 0

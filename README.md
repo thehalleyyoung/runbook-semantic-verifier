@@ -2,13 +2,13 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **85/100** items in the local roadmap are complete. The
+Current roadmap status: **90/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
-finding obligations, weakest-precondition templates, JSON explanation traces with greedy dependency-preserving counterexample minimization,
+finding obligations, weakest-precondition templates, JSON explanation traces with synthesized precondition/JSON-patch candidates, multiline Markdown DSL source mapping, greedy dependency-preserving counterexample minimization,
 runtime log conformance checks, synthetic mutation calibration, paper-ready tables,
 editor-friendly diagnostic examples, formal object maps, Markdown audits,
-semantic diffs, explanations, readiness reports, owner
+semantic diffs with behavior-preserving/proof-strengthening/assumption-weakening classifications, prose-to-DSL refinement audits, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
 CI gates and pull-request annotations for high-risk operations prose, auditable prose suppressions, Markdown autofix suggestions for reviewable
 runbook edits, named configuration profiles for production/advisory/docs-only/benchmark workflows,
@@ -19,7 +19,7 @@ cache flush/warmup/cold-start/capacity semantics, object-storage
 restore/failover semantics with RPO/RTO and multi-region durability checks, credential
 rotation/revocation semantics, high-risk effect annotations with auditable
 waivers, and checked-in
-historical/current public case-study evidence. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
+historical/current public case-study evidence, and conservative partial-order reduction for independent actions with trace-equivalence tests. Formal-export support now emits TLA+/Alloy starter models, proof-obligation reports, exporter conformance fixtures, mechanized-semantics notes, limitation guidance, and a shared verification glossary.
 Benchmark reports now also carry validity-threat categories, workflow-baseline
 comparisons, seeded/reproducible exploration metadata, semantic-diff remediation pairs, oracle-review labels, reproducible
 report-generation commands, contribution rules, and adoption-oriented risk/action
@@ -101,6 +101,7 @@ Executable examples use JSON so the repository runs with the Python standard lib
 
 Top-level fields:
 
+- Markdown source maps: JSON and fenced `runbook-json` blocks now retain step, nested `requires`/`effects`, and `effect_annotations` line numbers so findings can point at the operator-editable field.
 - `system`: regions, services/replicas, databases, queues, caches, object buckets,
   alerts, feature flags, deployments, traffic routes, DNS records, and credentials.
 - `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, `effects`, and high-risk `effect_annotations`.
@@ -153,6 +154,8 @@ Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 DNS actions `update_dns_record`, `mark_dns_health_check`, and
 `finalize_dns_record`, plus credential actions `revoke_credential` and
 `rotate_credential`.
+
+Counterexample explanations include synthesized weakest-precondition-style precondition candidates and JSON-patch snippets for review; Markdown lint findings mark unmapped operational claims as audit findings until a matching executable action/guard is present.
 
 ## Safety properties
 

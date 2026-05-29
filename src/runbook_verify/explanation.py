@@ -104,6 +104,7 @@ def render_explanation_markdown(explanation: dict[str, Any]) -> str:
         f"- Small-step rule: `{explanation['small_step_rule']}`",
         f"- Obligation: `{explanation['semantic_obligation']}`",
         f"- Location: `{explanation['source']['path']}:{explanation['source']['line'] or ''}`",
+        f"- Source field: `{explanation['source'].get('field') or 'step'}`",
         f"- Message: {explanation['message']}",
         f"- Hoare triple: `{explanation.get('hoare_triple') or '(not registered)'}`",
         f"- Weakest-precondition hint: {explanation['weakest_precondition_hint']}",
@@ -121,6 +122,10 @@ def render_explanation_markdown(explanation: dict[str, Any]) -> str:
         for delta in explanation["state_delta"]:
             lines.append(f"| `{delta['field']}` | `{delta['before']}` | `{delta['after']}` |")
         lines.append("")
+    if explanation.get("suggested_preconditions"):
+        lines.extend(["## Synthesized precondition candidates", "", "```json", json.dumps(explanation["suggested_preconditions"], indent=2, sort_keys=True), "```", ""])
+    if explanation.get("json_patches"):
+        lines.extend(["## Candidate JSON patches", "", "```json", json.dumps(explanation["json_patches"], indent=2, sort_keys=True), "```", ""])
     if explanation.get("remediation_examples"):
         lines.extend(["## Remediation examples", ""])
         lines.extend(f"- {example}" for example in explanation["remediation_examples"])
@@ -144,6 +149,9 @@ def _finding_from_violation(path: Path, violation: Violation) -> dict[str, Any]:
         "hoare_triple": violation.hoare_triple,
         "message": violation.message,
         "recommendation": violation.remediation,
+        "source_field": violation.source_field,
+        "suggested_preconditions": list(violation.suggested_preconditions),
+        "json_patches": list(violation.json_patches),
     }
 
 
@@ -163,6 +171,9 @@ def explain_violation(runbook: Runbook, violation: Violation, finding_id: str = 
             "hoare_triple": violation.hoare_triple,
             "line": violation.source_line,
             "path": violation.source_path,
+            "source_field": violation.source_field,
+            "suggested_preconditions": list(violation.suggested_preconditions),
+            "json_patches": list(violation.json_patches),
         },
         runbook,
     )
@@ -191,6 +202,7 @@ def _explain_semantic_finding(finding: dict[str, Any], runbook: Runbook) -> dict
     source_path = step.source_path if step else str(finding.get("path", ""))
     source_line = step.source_line if step else finding.get("line")
     source = _source_excerpt(source_path, source_line)
+    source["field"] = finding.get("source_field")
     return {
         "id": finding["id"],
         "type": "semantic",
@@ -213,6 +225,8 @@ def _explain_semantic_finding(finding: dict[str, Any], runbook: Runbook) -> dict
         "action_error": action_error,
         "weakest_precondition_hint": rule_info.get("weakest_precondition_hint", weakest_precondition_for(rule)),
         "remediation": finding.get("recommendation"),
+        "suggested_preconditions": finding.get("suggested_preconditions", []),
+        "json_patches": finding.get("json_patches", []),
         "remediation_examples": rule_info.get("remediation_examples", []),
     }
 

@@ -31,6 +31,9 @@ class MarkdownFinding:
     recommendation: str
     semantic_obligation: str
     autofix_suggestions: tuple[AutoFixSuggestion, ...] = field(default_factory=tuple)
+    refinement_status: str = "audit_observation"
+    required_action: str | None = None
+    missing_conditions: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -284,6 +287,9 @@ def lint_markdown_text(text: str, path: str | Path = "<memory>") -> list[Markdow
                     recommendation=rule.recommendation,
                     semantic_obligation=rule.semantic_obligation,
                     autofix_suggestions=_autofix_suggestions(rule, missing_action, tuple(missing_conditions), doc is not None),
+                    refinement_status="unmapped_operational_claim",
+                    required_action=rule.required_action,
+                    missing_conditions=tuple(missing_conditions),
                 )
                 suppression = _matching_suppression(active_suppressions, finding)
                 if suppression is not None:
@@ -300,13 +306,14 @@ def render_lint_json(findings: list[MarkdownFinding]) -> str:
 
 
 def render_lint_markdown(findings: list[MarkdownFinding]) -> str:
-    lines = ["# Markdown runbook lint report", "", f"- Findings: {len(findings)}", ""]
+    unmapped = sum(1 for finding in findings if finding.refinement_status == "unmapped_operational_claim")
+    lines = ["# Markdown runbook lint report", "", f"- Findings: {len(findings)}", f"- Unmapped operational claims: {unmapped}", ""]
     if findings:
-        lines.extend(["| Rule | Severity | Obligation | Location | Excerpt | Recommendation | Autofix suggestions |", "| --- | --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| Rule | Severity | Refinement | Obligation | Location | Excerpt | Recommendation | Autofix suggestions |", "| --- | --- | --- | --- | --- | --- | --- | --- |"])
         for finding in findings:
             location = f"{finding.path}:{finding.line}"
             suggestions = "; ".join(f"{suggestion.kind}: {suggestion.title}" for suggestion in finding.autofix_suggestions) or ""
-            lines.append(f"| {finding.rule} | {finding.severity} | `{finding.semantic_obligation}` | `{location}` | {finding.excerpt.replace('|', '\\|')} | {finding.recommendation.replace('|', '\\|')} | {suggestions.replace('|', '\\|')} |")
+            lines.append(f"| {finding.rule} | {finding.severity} | `{finding.refinement_status}` | `{finding.semantic_obligation}` | `{location}` | {finding.excerpt.replace('|', '\\|')} | {finding.recommendation.replace('|', '\\|')} | {suggestions.replace('|', '\\|')} |")
     return "\n".join(lines) + "\n"
 
 
@@ -428,6 +435,7 @@ def _applied_suppression_finding(suppression: ProseSuppression, suppressed: Mark
         ),
         recommendation="Review suppression owner, expiry, reason, and invariant/waiver/limitation link during runbook review.",
         semantic_obligation=suppression.link,
+        refinement_status="suppressed_unmapped_claim",
     )
 
 

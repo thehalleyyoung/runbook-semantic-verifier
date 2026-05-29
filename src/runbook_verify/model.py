@@ -239,6 +239,8 @@ class Step:
     effect_annotations: dict[str, Any] = field(default_factory=dict)
     source_path: str | None = None
     source_line: int | None = None
+    source_map: dict[str, int] = field(default_factory=dict)
+    source_index: int | None = None
 
 
 @dataclass(frozen=True)

@@ -60,6 +60,8 @@ def diff_runbooks(old_path: str | Path, new_path: str | Path) -> SemanticDiffRes
         "invariant_changes": sum(1 for change in changes if change["kind"] == "invariant_changed"),
         "safety_relevant_changes": safety_relevant,
         "assumption_weakenings": assumption_weakening,
+        "behavior_preserving_changes": sum(1 for change in changes if change["classification"] == "behavior_preserving"),
+        "proof_obligation_strengthenings": sum(1 for change in changes if change["classification"] == "proof_obligation_strengthening"),
         "introduced_counterexamples": len(introduced),
         "resolved_counterexamples": len(resolved),
         "persisting_counterexamples": len(persisting),
@@ -103,6 +105,8 @@ def render_diff_markdown(result: SemanticDiffResult) -> str:
         f"- Invariant changes: {result.summary['invariant_changes']}",
         f"- Safety-relevant changes: {result.summary['safety_relevant_changes']}",
         f"- Assumption weakenings: {result.summary['assumption_weakenings']}",
+        f"- Behavior-preserving changes: {result.summary['behavior_preserving_changes']}",
+        f"- Proof-obligation strengthenings: {result.summary['proof_obligation_strengthenings']}",
         f"- Introduced counterexamples: {result.summary['introduced_counterexamples']}",
         f"- Resolved counterexamples: {result.summary['resolved_counterexamples']}",
         f"- Persisting counterexamples: {result.summary['persisting_counterexamples']}",
@@ -197,7 +201,9 @@ def _diff_step(changes: list[dict[str, Any]], old: Step, new: Step) -> None:
         if field == "requires" and len(json.dumps(new_value, sort_keys=True)) < len(json.dumps(old_value, sort_keys=True)):
             classification = "assumption_weakening"
         if field == "effects":
-            classification = "proof_obligation_changed"
+            old_len = len(json.dumps(old_value, sort_keys=True))
+            new_len = len(json.dumps(new_value, sort_keys=True))
+            classification = "proof_obligation_strengthening" if new_len >= old_len else "assumption_weakening"
         _append_change(changes, classification, "step_changed", old.id, field, old_value, new_value)
 
 

@@ -133,6 +133,15 @@ class MarkdownLintTests(unittest.TestCase):
         self.assertEqual(by_rule["unsafe-copy-paste-shell-snippet"].severity, "error")
         self.assertIn("--dry-run=server", by_rule["unsafe-copy-paste-shell-snippet"].autofix_suggestions[0].replacement)
 
+    def test_unmapped_prose_refinement_status_is_reported(self):
+        findings = lint_markdown_text("Force failover during database incident.", "refinement.md")
+        failover = next(f for f in findings if f.rule == "failover-needs-health-and-quorum")
+        self.assertEqual(failover.refinement_status, "unmapped_operational_claim")
+        self.assertEqual(failover.required_action, "failover_database")
+        self.assertIn("region_healthy", failover.missing_conditions)
+        rendered = render_lint_json(findings)
+        self.assertIn("refinement_status", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()

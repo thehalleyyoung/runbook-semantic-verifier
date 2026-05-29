@@ -34,6 +34,9 @@ class Violation:
     hoare_triple: str | None = None
     source_path: str | None = None
     source_line: int | None = None
+    source_field: str | None = None
+    suggested_preconditions: tuple[dict[str, Any], ...] = ()
+    json_patches: tuple[dict[str, Any], ...] = ()
     original_trace: tuple[str, ...] = ()
     minimization: dict[str, Any] = field(default_factory=dict)
 
@@ -117,6 +120,7 @@ class Checker:
         timeout = runbook.safety.get("timeout_seconds")
         self.timeout_seconds = int(timeout) if isinstance(timeout, int) else None
         self.fairness_model = str(runbook.safety.get("fairness", "dependency" if runbook.allow_reordering else "fifo"))
+        self.partial_order_reduction = bool(runbook.safety.get("partial_order_reduction", True))
         self._rng = random.Random(self.seed)
 
     def check(self) -> CheckResult:
@@ -156,7 +160,9 @@ class Checker:
                 else:
                     _record_rule(result, EXPLORE_TERMINAL)
                 continue
-            enabled = self._ordered_enabled_steps(self._enabled_steps(done))
+            enabled_all = self._ordered_enabled_steps(self._enabled_steps(done))
+            enabled = self._partial_order_reduced_enabled(enabled_all, len(trace))
+            result.reductions_applied += len(enabled_all) - len(enabled)
             result.branch_points += 1
             result.branch_factor_total += len(enabled)
             result.max_branch_factor = max(result.max_branch_factor, len(enabled))
@@ -234,16 +240,25 @@ class Checker:
             return shuffled
         return enabled
 
+    def _partial_order_reduced_enabled(self, enabled: list[Step], trace_len: int) -> list[Step]:
+        if not self.partial_order_reduction or not self.runbook.allow_reordering or len(enabled) <= 1:
+            return enabled
+        if trace_len + len(enabled) > self.runbook.max_depth:
+            return enabled
+        if all(_independent_steps(left, right) for idx, left in enumerate(enabled) for right in enabled[idx + 1:]):
+            return enabled[:1]
+        return enabled
+
     def _pre_action_violations(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
         violations: list[Violation] = []
-        for condition in step.requires:
+        for condition_index, condition in enumerate(step.requires):
             try:
                 holds = condition_holds(state, condition)
             except ActionError as exc:
-                violations.append(_violation("precondition_defined", str(exc), trace + (step.id,), step.id, _append_property_rule(semantic_trace, "precondition_defined", step.id)))
+                violations.append(_with_source_field(_violation("precondition_defined", str(exc), trace + (step.id,), step.id, _append_property_rule(semantic_trace, "precondition_defined", step.id)), f"requires[{condition_index}]"))
                 continue
             if not holds:
-                violations.append(_violation("precondition", f"step {step.id} requires {condition}", trace + (step.id,), step.id, _append_property_rule(semantic_trace, "precondition", step.id)))
+                violations.append(_with_source_field(_violation("precondition", f"step {step.id} requires {condition}", trace + (step.id,), step.id, _append_property_rule(semantic_trace, "precondition", step.id)), f"requires[{condition_index}]"))
         if step.action in {"drain_replica", "drain_region", "scale_service"}:
             violations.extend(self._availability_would_be_violated(state, step, trace, semantic_trace))
         if step.action == "rollback_deployment":
@@ -389,14 +404,14 @@ class Checker:
                 violations.append(_violation("dns_requires_regional_capacity", f"DNS record {record.name} points to {record.region} but service {record.service} has no available replica there", trace, step.id))
             if record.previous_region is not None and not record.ttl_elapsed(state.clock_minute) and not record.allow_split_brain:
                 violations.append(_violation("dns_no_split_brain_during_ttl", f"DNS record {record.name} may answer both {record.previous_region} and {record.region} until minute {record.last_changed_minute + record.ttl_minutes}", trace, step.id))
-        for condition in step.effects:
+        for condition_index, condition in enumerate(step.effects):
             try:
                 holds = condition_holds(state, condition)
             except ActionError as exc:
-                violations.append(_violation("effect_defined", str(exc), trace, step.id))
+                violations.append(_with_source_field(_violation("effect_defined", str(exc), trace, step.id), f"effects[{condition_index}]"))
                 continue
             if not holds:
-                violations.append(_violation("effect", f"step {step.id} promised effect {condition}", trace, step.id))
+                violations.append(_with_source_field(_violation("effect", f"step {step.id} promised effect {condition}", trace, step.id), f"effects[{condition_index}]"))
         return [_with_semantic_prefix(violation, semantic_trace) for violation in violations]
 
     def _availability_would_be_violated(self, state: SystemState, step: Step, trace: tuple[str, ...], semantic_trace: tuple[str, ...]) -> list[Violation]:
@@ -414,7 +429,11 @@ class Checker:
         step = self.steps_by_id.get(violation.step or "")
         if step is None:
             return violation
-        return replace(violation, source_path=step.source_path, source_line=step.source_line)
+        source_field = violation.source_field or _default_source_field(violation.property)
+        source_line = step.source_map.get(source_field or "", step.source_line)
+        suggested = violation.suggested_preconditions or tuple(_suggested_preconditions(violation.property, step))
+        patches = violation.json_patches or tuple(_json_patches_for_preconditions(step, suggested))
+        return replace(violation, source_path=step.source_path, source_line=source_line, source_field=source_field, suggested_preconditions=suggested, json_patches=patches)
 
     def _minimized_violation(self, violation: Violation) -> Violation:
         original = tuple(violation.trace)
@@ -565,7 +584,7 @@ def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
     seen: set[tuple[str, str, tuple[str, ...], str | None]] = set()
     unique: list[Violation] = []
     for violation in violations:
-        key = (violation.property, violation.message, violation.trace, violation.step, violation.remediation, violation.small_step_rule, violation.semantic_trace)
+        key = (violation.property, violation.message, violation.trace, violation.step, violation.remediation, violation.small_step_rule, violation.semantic_trace, violation.source_field)
         if key not in seen:
             seen.add(key)
             unique.append(violation)
@@ -628,6 +647,62 @@ def _violation(property: str, message: str, trace: tuple[str, ...], step: str | 
     return Violation(property, message, _normalize_trace(trace, step), step, REMEDIATIONS.get(property), rule, semantic_trace, hoare_triple_for(property))
 
 
+def _with_source_field(violation: Violation, source_field: str) -> Violation:
+    return replace(violation, source_field=source_field)
+
+
+def _default_source_field(property_name: str) -> str:
+    if property_name in {"precondition", "precondition_defined"}:
+        return "requires"
+    if property_name in {"effect", "effect_defined"}:
+        return "effects"
+    if property_name in {"effect_annotation_required", "unsafe_retry_annotation"}:
+        return "effect_annotations"
+    return "params"
+
+
+def _suggested_preconditions(property_name: str, step: Step) -> list[dict[str, Any]]:
+    params = step.params
+    suggestions: dict[str, list[dict[str, Any]]] = {
+        "service_min_available": [{"kind": "service_available_at_least", "service": str(params.get("service", "TODO-service")), "count": 1}],
+        "no_draining_all_replicas": [{"kind": "service_available_at_least", "service": str(params.get("service", "TODO-service")), "count": 1}],
+        "no_rollback_during_incompatible_migration": [{"kind": "service_deployment_is", "service": str(params.get("service", "TODO-service")), "deployment": str(params.get("target", params.get("version", "TODO-version")))}],
+        "no_failover_to_unhealthy_region": [{"kind": "region_healthy", "region": str(params.get("target_region", "TODO-region"))}],
+        "quorum_before_data_loss_action": [{"kind": "database_quorum_confirmed", "database": str(params.get("database", "TODO-database"))}],
+        "no_queue_pause_without_drain_plan": [{"kind": "queue_depth_at_most", "queue": str(params.get("queue", "TODO-queue")), "depth": 0}, {"kind": "queue_has_consumers", "queue": str(params.get("queue", "TODO-queue")), "consumers": 2}],
+        "no_replay_without_dedupe": [{"kind": "queue_replay_deduplicated", "queue": str(params.get("queue", "TODO-queue")), "window_minutes": 60}],
+        "dead_letter_replay_has_messages": [{"kind": "queue_depth_at_most", "queue": str(params.get("queue", "TODO-queue")), "depth": int(params.get("count", 1))}],
+        "dead_letter_drain_has_messages": [{"kind": "queue_depth_at_most", "queue": str(params.get("queue", "TODO-queue")), "depth": int(params.get("count", 1))}],
+        "no_rebalance_to_zero_consumers": [{"kind": "queue_depth_at_most", "queue": str(params.get("queue", "TODO-queue")), "depth": 0}],
+        "cache_flush_requires_write_freeze": [{"kind": "cache_writes_frozen", "cache": str(params.get("cache", "TODO-cache"))}],
+        "cache_warmup_before_traffic": [{"kind": "cache_warm", "cache": str(params.get("cache", "TODO-cache"))}],
+        "cache_warmup_within_capacity": [{"kind": "cache_capacity_at_least", "cache": str(params.get("cache", "TODO-cache")), "entries": int(params.get("entries", 1))}],
+        "no_draining_load_balancer_with_traffic": [{"kind": "traffic_weight_at_most", "route": str(params.get("route", "TODO-route")), "region": str(params.get("region", "TODO-region")), "percent": 0}],
+        "no_traffic_to_unhealthy_region": [{"kind": "region_healthy", "region": str(params.get("region", params.get("target_region", "TODO-region")))}],
+        "no_traffic_to_drained_load_balancer": [{"kind": "region_healthy", "region": str(params.get("region", params.get("target_region", "TODO-region")))}],
+        "traffic_requires_regional_capacity": [{"kind": "service_available_at_least", "service": "TODO-service", "count": 1}],
+        "dns_target_region_healthy": [{"kind": "region_healthy", "region": str(params.get("target_region", "TODO-region"))}],
+        "dns_health_check_converged_before_cutover": [{"kind": "dns_health_check_converged", "record": str(params.get("record", "TODO-record")), "region": str(params.get("target_region", "TODO-region"))}],
+        "dns_requires_regional_capacity": [{"kind": "service_available_at_least", "service": "TODO-service", "count": 1}],
+        "dns_ttl_elapsed_before_recursion": [],
+        "dns_ttl_elapsed_before_finalize": [],
+        "object_restore_requires_write_freeze": [{"kind": "bucket_writes_frozen", "bucket": str(params.get("bucket", "TODO-bucket"))}],
+        "object_restore_requires_snapshot": [{"kind": "bucket_snapshot_available", "bucket": str(params.get("bucket", "TODO-bucket"))}],
+        "object_restore_within_rpo": [{"kind": "bucket_snapshot_available", "bucket": str(params.get("bucket", "TODO-bucket"))}],
+        "object_restore_within_rto": [{"kind": "bucket_snapshot_available", "bucket": str(params.get("bucket", "TODO-bucket"))}],
+        "object_replication_target_region_healthy": [{"kind": "region_healthy", "region": str(params.get("region", "TODO-region"))}],
+        "credential_active": [{"kind": "credential_active", "credential": str(params.get("credential", "TODO-credential"))}],
+    }
+    return suggestions.get(property_name, [])
+
+
+def _json_patches_for_preconditions(step: Step, preconditions: tuple[dict[str, Any], ...] | list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not preconditions:
+        return []
+    step_index = step.source_index if step.source_index is not None else step.id
+    return [{"op": "add", "path": f"/steps/{step_index}/requires/-", "value": condition} for condition in preconditions]
+
+
 def _append_property_rule(semantic_trace: tuple[str, ...], property: str, step: str | None) -> tuple[str, ...]:
     return semantic_trace + (label_rule(small_step_rule(property), step),)
 
@@ -655,3 +730,64 @@ def _normalize_trace(trace: tuple[str, ...], step: str | None) -> tuple[str, ...
         if item not in minimized:
             minimized.append(item)
     return tuple(minimized)
+
+
+READ_RESOURCE_ACTIONS: dict[str, tuple[str, ...]] = {
+    "drain_replica": ("service", "replica"),
+    "restore_replica": ("service", "replica"),
+    "scale_service": ("service",),
+    "restart_service": ("service",),
+    "failover_database": ("database", "target_region"),
+    "confirm_quorum": ("database",),
+    "pause_queue": ("queue",),
+    "resume_queue": ("queue",),
+    "replay_messages": ("queue",),
+    "drain_dead_letter_queue": ("queue",),
+    "rebalance_consumers": ("queue",),
+    "freeze_cache_writes": ("cache",),
+    "resume_cache_writes": ("cache",),
+    "flush_cache": ("cache",),
+    "warm_cache": ("cache",),
+    "freeze_bucket_writes": ("bucket",),
+    "resume_bucket_writes": ("bucket",),
+    "replicate_bucket": ("bucket", "region"),
+    "restore_bucket_snapshot": ("bucket",),
+    "suppress_alert": ("alert",),
+    "toggle_flag": ("flag",),
+    "shift_traffic": ("route", "region"),
+    "failover_traffic": ("route", "target_region"),
+    "drain_load_balancer": ("route", "region"),
+    "restore_load_balancer": ("route", "region"),
+    "update_dns_record": ("record", "target_region"),
+    "mark_dns_health_check": ("record", "region"),
+    "finalize_dns_record": ("record",),
+    "rotate_credential": ("credential",),
+    "revoke_credential": ("credential",),
+}
+
+
+def _independent_steps(left: Step, right: Step) -> bool:
+    if left.id in right.after or right.id in left.after:
+        return False
+    if left.action == "wait" or right.action == "wait":
+        return False
+    left_resources = _step_resources(left)
+    right_resources = _step_resources(right)
+    return bool(left_resources and right_resources and left_resources.isdisjoint(right_resources))
+
+
+def _step_resources(step: Step) -> set[tuple[str, str]]:
+    keys = READ_RESOURCE_ACTIONS.get(step.action)
+    if not keys:
+        return set()
+    resources: set[tuple[str, str]] = set()
+    for key in keys:
+        value = step.params.get(key)
+        if value is not None:
+            resources.add((key, str(value)))
+    # Preconditions/effects can make an otherwise local action depend on another entity.
+    for condition in (*step.requires, *step.effects):
+        for key, value in condition.items():
+            if key != "kind" and isinstance(value, (str, int, bool)):
+                resources.add((key, str(value)))
+    return resources

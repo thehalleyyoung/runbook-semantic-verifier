@@ -318,20 +318,24 @@ def main(argv: list[str] | None = None) -> int:
             print("Violations:")
             for v in result.violations:
                 location = f" source={v.source_path}:{v.source_line}" if v.source_path and v.source_line else ""
-                print(f"- [{v.property}] rule={v.small_step_rule}{location} trace={' -> '.join(v.trace)}: {v.message}")
+                field = f" field={v.source_field}" if v.source_field else ""
+                print(f"- [{v.property}] rule={v.small_step_rule}{location}{field} trace={' -> '.join(v.trace)}: {v.message}")
                 if v.hoare_triple:
                     print(f"  hoare: {v.hoare_triple}")
                 if v.semantic_trace:
                     print(f"  semantic_trace: {' -> '.join(v.semantic_trace)}")
                 if v.remediation:
                     print(f"  remediation: {v.remediation}")
+                if v.suggested_preconditions:
+                    print(f"  synthesized_preconditions: {json.dumps(list(v.suggested_preconditions), sort_keys=True)}")
         else:
             print("No safety violations found within bound.")
         if result.annotation_warnings:
             print("Effect annotation warnings:")
             for v in result.annotation_warnings:
                 location = f" source={v.source_path}:{v.source_line}" if v.source_path and v.source_line else ""
-                print(f"- [{v.property}] rule={v.small_step_rule}{location} trace={' -> '.join(v.trace)}: {v.message}")
+                field = f" field={v.source_field}" if v.source_field else ""
+                print(f"- [{v.property}] rule={v.small_step_rule}{location}{field} trace={' -> '.join(v.trace)}: {v.message}")
         if result.waivers_applied:
             print(f"Waivers applied: {len(result.waivers_applied)}")
         if args.expect_violations:
@@ -419,6 +423,9 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "semantic_trace": list(violation.semantic_trace),
                 "message": violation.message,
                 "recommendation": violation.remediation,
+                "source_field": violation.source_field,
+                "suggested_preconditions": list(violation.suggested_preconditions),
+                "json_patches": list(violation.json_patches),
             })
         for warning in result.annotation_warnings:
             audit_findings.append({
@@ -436,6 +443,9 @@ def _audit(path: str, expect_findings: bool, diagnostics_format: str = "text", o
                 "semantic_trace": list(warning.semantic_trace),
                 "message": warning.message,
                 "recommendation": warning.remediation,
+                "source_field": warning.source_field,
+                "suggested_preconditions": list(warning.suggested_preconditions),
+                "json_patches": list(warning.json_patches),
             })
     audit_findings = _with_finding_ids(_rank_audit_findings(audit_findings))
     profile = get_profile(profile_name)

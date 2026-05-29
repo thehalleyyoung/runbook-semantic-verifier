@@ -113,6 +113,7 @@
   "summary": {
     "assumption_changes": 0,
     "assumption_weakenings": 0,
+    "behavior_preserving_changes": 0,
     "changes": 1,
     "effect_changes": 0,
     "introduced_counterexamples": 0,
@@ -120,6 +121,7 @@
     "new_states_explored": 6,
     "old_states_explored": 6,
     "persisting_counterexamples": 0,
+    "proof_obligation_strengthenings": 0,
     "resolved_counterexamples": 2,
     "safety_relevant_changes": 1,
     "waiver_changes": 0
