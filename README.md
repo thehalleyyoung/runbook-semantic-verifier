@@ -2,6 +2,12 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
+Current roadmap status: **27/100** items in `100_STEPS.md` are complete. The
+implemented artifact includes parser/schema validation, bounded checking,
+Markdown audits, semantic diffs, explanations, readiness reports, owner
+scorecards, property-coverage reports, and checked-in historical/current public
+case-study evidence.
+
 ## Quickstart
 
 ```bash
@@ -22,6 +28,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafan
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -120,6 +127,7 @@ src/runbook_verify/
   semantic_diff.py PR-oriented semantic diff and counterexample delta
   readiness.py  incident-readiness aggregation over checks, audits, freshness
   owner_scorecard.py  owner/team scorecards for hazards, waivers, and remediation history
+  coverage.py   property-to-entity/owner/Markdown-section coverage reports
   cli.py        command-line interface
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
@@ -200,6 +208,21 @@ The checked-in outputs `reports/current_impact_owner_scorecard.md` and
 `grafana-tempo-public-fixture`, report `not_ready`, and show two bounded queue
 counterexamples plus one blocking data-deletion prose obligation as owner-visible
 remediation debt.
+
+`frv coverage` maps each current invariant template to the services, databases,
+queues, alerts, credentials (currently no credential state in the DSL), owners,
+regions, and Markdown sections it covers:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli coverage \
+  case_studies/current/grafana_tempo --format markdown
+```
+
+The checked-in outputs `reports/current_impact_coverage.md` and
+`reports/current_impact_coverage.json` show that the Tempo-derived fixture's
+`tempo-query` service, `tenant-index-fallback-scan` queue, `prod` region, owner,
+and executable DSL section are covered by five invariant/proof-obligation
+templates, while three destructive-data prose obligations remain coverage gaps.
 
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
 replays, credential handling, customer-notification gaps, rollback ambiguity,
@@ -333,18 +356,18 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - Action semantics are abstract and conservative, not cloud-provider APIs.
 - Concurrency is represented as permissible step reordering, not real-time interleavings.
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
-- The benchmark examples are synthetic and should be expanded before empirical claims.
+- The benchmark corpus is small: it includes synthetic examples plus bounded
+  public historical/current fixtures, and should be expanded before empirical claims.
 - The historical GitHub fixture is reconstructed from public facts, not exact
   internal runbook text.
 - The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.
 
 ## Claims and evidence
 
-See `docs/claims_evidence.md` for the precise novelty claim, what is and is not
-proven, and a reproduction protocol. In short: we are not aware of an existing
-open-source benchmark that converts public outage narratives into executable
-runbook safety models and reproduces the safety failure with model checking, but
-we do not claim a universal proof that no unpublished or private system exists.
+See `docs/claims_evidence.md` for bounded claims, what is and is not proven, and
+a reproduction protocol. The repository records exact public artifacts and
+commands used for evidence; it does not claim live-infrastructure safety or a
+universal proof of novelty.
 
 ## License
 

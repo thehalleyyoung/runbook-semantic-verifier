@@ -5,10 +5,11 @@
 This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
-case study. The historical fixture reconstructs the GitHub October 21, 2018
-MySQL failover incident from public postmortem facts. The current case study
-analyzes short attributed excerpts from Grafana Tempo's public runbook and
-checks a derived executable safety model.
+case study. The CLI also includes incident-readiness, owner-scorecard, and
+property-coverage reports. The historical fixture reconstructs the GitHub
+October 21, 2018 MySQL failover incident from public postmortem facts. The
+current case study analyzes short attributed excerpts from Grafana Tempo's
+public runbook and checks a derived executable safety model.
 
 ## Bounded novelty claim
 
@@ -43,6 +44,10 @@ differently named system exists.
 - The owner scorecard groups bounded semantic counterexamples, blocking prose
   obligations, stale assumptions, declared waiver debt, proof-obligation
   failures, and remediation history by checked-in owner metadata.
+- The coverage report maps each current invariant/proof-obligation template to
+  modeled services, databases, queues, alerts, credentials (none in the current
+  DSL), owners, regions, source steps, and Markdown sections; unverified prose
+  obligations are reported as coverage gaps, not as verified properties.
 
 ## What is not proven
 
@@ -85,6 +90,8 @@ differently named system exists.
   - `reports/current_impact_readiness.md`
   - `reports/current_impact_owner_scorecard.json`
   - `reports/current_impact_owner_scorecard.md`
+  - `reports/current_impact_coverage.json`
+  - `reports/current_impact_coverage.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -115,6 +122,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 ```
@@ -133,3 +141,7 @@ The current-impact owner scorecard reports one checked-in fixture owner,
 `grafana-tempo-public-fixture`, with zero verified runbooks, two bounded queue
 counterexamples, one blocking prose obligation, no stale assumptions, and no
 waiver debt as of 2026-05-29.
+The current-impact coverage report maps five invariant/proof-obligation
+templates to the fixture's `tempo-query` service, `tenant-index-fallback-scan`
+queue, `prod` region, owner metadata, and executable Markdown section, and
+keeps three destructive-data prose obligations as explicit coverage gaps.

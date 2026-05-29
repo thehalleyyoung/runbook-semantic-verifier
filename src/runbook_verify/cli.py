@@ -9,6 +9,7 @@ from xml.sax.saxutils import escape
 
 from .benchmark import BenchmarkConfigError, render_json, render_markdown, run_benchmark
 from .checker import Checker
+from .coverage import CoverageError, build_coverage_report, render_coverage_json, render_coverage_markdown
 from .explanation import ExplainError, explain_finding, render_explanation_json, render_explanation_markdown
 from .exporter import export_alloy, export_tla
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
@@ -67,6 +68,9 @@ def main(argv: list[str] | None = None) -> int:
     owner_p.add_argument("--as-of", help="ISO date used for reproducible freshness calculations")
     owner_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     owner_p.add_argument("--fail-on", choices=["not-ready", "none"], default="not-ready")
+    coverage_p = sub.add_parser("coverage", help="map safety properties to modeled entities, owners, and Markdown sections")
+    coverage_p.add_argument("path")
+    coverage_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     lint_p = sub.add_parser("lint-markdown", help="lint Markdown runbook prose for dangerous unmodeled operations")
     lint_p.add_argument("path")
     lint_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
@@ -144,6 +148,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.fail_on == "none":
             return 0
         return 1 if result["summary"]["status"] == "not_ready" else 0
+    if args.command == "coverage":
+        try:
+            result = build_coverage_report(args.path)
+        except CoverageError as exc:
+            print(f"coverage error: {exc}", file=sys.stderr)
+            return 2
+        print(render_coverage_json(result) if args.format == "json" else render_coverage_markdown(result), end="")
+        return 0 if not result["parse_errors"] else 2
     if args.command == "schema":
         print(render_json_schema(), end="")
         return 0

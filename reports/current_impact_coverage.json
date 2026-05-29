@@ -1,0 +1,232 @@
+{
+  "parse_errors": [],
+  "path": "case_studies/current/grafana_tempo",
+  "properties": [
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "formal_obligation": "Hoare-style local assertion over step pre/postconditions",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "declared_effect",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "resume_queue",
+          "id": "resume-fallback-scans",
+          "line": 99,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_draining_all_replicas",
+      "queues": [],
+      "regions": [
+        "prod"
+      ],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [
+        "tempo-query"
+      ],
+      "steps": []
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_paused_queue_with_backlog",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "pause_queue",
+          "id": "delete-stale-tenant-indexes",
+          "line": 93,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "resume_queue",
+          "id": "resume-fallback-scans",
+          "line": 99,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "no_queue_pause_without_drain_plan",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [],
+      "steps": [
+        {
+          "action": "pause_queue",
+          "id": "delete-stale-tenant-indexes",
+          "line": 93,
+          "section": "Defensive interpretation"
+        },
+        {
+          "action": "resume_queue",
+          "id": "resume-fallback-scans",
+          "line": 99,
+          "section": "Defensive interpretation"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "property": "service_min_available",
+      "queues": [],
+      "regions": [
+        "prod"
+      ],
+      "runbook": "Grafana Tempo current public runbook derived safety model",
+      "services": [
+        "tempo-query"
+      ],
+      "steps": []
+    }
+  ],
+  "runbooks": [
+    {
+      "alerts": [],
+      "credentials": [],
+      "databases": [],
+      "name": "Grafana Tempo current public runbook derived safety model",
+      "owners": [
+        "grafana-tempo-public-fixture"
+      ],
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "queues": [
+        "tenant-index-fallback-scan"
+      ],
+      "regions": [
+        "prod"
+      ],
+      "services": [
+        "tempo-query"
+      ]
+    }
+  ],
+  "summary": {
+    "alerts": 0,
+    "covered_alerts": 0,
+    "covered_credentials": 0,
+    "covered_databases": 0,
+    "covered_queues": 1,
+    "covered_regions": 1,
+    "covered_services": 1,
+    "credentials": 0,
+    "databases": 0,
+    "owners": [
+      "grafana-tempo-public-fixture"
+    ],
+    "parse_errors": 0,
+    "path": "case_studies/current/grafana_tempo",
+    "properties": 5,
+    "queues": 1,
+    "regions": 1,
+    "runbooks": 1,
+    "services": 1,
+    "uncovered_entities": 3,
+    "unverified_prose_obligations": 3
+  },
+  "uncovered_entities": [
+    {
+      "kind": "prose_obligation",
+      "line": 20,
+      "message": "Markdown section has unverified obligation restore_path_and_blast_radius_limited",
+      "name": "data-deletion-needs-restore-precondition",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+    },
+    {
+      "kind": "prose_obligation",
+      "line": 18,
+      "message": "Markdown section has unverified obligation blast_radius_limited_or_explicit_limitation",
+      "name": "destructive-delete-needs-targeting",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+    },
+    {
+      "kind": "prose_obligation",
+      "line": 20,
+      "message": "Markdown section has unverified obligation blast_radius_limited_or_explicit_limitation",
+      "name": "destructive-delete-needs-targeting",
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md"
+    }
+  ],
+  "unverified_prose_obligations": [
+    {
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "line": 20,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Require a targeted scope, backup/restore validation, and capacity guard before destructive data operations.",
+      "rule": "data-deletion-needs-restore-precondition",
+      "section": "Public prose excerpts analyzed",
+      "semantic_obligation": "restore_path_and_blast_radius_limited",
+      "severity": "error"
+    },
+    {
+      "excerpt": "> Use the \"Forget\" button to forget and remove any unhealthy distributors from the ring.",
+      "line": 18,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "section": "Public prose excerpts analyzed",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning"
+    },
+    {
+      "excerpt": "> If you can isolate the impacted tenants, attempt to take targeted action instead of making sweeping changes. Your easiest lever to pull is to simply delete stale tenant indexes as all components will fallback to bucket listing.",
+      "line": 20,
+      "path": "case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "recommendation": "Model the removal as an action guarded by targeted scope, capacity, and rollback/restore preconditions.",
+      "rule": "destructive-delete-needs-targeting",
+      "section": "Public prose excerpts analyzed",
+      "semantic_obligation": "blast_radius_limited_or_explicit_limitation",
+      "severity": "warning"
+    }
+  ]
+}

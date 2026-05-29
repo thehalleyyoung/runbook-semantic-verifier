@@ -45,7 +45,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [ ] Add rely/guarantee reasoning for concurrent operators and automation that may change replicas, routes, queues, alerts, or credentials during execution.
 - [ ] Add temporal-logic invariant templates for blast radius, RPO/RTO, data durability, quorum, write availability, regional isolation, alert visibility, and rollback readiness.
 - [ ] Add waiver syntax with owner, expiry, scope, rationale, linked invariant, and benchmark visibility so suppressed obligations remain auditable.
-- [ ] Generate property-coverage reports showing which services, databases, queues, alerts, credentials, owners, regions, and Markdown sections each invariant covers.
+- [x] Generate property-coverage reports showing which services, databases, queues, alerts, credentials, owners, regions, and Markdown sections each invariant covers.
 
 ## Phase 4 — Verification algorithms with explainable counterexamples
 
