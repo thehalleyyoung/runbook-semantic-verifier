@@ -194,6 +194,48 @@ class CheckerExplanationTests(unittest.TestCase):
         self.assertIn("queue_backlog_requires_consumers", props)
         self.assertIn("no_unstable_consumer_group_with_backlog", props)
 
+    def test_safe_cache_flush_freezes_writes_and_warms_before_resume(self):
+        runbook = parse_runbook({
+            "allow_reordering": False,
+            "system": {
+                "services": {"api": {"min_available": 0, "replicas": []}},
+                "caches": {"redis": {"service": "api", "entries": 100, "warmup_entries": 80, "capacity_entries": 120}},
+            },
+            "steps": [
+                {"id": "freeze", "action": "freeze_cache_writes", "params": {"cache": "redis"},
+                 "effects": [{"kind": "cache_writes_frozen", "cache": "redis"}]},
+                {"id": "flush", "action": "flush_cache", "after": ["freeze"], "params": {"cache": "redis"},
+                 "requires": [{"kind": "cache_writes_frozen", "cache": "redis"}]},
+                {"id": "warm", "action": "warm_cache", "after": ["flush"], "params": {"cache": "redis", "entries": 100},
+                 "requires": [{"kind": "cache_capacity_at_least", "cache": "redis", "entries": 100}],
+                 "effects": [{"kind": "cache_warm", "cache": "redis"}, {"kind": "cache_no_stale_read_risk", "cache": "redis"}]},
+                {"id": "resume", "action": "resume_cache_writes", "after": ["warm"], "params": {"cache": "redis"}},
+            ],
+        })
+        result = Checker(runbook).check()
+        self.assertTrue(result.safe, result.violations)
+
+    def test_unsafe_cache_flush_reports_cold_start_capacity_and_stale_read_hazards(self):
+        runbook = parse_runbook({
+            "allow_reordering": True,
+            "max_depth": 2,
+            "system": {
+                "services": {"api": {"min_available": 0, "replicas": []}},
+                "caches": {"redis": {"service": "api", "entries": 100, "warmup_entries": 80, "capacity_entries": 120}},
+            },
+            "steps": [
+                {"id": "flush", "action": "flush_cache", "params": {"cache": "redis"}},
+                {"id": "underwarm", "action": "warm_cache", "after": ["flush"], "params": {"cache": "redis", "entries": 40}},
+                {"id": "overwarm", "action": "warm_cache", "after": ["flush"], "params": {"cache": "redis", "entries": 130}},
+            ],
+        })
+        result = Checker(runbook).check()
+        props = {v.property for v in result.violations}
+        self.assertIn("cache_flush_requires_write_freeze", props)
+        self.assertIn("cache_warmup_before_traffic", props)
+        self.assertIn("cache_warmup_within_capacity", props)
+        self.assertIn("no_stale_reads_after_cache_flush", props)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,12 +2,12 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **29/100** items in `100_STEPS.md` are complete. The
+Current roadmap status: **30/100** items in `100_STEPS.md` are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 Markdown audits, semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, queue replay/DLQ/consumer-group
-semantics, DNS cutover semantics, and checked-in historical/current public
-case-study evidence.
+semantics, DNS cutover semantics, cache flush/warmup/cold-start/capacity
+semantics, and checked-in historical/current public case-study evidence.
 
 ## Quickstart
 
@@ -18,6 +18,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_safe.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/queue_replay_unsafe.json --expect-violations
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/cache_flush_safe.json
+PYTHONPATH=src python3 -m runbook_verify.cli check examples/cache_flush_unsafe.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli schema
 PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
@@ -29,6 +31,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_
 PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/grafana_tempo --format junit --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/dnsswitch_dns_failover --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/redis_cache_flush --format markdown --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli explain case_studies/current/grafana_tempo finding-001 --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
@@ -62,7 +65,7 @@ Executable examples use JSON so the repository runs with the Python standard lib
 
 Top-level fields:
 
-- `system`: regions, services/replicas, databases, queues, alerts, feature flags, deployments, traffic routes, DNS records.
+- `system`: regions, services/replicas, databases, queues, caches, alerts, feature flags, deployments, traffic routes, DNS records.
 - `steps`: runbook actions with `id`, `action`, `params`, optional `after`, `requires`, and `effects`.
 - `allow_reordering`: when true, the checker explores any order satisfying `after` dependencies.
 - `max_depth`: bound for state-space exploration.
@@ -98,7 +101,8 @@ Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,
 `suppress_alert`, `scale_service`, `toggle_flag`, `run_migration`,
 `finish_migration`, `pause_queue`, `resume_queue`, `replay_messages`,
-`drain_dead_letter_queue`, `rebalance_consumers`, `wait`, and
+`drain_dead_letter_queue`, `rebalance_consumers`, `freeze_cache_writes`,
+`resume_cache_writes`, `flush_cache`, `warm_cache`, `wait`, and
 `mark_region_health`, plus traffic actions `shift_traffic`,
 `failover_traffic`, `drain_load_balancer`, and `restore_load_balancer`, and
 DNS actions `update_dns_record`, `mark_dns_health_check`, and
@@ -126,6 +130,9 @@ The prototype checks pragmatic cloud-operations hazards:
   health-check convergence, no premature DNS finalization before the TTL window
   elapses, and no stateful split-brain DNS window unless explicitly modeled as
   active-active safe;
+- no destructive shared-cache flush without write freeze, no resuming traffic or
+  writes before modeled cache warmup reaches threshold, no warmup beyond modeled
+  cache capacity, and no stale-read-risk state left after a flush;
 - declared step preconditions and effects must hold.
 
 ## Architecture
@@ -227,7 +234,7 @@ counterexamples plus destructive-data/backfill prose obligations as
 owner-visible remediation debt.
 
 `frv coverage` maps each current invariant template to the services, databases,
-queues, alerts, DNS records, credentials (currently no credential state in the
+queues, caches, alerts, DNS records, credentials (currently no credential state in the
 DSL), owners, regions, and Markdown sections it covers:
 
 ```bash
@@ -246,11 +253,21 @@ The checked-in DNS case-study reports (`reports/dnsswitch_dns_audit.md`,
 `reports/dnsswitch_dns_audit.json`, and `reports/dnsswitch_dns_coverage.md`)
 show the same report surfaces on a bounded DNS failover fixture.
 
+The checked-in Redis cache-flush reports (`reports/redis_cache_flush_audit.md`,
+`reports/redis_cache_flush_audit.json`,
+`reports/redis_cache_flush_coverage.md`, and
+`reports/redis_cache_flush_coverage.json`) validate the cache semantics on a
+bounded fixture derived from a public Redis runbook template that mentions flush
+procedures and capacity operations. The model intentionally reports missing
+write-freeze, insufficient warmup, over-capacity warmup, and stale-read-risk
+obligations; it is not a claim about a live deployment.
+
 Expanded prose rules cover destructive data deletion, manual SQL, backfills or
-replays, credential handling, customer-notification gaps, rollback ambiguity,
-alert suppression, failover, draining, and unmodeled escalation paths. Backfill
-or replay prose is tied to executable backlog, consumer, and deduplication
-obligations. Severity
+replays, cache flush/invalidation, credential handling, customer-notification
+gaps, rollback ambiguity, alert suppression, failover, draining, and unmodeled
+escalation paths. Backfill or replay prose is tied to executable backlog,
+consumer, and deduplication obligations; cache-flush prose is tied to executable
+write-freeze, warmup, and capacity obligations. Severity
 levels are `audit-only`, `warning`, `error`, and `responsible-disclosure`, with
 `info` reserved for future advisory checks.
 
@@ -284,6 +301,16 @@ new DNS semantics by reporting a cutover before target health-check convergence,
 before west-region service capacity exists, during a stateful TTL split-brain
 window, and with premature finalization before TTL expiry. This is a defensive
 artifact-level validation, not a claim about a live deployment.
+
+## Redis cache-flush public-template case study
+
+`case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md`
+is an independently authored bounded model derived from short attributed
+excerpts in OneUptime's public Redis operations runbook template (retrieved
+2026-05-29). It demonstrates cache flush, write-freeze, warmup threshold,
+capacity, and stale-read-risk semantics by reporting an intentionally unsafe
+mutant. This validates the checker/report surfaces against public operational
+documentation while keeping the claim bounded to the modeled artifact.
 
 ## Historical public case study
 
@@ -360,11 +387,12 @@ public benchmark contract documented by `docs/schema/benchmark.schema.json` and
 abstraction level, expected result, responsible-disclosure status, validity
 threats, and semantic feature coverage.
 
-The built-in benchmark currently contains eight runbooks: safe/unsafe synthetic
-regressions, safe/unsafe queue replay mutants, one real-world-style Kubernetes
-failover fixture, the GitHub Oct. 21 2018 reconstructed failover case, the
-Grafana Tempo current public runbook-derived replay case, and a public
-DNS-failover-pattern reconstruction.
+The built-in benchmark currently contains eleven runbooks: safe/unsafe
+synthetic regressions, safe/unsafe queue replay mutants, safe/unsafe cache-flush
+mutants, one real-world-style Kubernetes failover fixture, the GitHub Oct. 21
+2018 reconstructed failover case, the Grafana Tempo current public
+runbook-derived replay case, a public DNS-failover-pattern reconstruction, and a
+public Redis runbook-template-derived cache-flush mutant.
 
 ```json
 {
@@ -401,7 +429,8 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - The TLA+/Alloy exporters are formal-ish starting points, not complete proof obligations.
 - The benchmark corpus is small: it includes synthetic examples plus bounded
   public historical/current fixtures for database failover, queue replay/fallback,
-  and DNS failover patterns, and should be expanded before empirical claims.
+  DNS failover patterns, and cache-flush warmup/capacity hazards, and should be
+  expanded before empirical claims.
 - The historical GitHub fixture is reconstructed from public facts, not exact
   internal runbook text.
 - The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.

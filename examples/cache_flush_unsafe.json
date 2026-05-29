@@ -1,0 +1,26 @@
+{
+  "name": "Unsafe cache flush without warmup capacity",
+  "description": "Mutant fixture: flushes a shared cache without freezing writes, then under-warms and over-capacity warms it.",
+  "allow_reordering": true,
+  "max_depth": 2,
+  "system": {
+    "services": {
+      "api": {"min_available": 0, "replicas": []}
+    },
+    "caches": {
+      "api-redis": {
+        "service": "api",
+        "entries": 1000,
+        "warmup_entries": 800,
+        "capacity_entries": 1200,
+        "warm": true,
+        "write_frozen": false
+      }
+    }
+  },
+  "steps": [
+    {"id": "flush-cache", "action": "flush_cache", "params": {"cache": "api-redis"}},
+    {"id": "underwarm-cache", "action": "warm_cache", "after": ["flush-cache"], "params": {"cache": "api-redis", "entries": 400}},
+    {"id": "overwarm-cache", "action": "warm_cache", "after": ["flush-cache"], "params": {"cache": "api-redis", "entries": 1300}}
+  ]
+}

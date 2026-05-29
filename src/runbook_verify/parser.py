@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .descriptors import ACTION_DESCRIPTORS, CONDITION_DESCRIPTORS, OperationDescriptor
-from .model import Alert, Database, DNSRecord, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Cache, Database, DNSRecord, Deployment, FeatureFlag, Queue, Region, Replica, Runbook, Service, Step, SystemState, TrafficRoute
 
 
 @dataclass
@@ -63,6 +63,7 @@ def _normalize_field(field: str | None) -> str | None:
     normalized = field.replace("service ", "system.services.")
     normalized = normalized.replace("database ", "system.databases.")
     normalized = normalized.replace("queue ", "system.queues.")
+    normalized = normalized.replace("cache ", "system.caches.")
     normalized = normalized.replace("alert ", "system.alerts.")
     normalized = normalized.replace("flag ", "system.feature_flags.")
     normalized = normalized.replace("traffic route ", "system.traffic_routes.")
@@ -218,6 +219,28 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             duplicate_risk=bool(cfg.get("duplicate_risk", False)),
             consumer_group_stable=bool(cfg.get("consumer_group_stable", True)),
         )
+    caches = {}
+    for name, cfg_any in _require_mapping(raw.get("caches", {}), "system.caches").items():
+        name = str(name)
+        cfg = _require_mapping(cfg_any, f"cache {name}")
+        service = str(_require_key(cfg, "service", f"cache {name}"))
+        if service not in services:
+            raise RunbookParseError(f"cache {name}.service references unknown service {service!r}", field=f"system.caches.{name}.service")
+        entries = _non_negative_int(cfg.get("entries", 0), f"cache {name}.entries")
+        warmup_entries = _non_negative_int(cfg.get("warmup_entries", 0), f"cache {name}.warmup_entries")
+        capacity_entries = _non_negative_int(cfg.get("capacity_entries", entries), f"cache {name}.capacity_entries")
+        if capacity_entries < entries:
+            raise RunbookParseError(f"cache {name}.capacity_entries={capacity_entries} is smaller than entries={entries}", field=f"system.caches.{name}.capacity_entries")
+        caches[name] = Cache(
+            name=name,
+            service=service,
+            warm=bool(cfg.get("warm", entries >= warmup_entries)),
+            entries=entries,
+            warmup_entries=warmup_entries,
+            capacity_entries=capacity_entries,
+            stale_read_risk=bool(cfg.get("stale_read_risk", False)),
+            write_frozen=bool(cfg.get("write_frozen", False)),
+        )
     alerts = {name: Alert(name=name, active=bool(_require_mapping(cfg, f"alert {name}").get("active", True)), suppressed_until_minute=_optional_non_negative_int(_require_mapping(cfg, f"alert {name}").get("suppressed_until_minute"), f"alert {name}.suppressed_until_minute")) for name, cfg in _require_mapping(raw.get("alerts", {}), "system.alerts").items()}
     flags = {name: FeatureFlag(name=name, enabled=bool(_require_mapping(cfg, f"flag {name}").get("enabled", False))) for name, cfg in _require_mapping(raw.get("feature_flags", {}), "system.feature_flags").items()}
     deployments = {name: Deployment(service=str(_require_mapping(cfg, f"deployment {name}").get("service", name)), current=str(_require_mapping(cfg, f"deployment {name}").get("current", "current")), previous=_require_mapping(cfg, f"deployment {name}").get("previous")) for name, cfg in _require_mapping(raw.get("deployments", {}), "system.deployments").items()}
@@ -279,7 +302,7 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             health_check_converged_regions=converged_regions,
             allow_split_brain=bool(cfg.get("allow_split_brain", False)),
         )
-    return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
+    return SystemState(regions=regions, services=services, databases=databases, queues=queues, caches=caches, alerts=alerts, flags=flags, deployments=deployments, traffic_routes=traffic_routes, dns_records=dns_records, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
 def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) -> Runbook:
@@ -451,6 +474,8 @@ def _validate_step_references(state: SystemState, steps: list[Step]) -> None:
             require_entity("alert", str(params["alert"]), state.alerts)
         if "queue" in params:
             require_entity("queue", str(params["queue"]), state.queues)
+        if "cache" in params:
+            require_entity("cache", str(params["cache"]), state.caches)
         if "route" in params:
             require_entity("traffic route", str(params["route"]), state.traffic_routes)
         if "record" in params:
@@ -476,6 +501,7 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         ("database", state.databases, "database"),
         ("alert", state.alerts, "alert"),
         ("queue", state.queues, "queue"),
+        ("cache", state.caches, "cache"),
         ("region", state.regions, "region"),
         ("flag", state.flags, "feature flag"),
         ("route", state.traffic_routes, "traffic route"),

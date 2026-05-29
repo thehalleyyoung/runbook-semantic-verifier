@@ -1,0 +1,23 @@
+# Runbook audit: case_studies/current/redis_cache_flush
+
+- Runbooks checked: 1
+- Safe runbooks: 0
+- Findings: 9
+- Findings by severity: `{"error": 7, "warning": 2}`
+- Findings by rule: `{"cache-flush-needs-warmup-capacity": 2, "cache_flush_requires_write_freeze": 1, "cache_warmup_before_traffic": 3, "cache_warmup_within_capacity": 2, "no_stale_reads_after_cache_flush": 1}`
+
+| Runbook | Safe | States | Traces | Violations |
+| --- | --- | ---: | ---: | ---: |
+| `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md` | `False` | 4 | 2 | 7 |
+
+| ID | Rank | Type | Severity | Rule | Obligation | Location | Message | Recommendation |
+| --- | ---: | --- | --- | --- | --- | --- | --- | --- |
+| `finding-001` | 3 | semantic | error | cache_flush_requires_write_freeze | `cache_flush_requires_write_freeze` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary writes are not frozen before flush | Freeze cache writes or otherwise quiesce repopulation before flushing shared keys. |
+| `finding-002` | 3 | semantic | error | cache_warmup_before_traffic | `cache_warmup_before_traffic` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary is cold; warmup threshold=80000 entries | Warm the cache to its modeled threshold before restoring user traffic or resuming writes. |
+| `finding-003` | 3 | semantic | error | cache_warmup_before_traffic | `cache_warmup_before_traffic` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary warmup entries=40000, requires at least 80000 | Warm the cache to its modeled threshold before restoring user traffic or resuming writes. |
+| `finding-004` | 3 | semantic | error | cache_warmup_before_traffic | `cache_warmup_before_traffic` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary is cold; warmup threshold=80000 entries | Warm the cache to its modeled threshold before restoring user traffic or resuming writes. |
+| `finding-005` | 3 | semantic | error | cache_warmup_within_capacity | `cache_warmup_within_capacity` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary warmup entries=130000 exceed capacity=120000 | Increase cache capacity or lower warmup size before preloading entries. |
+| `finding-006` | 3 | semantic | error | cache_warmup_within_capacity | `cache_warmup_within_capacity` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary entries=130000 exceed capacity=120000 | Increase cache capacity or lower warmup size before preloading entries. |
+| `finding-007` | 3 | semantic | error | no_stale_reads_after_cache_flush | `no_stale_reads_after_cache_flush` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:` | cache redis-primary may serve stale reads after flush without a write freeze/warmup guard | Freeze writes and complete warmup/verification before allowing reads after a destructive cache flush. |
+| `finding-008` | 2 | prose | warning | cache-flush-needs-warmup-capacity | `cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:1` | Prose mentions cache flush/invalidation without executable write-freeze, warmup, and capacity obligations. Missing condition(s): cache_writes_frozen, cache_capacity_at_least, cache_warm. | Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic. |
+| `finding-009` | 2 | prose | warning | cache-flush-needs-warmup-capacity | `cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity` | `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md:14` | Prose mentions cache flush/invalidation without executable write-freeze, warmup, and capacity obligations. Missing condition(s): cache_writes_frozen, cache_capacity_at_least, cache_warm. | Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic. |

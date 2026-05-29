@@ -1,0 +1,296 @@
+{
+  "parse_errors": [],
+  "path": "case_studies/current/redis_cache_flush",
+  "properties": [
+    {
+      "alerts": [],
+      "caches": [
+        "redis-primary"
+      ],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "cache flush/warmup safety invariant over write freeze, cold-start capacity, and stale-read risk",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "property": "cache_flush_requires_write_freeze",
+      "queues": [],
+      "regions": [],
+      "runbook": "Redis public runbook derived cache flush mutant",
+      "services": [
+        "web-api"
+      ],
+      "steps": [
+        {
+          "action": "flush_cache",
+          "id": "flush-redis",
+          "line": 51,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "underwarm-redis",
+          "line": 52,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "overwarm-redis",
+          "line": 53,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "caches": [
+        "redis-primary"
+      ],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "cache flush/warmup safety invariant over write freeze, cold-start capacity, and stale-read risk",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "property": "cache_warmup_before_traffic",
+      "queues": [],
+      "regions": [],
+      "runbook": "Redis public runbook derived cache flush mutant",
+      "services": [
+        "web-api"
+      ],
+      "steps": [
+        {
+          "action": "flush_cache",
+          "id": "flush-redis",
+          "line": 51,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "underwarm-redis",
+          "line": 52,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "overwarm-redis",
+          "line": 53,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "caches": [
+        "redis-primary"
+      ],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "cache flush/warmup safety invariant over write freeze, cold-start capacity, and stale-read risk",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "property": "cache_warmup_within_capacity",
+      "queues": [],
+      "regions": [],
+      "runbook": "Redis public runbook derived cache flush mutant",
+      "services": [
+        "web-api"
+      ],
+      "steps": [
+        {
+          "action": "flush_cache",
+          "id": "flush-redis",
+          "line": 51,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "underwarm-redis",
+          "line": 52,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "overwarm-redis",
+          "line": 53,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "caches": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "property": "no_draining_all_replicas",
+      "queues": [],
+      "regions": [],
+      "runbook": "Redis public runbook derived cache flush mutant",
+      "services": [
+        "web-api"
+      ],
+      "steps": []
+    },
+    {
+      "alerts": [],
+      "caches": [
+        "redis-primary"
+      ],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "cache flush/warmup safety invariant over write freeze, cold-start capacity, and stale-read risk",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "property": "no_stale_reads_after_cache_flush",
+      "queues": [],
+      "regions": [],
+      "runbook": "Redis public runbook derived cache flush mutant",
+      "services": [
+        "web-api"
+      ],
+      "steps": [
+        {
+          "action": "flush_cache",
+          "id": "flush-redis",
+          "line": 51,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "underwarm-redis",
+          "line": 52,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        },
+        {
+          "action": "warm_cache",
+          "id": "overwarm-redis",
+          "line": 53,
+          "section": "Redis cache flush public-runbook-derived fixture"
+        }
+      ]
+    },
+    {
+      "alerts": [],
+      "caches": [],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "formal_obligation": "temporal safety invariant checked over bounded small-step traces",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "property": "service_min_available",
+      "queues": [],
+      "regions": [],
+      "runbook": "Redis public runbook derived cache flush mutant",
+      "services": [
+        "web-api"
+      ],
+      "steps": []
+    }
+  ],
+  "runbooks": [
+    {
+      "alerts": [],
+      "caches": [
+        "redis-primary"
+      ],
+      "credentials": [],
+      "databases": [],
+      "dns_records": [],
+      "name": "Redis public runbook derived cache flush mutant",
+      "owners": [
+        "public-redis-runbook-fixture"
+      ],
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "queues": [],
+      "regions": [],
+      "services": [
+        "web-api"
+      ]
+    }
+  ],
+  "summary": {
+    "alerts": 0,
+    "caches": 1,
+    "covered_alerts": 0,
+    "covered_caches": 1,
+    "covered_credentials": 0,
+    "covered_databases": 0,
+    "covered_dns_records": 0,
+    "covered_queues": 0,
+    "covered_regions": 0,
+    "covered_services": 1,
+    "credentials": 0,
+    "databases": 0,
+    "dns_records": 0,
+    "owners": [
+      "public-redis-runbook-fixture"
+    ],
+    "parse_errors": 0,
+    "path": "case_studies/current/redis_cache_flush",
+    "properties": 6,
+    "queues": 0,
+    "regions": 0,
+    "runbooks": 1,
+    "services": 1,
+    "uncovered_entities": 2,
+    "unverified_prose_obligations": 2
+  },
+  "uncovered_entities": [
+    {
+      "kind": "prose_obligation",
+      "line": 1,
+      "message": "Markdown section has unverified obligation cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+      "name": "cache-flush-needs-warmup-capacity",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md"
+    },
+    {
+      "kind": "prose_obligation",
+      "line": 14,
+      "message": "Markdown section has unverified obligation cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+      "name": "cache-flush-needs-warmup-capacity",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md"
+    }
+  ],
+  "unverified_prose_obligations": [
+    {
+      "excerpt": "# Redis cache flush public-runbook-derived fixture",
+      "line": 1,
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "recommendation": "Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic.",
+      "rule": "cache-flush-needs-warmup-capacity",
+      "section": "Redis cache flush public-runbook-derived fixture",
+      "semantic_obligation": "cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+      "severity": "warning"
+    },
+    {
+      "excerpt": "Bounded modeling note: the public template usefully reminds operators to include flush procedures and capacity/scaling sections, but the excerpt does not itself encode write freeze, cache warmup threshold, or cold-start capacity obligations. This defensive fixture models a common unsafe cache-flush mutant so the verifier can check those obligations explicitly. It is not a claim about a live OneUptime deployment.",
+      "line": 14,
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "recommendation": "Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic.",
+      "rule": "cache-flush-needs-warmup-capacity",
+      "section": "Redis cache flush public-runbook-derived fixture",
+      "semantic_obligation": "cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+      "severity": "warning"
+    }
+  ]
+}

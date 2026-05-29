@@ -160,7 +160,7 @@ class ParserValidationTests(unittest.TestCase):
     def test_complete_schema_example_fixture_validates(self):
         runbook = load_runbook(ROOT / "docs" / "schema" / "examples" / "complete_runbook.json")
         self.assertEqual(runbook.name, "Complete documented DSL fixture")
-        self.assertEqual(len(runbook.steps), 5)
+        self.assertEqual(len(runbook.steps), 9)
 
     def test_parses_and_validates_traffic_route_references(self):
         runbook = parse_runbook({
@@ -245,6 +245,29 @@ class ParserValidationTests(unittest.TestCase):
             parse_runbook({
                 "system": {"queues": {}},
                 "steps": [{"id": "replay", "action": "replay_messages", "params": {"queue": "missing", "count": 1}}],
+            })
+
+    def test_parses_and_validates_cache_references(self):
+        runbook = parse_runbook({
+            "system": {
+                "services": {"api": {"min_available": 0, "replicas": []}},
+                "caches": {"redis": {"service": "api", "entries": 100, "warmup_entries": 50, "capacity_entries": 200}},
+            },
+            "steps": [{"id": "flush", "action": "flush_cache", "params": {"cache": "redis"}}],
+        })
+        self.assertEqual(runbook.state.caches["redis"].service, "api")
+        self.assertEqual(runbook.state.caches["redis"].capacity_entries, 200)
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown cache"):
+            parse_runbook({
+                "system": {"services": {"api": {"min_available": 0, "replicas": []}}, "caches": {}},
+                "steps": [{"id": "flush", "action": "flush_cache", "params": {"cache": "missing"}}],
+            })
+
+        with self.assertRaisesRegex(RunbookParseError, "unknown service"):
+            parse_runbook({
+                "system": {"caches": {"redis": {"service": "api"}}},
+                "steps": [],
             })
 
 

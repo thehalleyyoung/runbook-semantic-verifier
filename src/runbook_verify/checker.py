@@ -173,6 +173,17 @@ class Checker:
             target = int(step.params["consumers"])
             if q.depth > 0 and target <= 0:
                 violations.append(_violation("no_rebalance_to_zero_consumers", f"queue {q.name} has depth={q.depth} before rebalance to {target} consumers", trace + (step.id,), step.id))
+        if step.action == "flush_cache":
+            cache = state.caches[str(step.params["cache"])]
+            if not cache.write_frozen:
+                violations.append(_violation("cache_flush_requires_write_freeze", f"cache {cache.name} writes are not frozen before flush", trace + (step.id,), step.id))
+        if step.action == "warm_cache":
+            cache = state.caches[str(step.params["cache"])]
+            entries = int(step.params["entries"])
+            if entries < cache.warmup_entries:
+                violations.append(_violation("cache_warmup_before_traffic", f"cache {cache.name} warmup entries={entries}, requires at least {cache.warmup_entries}", trace + (step.id,), step.id))
+            if entries > cache.capacity_entries:
+                violations.append(_violation("cache_warmup_within_capacity", f"cache {cache.name} warmup entries={entries} exceed capacity={cache.capacity_entries}", trace + (step.id,), step.id))
         if step.action == "drain_load_balancer":
             route = state.traffic_routes[str(step.params["route"])]
             region = str(step.params["region"])
@@ -218,6 +229,13 @@ class Checker:
                 violations.append(_violation("queue_backlog_requires_consumers", f"queue {q.name} has depth={q.depth} with no active consumers", trace, step.id))
             if q.depth > 0 and not q.consumer_group_stable:
                 violations.append(_violation("no_unstable_consumer_group_with_backlog", f"queue {q.name} has depth={q.depth} while consumer group rebalance is not stable", trace, step.id))
+        for cache in state.caches.values():
+            if not cache.warm and not cache.write_frozen:
+                violations.append(_violation("cache_warmup_before_traffic", f"cache {cache.name} is cold; warmup threshold={cache.warmup_entries} entries", trace, step.id))
+            if cache.entries > cache.capacity_entries:
+                violations.append(_violation("cache_warmup_within_capacity", f"cache {cache.name} entries={cache.entries} exceed capacity={cache.capacity_entries}", trace, step.id))
+            if cache.stale_read_risk:
+                violations.append(_violation("no_stale_reads_after_cache_flush", f"cache {cache.name} may serve stale reads after flush without a write freeze/warmup guard", trace, step.id))
         for route in state.traffic_routes.values():
             total = sum(route.weights.values())
             if total != 100:
@@ -269,7 +287,7 @@ def _record_obligations(result: CheckResult, group: str, checked: int, failures:
 
 
 def _safety_obligation_count(state: SystemState) -> int:
-    return len(state.services) * 2 + len(state.queues) * 5 + len(state.traffic_routes) + len(state.dns_records) * 3
+    return len(state.services) * 2 + len(state.queues) * 5 + len(state.caches) * 3 + len(state.traffic_routes) + len(state.dns_records) * 3
 
 
 def _dedupe_violations(violations: list[Violation]) -> list[Violation]:
@@ -301,6 +319,10 @@ REMEDIATIONS = {
     "queue_backlog_requires_consumers": "Keep at least one active consumer or drain backlog before rebalancing to zero consumers.",
     "no_rebalance_to_zero_consumers": "Rebalance to a positive consumer count while backlog exists, or drain the queue first.",
     "no_unstable_consumer_group_with_backlog": "Wait for consumer-group stability before leaving replay/backlog processing exposed.",
+    "cache_flush_requires_write_freeze": "Freeze cache writes or otherwise quiesce repopulation before flushing shared keys.",
+    "cache_warmup_before_traffic": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
+    "cache_warmup_within_capacity": "Increase cache capacity or lower warmup size before preloading entries.",
+    "no_stale_reads_after_cache_flush": "Freeze writes and complete warmup/verification before allowing reads after a destructive cache flush.",
     "traffic_weights_sum_to_100": "Keep route weights normalized to 100%; use failover_traffic or paired shift_traffic steps.",
     "no_traffic_to_unhealthy_region": "Require region_healthy and restore regional health before shifting or failing over traffic.",
     "no_traffic_to_drained_load_balancer": "Restore the regional load balancer or shift traffic away before relying on that route.",

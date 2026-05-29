@@ -307,6 +307,14 @@ def _state_signature(state: SystemState) -> dict[str, Any]:
         data[f"queues.{name}.dedupe_window_minutes"] = queue.dedupe_window_minutes
         data[f"queues.{name}.duplicate_risk"] = queue.duplicate_risk
         data[f"queues.{name}.consumer_group_stable"] = queue.consumer_group_stable
+    for name, cache in state.caches.items():
+        data[f"caches.{name}.service"] = cache.service
+        data[f"caches.{name}.warm"] = cache.warm
+        data[f"caches.{name}.entries"] = cache.entries
+        data[f"caches.{name}.warmup_entries"] = cache.warmup_entries
+        data[f"caches.{name}.capacity_entries"] = cache.capacity_entries
+        data[f"caches.{name}.stale_read_risk"] = cache.stale_read_risk
+        data[f"caches.{name}.write_frozen"] = cache.write_frozen
     for name, alert in state.alerts.items():
         data[f"alerts.{name}.active"] = alert.active
         data[f"alerts.{name}.suppressed_until_minute"] = alert.suppressed_until_minute

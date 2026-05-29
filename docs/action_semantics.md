@@ -13,6 +13,8 @@ This table is generated from the typed action descriptors used by parser validat
 | `failover_traffic` | `route:string, target_region:string` | Moves all modeled route traffic to one target region and zeroes the other route weights. |
 | `finalize_dns_record` | `record:string` | Clears a DNS record's prior target after the TTL wait obligation has elapsed. |
 | `finish_migration` | `database:string` | Clears the database migration-in-progress flag. |
+| `flush_cache` | `cache:string` | Evicts all modeled cache entries, making the cache cold and recording stale-read risk unless writes are frozen. |
+| `freeze_cache_writes` | `cache:string` | Freezes writes that could repopulate or serve stale values during a cache flush. |
 | `mark_dns_health_check` | `record:string, region:string, converged:boolean` | Records whether DNS health checks have converged for a record's regional endpoint. |
 | `mark_region_health` | `region:string, healthy:boolean` | Sets a region health flag used by failover checks. |
 | `pause_queue` | `queue:string` | Pauses queue consumption/processing. |
@@ -21,6 +23,7 @@ This table is generated from the typed action descriptors used by parser validat
 | `restart_service` | `service:string` | Reasserts the modeled service without changing capacity. |
 | `restore_load_balancer` | `route:string, region:string` | Marks a route's regional load balancer active again. |
 | `restore_replica` | `service:string, replica:string` | Marks one drained service replica available again. |
+| `resume_cache_writes` | `cache:string` | Re-enables writes to a cache after warmup/verification. |
 | `resume_queue` | `queue:string` | Resumes queue consumption/processing. |
 | `rollback_deployment` | `service:string, to?:string` | Moves a service deployment pointer to a previous or named version. |
 | `run_migration` | `database:string, in_progress?:boolean, compatible?:boolean` | Updates database migration progress and compatibility flags. |
@@ -30,6 +33,7 @@ This table is generated from the typed action descriptors used by parser validat
 | `toggle_flag` | `flag:string, enabled:boolean` | Sets a feature flag to the requested boolean value. |
 | `update_dns_record` | `record:string, target_region:string` | Changes a DNS record target region and starts the modeled TTL propagation window. |
 | `wait` | `minutes:integer>=0` | Advances the model clock by a non-negative number of minutes. |
+| `warm_cache` | `cache:string, entries:integer>=0` | Warms a cache with a bounded number of entries and clears modeled stale-read risk when the warmup threshold is met. |
 
 ## Condition descriptors
 
@@ -37,6 +41,11 @@ This table is generated from the typed action descriptors used by parser validat
 | --- | --- | --- |
 | `alert_active` | `alert:string, active:boolean` | Requires or asserts an alert activity value. |
 | `alert_suppressed_for_at_most` | `alert:string, minutes:integer>=0` | Requires or asserts bounded alert suppression duration. |
+| `cache_capacity_at_least` | `cache:string, entries:integer>=0` | Requires or asserts enough cache capacity for the requested warmup. |
+| `cache_entries_at_least` | `cache:string, entries:integer>=0` | Requires or asserts a minimum number of warmed cache entries. |
+| `cache_no_stale_read_risk` | `cache:string` | Requires or asserts no modeled stale-read risk remains after flush and warmup. |
+| `cache_warm` | `cache:string` | Requires or asserts that cache warmup has reached the modeled threshold. |
+| `cache_writes_frozen` | `cache:string` | Requires or asserts that cache writes are frozen before a destructive flush. |
 | `consumer_group_stable` | `queue:string` | Requires or asserts that consumer-group rebalancing has converged. |
 | `database_primary_region` | `database:string, region:string` | Requires or asserts a database primary region. |
 | `database_quorum_confirmed` | `database:string` | Requires or asserts confirmed database quorum. |

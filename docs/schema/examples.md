@@ -8,7 +8,9 @@
 - `allow_reordering`: whether the checker can explore any order that respects each step's `after` dependencies.
 - `max_depth`: non-negative exploration bound.
 - `safety`: checker policy configuration such as `max_alert_suppression_minutes`.
-- `system`: initial regions, services and replicas, databases, queues, alerts, feature flags, deployments, traffic routes, DNS records, and optional `clock_minute`.
+- `system`: initial regions, services and replicas, databases, queues, caches,
+  alerts, feature flags, deployments, traffic routes, DNS records, and optional
+  `clock_minute`.
 - `steps`: executable actions with `id`, `action`, `params`, optional `after`, and optional `requires`/`effects` conditions.
 
 JSON does not permit comments, so keep automation fixtures strict and place explanatory comments in prose like this file.

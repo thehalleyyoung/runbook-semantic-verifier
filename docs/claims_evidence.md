@@ -7,12 +7,14 @@ a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes incident-readiness, owner-scorecard, and
 property-coverage reports. The DSL also models queue replay/DLQ/consumer-group
-semantics and DNS cutovers with TTL and health-check convergence obligations.
+semantics, DNS cutovers with TTL and health-check convergence obligations, and
+cache flush/warmup/cold-start/capacity semantics.
 The historical fixture reconstructs the GitHub
 October 21, 2018 MySQL failover incident from public postmortem facts. The
 current case studies analyze short attributed excerpts from Grafana Tempo's
-public runbook and a bounded DNS failover pattern derived from public
-`dnsswitch` guidance.
+public runbook, a bounded DNS failover pattern derived from public `dnsswitch`
+guidance, and a bounded Redis cache-flush mutant derived from a public Redis
+runbook template.
 
 ## Bounded novelty claim
 
@@ -54,6 +56,9 @@ differently named system exists.
 - Queue replay, DLQ draining, deduplication guards, and consumer-group
   rebalancing are checked as bounded small-step transitions with concrete
   duplicate-processing and backlog counterexamples.
+- Cache write freezes, destructive flushes, warmup thresholds, capacity limits,
+  and stale-read risk are checked as bounded small-step transitions with
+  concrete cold-start and over-capacity counterexamples.
 
 ## What is not proven
 
@@ -70,6 +75,8 @@ differently named system exists.
   vulnerability in Grafana Labs, Tempo, or any live service.
 - The `dnsswitch` DNS case study is a defensive bounded reconstruction of a
   documented failover pattern, not a claim about a live deployment.
+- The Redis cache-flush case study is a defensive bounded mutant derived from a
+  public runbook template, not a claim about a live deployment.
 - The prior-art search cannot prove universal nonexistence; it only documents
   the public search performed for this repository.
 
@@ -87,6 +94,8 @@ differently named system exists.
 - Source repository license text observed: AGPL-3.0.
 - Hotpirsch `dnsswitch` public DNS failover guidance:
   <https://github.com/Hotpirsch/dnsswitch>
+- OneUptime public Redis operations runbook template:
+  <https://raw.githubusercontent.com/OneUptime/blog/master/posts/2026-03-31-redis-operations-runbook/README.md>
 - Checked-in evidence:
   - `case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md`
   - `reports/github_oct21_semantic_diff.json`
@@ -106,6 +115,11 @@ differently named system exists.
   - `reports/dnsswitch_dns_audit.json`
   - `reports/dnsswitch_dns_audit.md`
   - `reports/dnsswitch_dns_coverage.md`
+  - `case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md`
+  - `reports/redis_cache_flush_audit.json`
+  - `reports/redis_cache_flush_audit.md`
+  - `reports/redis_cache_flush_coverage.json`
+  - `reports/redis_cache_flush_coverage.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -138,6 +152,8 @@ PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/
 PYTHONPATH=src python3 -m runbook_verify.cli readiness case_studies/current/grafana_tempo --service tempo-query --region prod --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli owner-scorecard case_studies/current/grafana_tempo --as-of 2026-05-29 --format markdown --fail-on none
 PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/grafana_tempo --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli audit case_studies/current/redis_cache_flush --format markdown --expect-findings
+PYTHONPATH=src python3 -m runbook_verify.cli coverage case_studies/current/redis_cache_flush --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli diff case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md --format markdown
 ```
@@ -165,3 +181,8 @@ keeps four destructive-data/backfill prose obligations as explicit coverage gaps
 The DNS case-study check reports bounded `dns_health_check_converged_before_cutover`,
 `dns_requires_regional_capacity`, `dns_no_split_brain_during_ttl`, and
 `dns_ttl_elapsed_before_finalize` counterexamples.
+The Redis cache-flush case-study audit reports bounded
+`cache_flush_requires_write_freeze`, `cache_warmup_before_traffic`,
+`cache_warmup_within_capacity`, and `no_stale_reads_after_cache_flush`
+counterexamples plus cache-flush prose obligations for write-freeze, warmup, and
+capacity.

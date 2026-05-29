@@ -116,6 +116,23 @@ def _system_schema() -> dict[str, Any]:
                         "consumer_group_stable": {"type": "boolean"},
                     },
                 },
+                "caches": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["service"],
+                        "properties": {
+                            "service": {"type": "string"},
+                            "warm": {"type": "boolean"},
+                            "entries": {"type": "integer", "minimum": 0},
+                            "warmup_entries": {"type": "integer", "minimum": 0},
+                            "capacity_entries": {"type": "integer", "minimum": 0},
+                            "stale_read_risk": {"type": "boolean"},
+                            "write_frozen": {"type": "boolean"},
+                        },
+                    },
+                },
             },
             "alerts": {
                 "type": "object",
@@ -250,6 +267,7 @@ def _field_schema(field: FieldDescriptor | str) -> dict[str, Any]:
         "minutes": 0,
         "replicas": 0,
         "percent": 0,
+        "entries": 0,
     }
     if name in integer_minimums:
         schema = {"type": "integer", "minimum": integer_minimums[name]}

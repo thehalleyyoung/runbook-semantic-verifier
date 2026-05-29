@@ -5,18 +5,47 @@
   "runbooks": [
     {
       "path": "../examples/safe_runbook.json",
-      "provenance": { "kind": "synthetic", "notes": "Repository-authored safe regression fixture." },
-      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored safe regression fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
       "abstraction_level": "toy",
-      "expected_result": { "safe": true, "violation_properties": [], "prose_rules": [] },
-      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic safe fixture." },
-      "validity_threats": ["Small synthetic state space; not a production incident."],
-      "semantic_features": ["service_capacity", "database_quorum", "alert_suppression", "feature_flags", "deployment_rollback"]
+      "expected_result": {
+        "safe": true,
+        "violation_properties": [],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic safe fixture."
+      },
+      "validity_threats": [
+        "Small synthetic state space; not a production incident."
+      ],
+      "semantic_features": [
+        "service_capacity",
+        "database_quorum",
+        "alert_suppression",
+        "feature_flags",
+        "deployment_rollback"
+      ]
     },
     {
       "path": "../examples/unsafe_runbook.json",
-      "provenance": { "kind": "synthetic", "notes": "Repository-authored unsafe regression fixture." },
-      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored unsafe regression fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
       "abstraction_level": "toy",
       "expected_result": {
         "safe": false,
@@ -29,24 +58,63 @@
         ],
         "prose_rules": []
       },
-      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic unsafe fixture." },
-      "validity_threats": ["Designed mutant fixture; expected hazards are intentionally seeded."],
-      "semantic_features": ["service_capacity", "database_quorum", "alert_suppression", "feature_flags", "deployment_rollback"]
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic unsafe fixture."
+      },
+      "validity_threats": [
+        "Designed mutant fixture; expected hazards are intentionally seeded."
+      ],
+      "semantic_features": [
+        "service_capacity",
+        "database_quorum",
+        "alert_suppression",
+        "feature_flags",
+        "deployment_rollback"
+      ]
     },
     {
       "path": "../examples/queue_replay_safe.json",
-      "provenance": { "kind": "synthetic", "notes": "Repository-authored safe queue replay regression fixture." },
-      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored safe queue replay regression fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
       "abstraction_level": "toy",
-      "expected_result": { "safe": true, "violation_properties": [], "prose_rules": [] },
-      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic safe queue replay fixture." },
-      "validity_threats": ["Small synthetic state space; not a production incident."],
-      "semantic_features": ["message_replay", "dead_letter_queue", "dedupe_key", "consumer_group_rebalance"]
+      "expected_result": {
+        "safe": true,
+        "violation_properties": [],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic safe queue replay fixture."
+      },
+      "validity_threats": [
+        "Small synthetic state space; not a production incident."
+      ],
+      "semantic_features": [
+        "message_replay",
+        "dead_letter_queue",
+        "dedupe_key",
+        "consumer_group_rebalance"
+      ]
     },
     {
       "path": "../examples/queue_replay_unsafe.json",
-      "provenance": { "kind": "synthetic", "notes": "Repository-authored unsafe queue replay mutant fixture." },
-      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored unsafe queue replay mutant fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
       "abstraction_level": "toy",
       "expected_result": {
         "safe": false,
@@ -59,23 +127,122 @@
         ],
         "prose_rules": []
       },
-      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic unsafe replay fixture." },
-      "validity_threats": ["Designed mutant fixture; expected hazards are intentionally seeded."],
-      "semantic_features": ["message_replay", "dead_letter_queue", "dedupe_key", "consumer_group_rebalance"]
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic unsafe replay fixture."
+      },
+      "validity_threats": [
+        "Designed mutant fixture; expected hazards are intentionally seeded."
+      ],
+      "semantic_features": [
+        "message_replay",
+        "dead_letter_queue",
+        "dedupe_key",
+        "consumer_group_rebalance"
+      ]
+    },
+    {
+      "path": "../examples/cache_flush_safe.json",
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored safe cache flush regression fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": true,
+        "violation_properties": [],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic safe cache flush fixture."
+      },
+      "validity_threats": [
+        "Small synthetic state space; not a production incident."
+      ],
+      "semantic_features": [
+        "cache_flush",
+        "cache_warmup",
+        "write_freeze",
+        "cold_start_capacity"
+      ]
+    },
+    {
+      "path": "../examples/cache_flush_unsafe.json",
+      "provenance": {
+        "kind": "synthetic",
+        "notes": "Repository-authored unsafe cache flush mutant fixture."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "cache_flush_requires_write_freeze",
+          "cache_warmup_before_traffic",
+          "cache_warmup_within_capacity",
+          "no_stale_reads_after_cache_flush"
+        ],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic unsafe cache flush fixture."
+      },
+      "validity_threats": [
+        "Designed mutant fixture; expected hazards are intentionally seeded."
+      ],
+      "semantic_features": [
+        "cache_flush",
+        "cache_warmup",
+        "write_freeze",
+        "cold_start_capacity",
+        "stale_read_risk"
+      ]
     },
     {
       "path": "../examples/real_world/kubernetes_region_failover.md",
-      "provenance": { "kind": "real-world-style", "notes": "Repository-authored Markdown fixture modeled on common Kubernetes regional failover runbook patterns." },
-      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "provenance": {
+        "kind": "real-world-style",
+        "notes": "Repository-authored Markdown fixture modeled on common Kubernetes regional failover runbook patterns."
+      },
+      "license": {
+        "status": "original",
+        "name": "MIT",
+        "notes": "Authored for this repository."
+      },
       "abstraction_level": "real-world-style",
       "expected_result": {
         "safe": false,
-        "violation_properties": ["bounded_alert_suppression", "quorum_before_data_loss_action", "service_min_available"],
+        "violation_properties": [
+          "bounded_alert_suppression",
+          "quorum_before_data_loss_action",
+          "service_min_available"
+        ],
         "prose_rules": []
       },
-      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic real-world-style fixture, not a live service report." },
-      "validity_threats": ["Represents a class of failover mistakes rather than a specific public incident."],
-      "semantic_features": ["markdown_embedded_dsl", "service_capacity", "database_quorum", "alert_suppression"]
+      "responsible_disclosure": {
+        "status": "not-applicable",
+        "notes": "Synthetic real-world-style fixture, not a live service report."
+      },
+      "validity_threats": [
+        "Represents a class of failover mistakes rather than a specific public incident."
+      ],
+      "semantic_features": [
+        "markdown_embedded_dsl",
+        "service_capacity",
+        "database_quorum",
+        "alert_suppression"
+      ]
     },
     {
       "path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
@@ -85,12 +252,34 @@
         "incident_date": "2018-10-21",
         "notes": "Reconstructed executable model from public post-incident analysis; not original runbook text."
       },
-      "license": { "status": "excerpted", "notes": "Uses public facts and independently authored executable model." },
+      "license": {
+        "status": "excerpted",
+        "notes": "Uses public facts and independently authored executable model."
+      },
       "abstraction_level": "reconstructed-public-facts",
-      "expected_result": { "safe": false, "violation_properties": ["precondition", "quorum_before_data_loss_action"], "prose_rules": [] },
-      "responsible_disclosure": { "status": "public-information", "notes": "Historical public incident analysis; no new vulnerability claim." },
-      "validity_threats": ["Public-data incompleteness", "Reconstructed assumptions may differ from original operational procedures", "Bounded model abstracts distributed database behavior."],
-      "semantic_features": ["public_historical_case", "database_quorum", "queue_pause", "preconditions"]
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "precondition",
+          "quorum_before_data_loss_action"
+        ],
+        "prose_rules": []
+      },
+      "responsible_disclosure": {
+        "status": "public-information",
+        "notes": "Historical public incident analysis; no new vulnerability claim."
+      },
+      "validity_threats": [
+        "Public-data incompleteness",
+        "Reconstructed assumptions may differ from original operational procedures",
+        "Bounded model abstracts distributed database behavior."
+      ],
+      "semantic_features": [
+        "public_historical_case",
+        "database_quorum",
+        "queue_pause",
+        "preconditions"
+      ]
     },
     {
       "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
@@ -101,16 +290,44 @@
         "retrieved": "2026-05-29",
         "notes": "Short attributed public excerpts plus independently authored defensive model."
       },
-      "license": { "status": "public-license", "name": "AGPL-3.0", "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model." },
+      "license": {
+        "status": "public-license",
+        "name": "AGPL-3.0",
+        "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model."
+      },
       "abstraction_level": "derived-public-runbook",
       "expected_result": {
         "safe": false,
-        "violation_properties": ["no_duplicate_processing_risk", "no_rebalance_to_zero_consumers", "no_replay_without_dedupe", "no_unstable_consumer_group_with_backlog", "queue_backlog_requires_consumers"],
-        "prose_rules": ["data-deletion-needs-restore-precondition", "destructive-delete-needs-targeting"]
+        "violation_properties": [
+          "no_duplicate_processing_risk",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_unstable_consumer_group_with_backlog",
+          "queue_backlog_requires_consumers"
+        ],
+        "prose_rules": [
+          "data-deletion-needs-restore-precondition",
+          "destructive-delete-needs-targeting"
+        ]
       },
-      "responsible_disclosure": { "status": "public-information", "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim." },
-      "validity_threats": ["Public runbook excerpts are incomplete", "Executable model is derived, not maintainer-authored", "Result is advisory and bounded to modeled queue fallback replay and consumer-group behavior."],
-      "semantic_features": ["public_current_case", "markdown_prose_lint", "message_replay", "dead_letter_queue", "dedupe_key", "consumer_group_rebalance", "benchmark_expected_prose_rules"]
+      "responsible_disclosure": {
+        "status": "public-information",
+        "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim."
+      },
+      "validity_threats": [
+        "Public runbook excerpts are incomplete",
+        "Executable model is derived, not maintainer-authored",
+        "Result is advisory and bounded to modeled queue fallback replay and consumer-group behavior."
+      ],
+      "semantic_features": [
+        "public_current_case",
+        "markdown_prose_lint",
+        "message_replay",
+        "dead_letter_queue",
+        "dedupe_key",
+        "consumer_group_rebalance",
+        "benchmark_expected_prose_rules"
+      ]
     },
     {
       "path": "../case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
@@ -120,7 +337,10 @@
         "retrieved": "2026-05-29",
         "notes": "Independently authored bounded model from public DNS failover guidance discussing health checks and TTL behavior."
       },
-      "license": { "status": "public-license", "notes": "Benchmark stores original model/prose with link to public source; no project code copied." },
+      "license": {
+        "status": "public-license",
+        "notes": "Benchmark stores original model/prose with link to public source; no project code copied."
+      },
       "abstraction_level": "derived-public-runbook",
       "expected_result": {
         "safe": false,
@@ -132,9 +352,65 @@
         ],
         "prose_rules": []
       },
-      "responsible_disclosure": { "status": "public-information", "notes": "Defensive model of a documented DNS failover pattern; not an undisclosed vulnerability claim." },
-      "validity_threats": ["Derived from public documentation rather than an operator's private runbook", "DNS client caching behavior is abstracted to a bounded TTL window", "Service state is intentionally small."],
-      "semantic_features": ["public_current_case", "dns_failover", "ttl_window", "health_check_convergence", "split_brain"]
+      "responsible_disclosure": {
+        "status": "public-information",
+        "notes": "Defensive model of a documented DNS failover pattern; not an undisclosed vulnerability claim."
+      },
+      "validity_threats": [
+        "Derived from public documentation rather than an operator's private runbook",
+        "DNS client caching behavior is abstracted to a bounded TTL window",
+        "Service state is intentionally small."
+      ],
+      "semantic_features": [
+        "public_current_case",
+        "dns_failover",
+        "ttl_window",
+        "health_check_convergence",
+        "split_brain"
+      ]
+    },
+    {
+      "path": "../case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "provenance": {
+        "kind": "public-current",
+        "source_url": "https://raw.githubusercontent.com/OneUptime/blog/master/posts/2026-03-31-redis-operations-runbook/README.md",
+        "retrieved": "2026-05-29",
+        "notes": "Short attributed public Redis runbook-template excerpts plus independently authored defensive cache-flush mutant model."
+      },
+      "license": {
+        "status": "public-license",
+        "notes": "Benchmark stores short attributed excerpts and original model; source is a public GitHub blog/runbook template."
+      },
+      "abstraction_level": "derived-public-runbook",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "cache_flush_requires_write_freeze",
+          "cache_warmup_before_traffic",
+          "cache_warmup_within_capacity",
+          "no_stale_reads_after_cache_flush"
+        ],
+        "prose_rules": [
+          "cache-flush-needs-warmup-capacity"
+        ]
+      },
+      "responsible_disclosure": {
+        "status": "public-information",
+        "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim."
+      },
+      "validity_threats": [
+        "Public runbook template is generic rather than a live incident procedure",
+        "Executable model is derived, not maintainer-authored",
+        "Cache behavior is abstracted to warm/cold entry counts and write-freeze flags."
+      ],
+      "semantic_features": [
+        "public_current_case",
+        "cache_flush",
+        "cache_warmup",
+        "write_freeze",
+        "cold_start_capacity",
+        "stale_read_risk"
+      ]
     }
   ]
 }

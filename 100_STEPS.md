@@ -29,7 +29,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 - [ ] Express safety checks as Hoare triples over preconditions, action effects, and postconditions, and surface failed triples as `frv check` findings with concrete runbook line numbers.
 - [ ] Document weakest-precondition templates for missing guards such as backups, quorum, alerts, ownership, freeze windows, rollback paths, and customer notification prerequisites.
 - [ ] Extend Markdown source mapping to multiline DSL blocks, nested preconditions, and effect diagnostics so formal counterexamples point to the prose operators must edit.
-- [ ] Add first-class semantics for cache flush, cache warmup, stale-read risk, and cold-start capacity, with safe and unsafe Markdown examples.
+- [x] Add first-class semantics for cache flush, cache warmup, stale-read risk, and cold-start capacity, with safe and unsafe Markdown examples.
 - [ ] Add first-class semantics for object-storage replication, bucket write freezes, restore-from-snapshot actions, and RPO/RTO obligations.
 - [x] Add first-class semantics for message replay, dead-letter queues, deduplication keys, and consumer-group rebalancing, with duplicate-processing benchmarks.
 - [x] Add first-class semantics for DNS changes, TTL wait windows, health-check convergence, and split-brain routing hazards, producing operator-readable traces.

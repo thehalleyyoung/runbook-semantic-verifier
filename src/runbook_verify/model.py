@@ -55,6 +55,18 @@ class Queue:
 
 
 @dataclass(frozen=True)
+class Cache:
+    name: str
+    service: str
+    warm: bool = True
+    entries: int = 0
+    warmup_entries: int = 0
+    capacity_entries: int = 0
+    stale_read_risk: bool = False
+    write_frozen: bool = False
+
+
+@dataclass(frozen=True)
 class Alert:
     name: str
     active: bool = True
@@ -105,6 +117,7 @@ class SystemState:
     services: dict[str, Service]
     databases: dict[str, Database]
     queues: dict[str, Queue]
+    caches: dict[str, Cache]
     alerts: dict[str, Alert]
     flags: dict[str, FeatureFlag]
     deployments: dict[str, Deployment]
@@ -137,6 +150,16 @@ class SystemState:
             q.duplicate_risk,
             q.consumer_group_stable,
         ) for n, q in self.queues.items()))
+        caches = tuple(sorted((
+            n,
+            c.service,
+            c.warm,
+            c.entries,
+            c.warmup_entries,
+            c.capacity_entries,
+            c.stale_read_risk,
+            c.write_frozen,
+        ) for n, c in self.caches.items()))
         traffic_routes = tuple(sorted((
             n, route.service, tuple(sorted(route.weights.items())), tuple(sorted(route.drained_regions))
         ) for n, route in self.traffic_routes.items()))
@@ -150,7 +173,7 @@ class SystemState:
             tuple(sorted(record.health_check_converged_regions)),
             record.allow_split_brain,
         ) for n, record in self.dns_records.items()))
-        return (self.clock_minute, regions, services, databases, queues, alerts, flags, deployments, traffic_routes, dns_records)
+        return (self.clock_minute, regions, services, databases, queues, caches, alerts, flags, deployments, traffic_routes, dns_records)
 
 
 @dataclass(frozen=True)

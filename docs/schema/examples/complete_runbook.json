@@ -11,7 +11,7 @@
     "source": "synthetic schema example"
   },
   "allow_reordering": true,
-  "max_depth": 5,
+  "max_depth": 9,
   "safety": {
     "max_alert_suppression_minutes": 30
   },
@@ -59,6 +59,16 @@
         "depth": 0,
         "consumers": 2,
         "paused": false
+      }
+    },
+    "caches": {
+      "api-cache": {
+        "service": "api",
+        "entries": 1000,
+        "warmup_entries": 800,
+        "capacity_entries": 1200,
+        "warm": true,
+        "write_frozen": false
       }
     },
     "alerts": {
@@ -186,6 +196,74 @@
         {
           "kind": "queue_resumed",
           "queue": "orders-events"
+        }
+      ]
+    },
+    {
+      "id": "freeze-api-cache",
+      "action": "freeze_cache_writes",
+      "params": {
+        "cache": "api-cache"
+      },
+      "after": ["resume-orders-events"],
+      "effects": [
+        {
+          "kind": "cache_writes_frozen",
+          "cache": "api-cache"
+        }
+      ]
+    },
+    {
+      "id": "flush-api-cache",
+      "action": "flush_cache",
+      "params": {
+        "cache": "api-cache"
+      },
+      "after": ["freeze-api-cache"],
+      "requires": [
+        {
+          "kind": "cache_writes_frozen",
+          "cache": "api-cache"
+        }
+      ]
+    },
+    {
+      "id": "warm-api-cache",
+      "action": "warm_cache",
+      "params": {
+        "cache": "api-cache",
+        "entries": 1000
+      },
+      "after": ["flush-api-cache"],
+      "requires": [
+        {
+          "kind": "cache_capacity_at_least",
+          "cache": "api-cache",
+          "entries": 1000
+        }
+      ],
+      "effects": [
+        {
+          "kind": "cache_warm",
+          "cache": "api-cache"
+        },
+        {
+          "kind": "cache_no_stale_read_risk",
+          "cache": "api-cache"
+        }
+      ]
+    },
+    {
+      "id": "resume-api-cache-writes",
+      "action": "resume_cache_writes",
+      "params": {
+        "cache": "api-cache"
+      },
+      "after": ["warm-api-cache"],
+      "requires": [
+        {
+          "kind": "cache_warm",
+          "cache": "api-cache"
         }
       ]
     }

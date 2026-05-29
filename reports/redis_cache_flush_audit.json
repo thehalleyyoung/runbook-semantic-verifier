@@ -1,0 +1,172 @@
+{
+  "findings": [
+    {
+      "id": "finding-001",
+      "line": null,
+      "message": "cache redis-primary writes are not frozen before flush",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Freeze cache writes or otherwise quiesce repopulation before flushing shared keys.",
+      "rule": "cache_flush_requires_write_freeze",
+      "semantic_obligation": "cache_flush_requires_write_freeze",
+      "severity": "error",
+      "step": "flush-redis",
+      "trace": [
+        "flush-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-002",
+      "line": null,
+      "message": "cache redis-primary is cold; warmup threshold=80000 entries",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
+      "rule": "cache_warmup_before_traffic",
+      "semantic_obligation": "cache_warmup_before_traffic",
+      "severity": "error",
+      "step": "flush-redis",
+      "trace": [
+        "flush-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-003",
+      "line": null,
+      "message": "cache redis-primary warmup entries=40000, requires at least 80000",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
+      "rule": "cache_warmup_before_traffic",
+      "semantic_obligation": "cache_warmup_before_traffic",
+      "severity": "error",
+      "step": "underwarm-redis",
+      "trace": [
+        "flush-redis",
+        "underwarm-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-004",
+      "line": null,
+      "message": "cache redis-primary is cold; warmup threshold=80000 entries",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Warm the cache to its modeled threshold before restoring user traffic or resuming writes.",
+      "rule": "cache_warmup_before_traffic",
+      "semantic_obligation": "cache_warmup_before_traffic",
+      "severity": "error",
+      "step": "underwarm-redis",
+      "trace": [
+        "flush-redis",
+        "underwarm-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-005",
+      "line": null,
+      "message": "cache redis-primary warmup entries=130000 exceed capacity=120000",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Increase cache capacity or lower warmup size before preloading entries.",
+      "rule": "cache_warmup_within_capacity",
+      "semantic_obligation": "cache_warmup_within_capacity",
+      "severity": "error",
+      "step": "overwarm-redis",
+      "trace": [
+        "flush-redis",
+        "overwarm-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-006",
+      "line": null,
+      "message": "cache redis-primary entries=130000 exceed capacity=120000",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Increase cache capacity or lower warmup size before preloading entries.",
+      "rule": "cache_warmup_within_capacity",
+      "semantic_obligation": "cache_warmup_within_capacity",
+      "severity": "error",
+      "step": "overwarm-redis",
+      "trace": [
+        "flush-redis",
+        "overwarm-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "id": "finding-007",
+      "line": null,
+      "message": "cache redis-primary may serve stale reads after flush without a write freeze/warmup guard",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 3,
+      "recommendation": "Freeze writes and complete warmup/verification before allowing reads after a destructive cache flush.",
+      "rule": "no_stale_reads_after_cache_flush",
+      "semantic_obligation": "no_stale_reads_after_cache_flush",
+      "severity": "error",
+      "step": "flush-redis",
+      "trace": [
+        "flush-redis"
+      ],
+      "type": "semantic"
+    },
+    {
+      "excerpt": "# Redis cache flush public-runbook-derived fixture",
+      "id": "finding-008",
+      "line": 1,
+      "message": "Prose mentions cache flush/invalidation without executable write-freeze, warmup, and capacity obligations. Missing condition(s): cache_writes_frozen, cache_capacity_at_least, cache_warm.",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 2,
+      "recommendation": "Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic.",
+      "rule": "cache-flush-needs-warmup-capacity",
+      "semantic_obligation": "cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+      "severity": "warning",
+      "type": "prose"
+    },
+    {
+      "excerpt": "Bounded modeling note: the public template usefully reminds operators to include flush procedures and capacity/scaling sections, but the excerpt does not itself encode write freeze, cache warmup threshold, or cold-start capacity obligations. This defensive fixture models a common unsafe cache-flush mutant so the verifier can check those obligations explicitly. It is not a claim about a live OneUptime deployment.",
+      "id": "finding-009",
+      "line": 14,
+      "message": "Prose mentions cache flush/invalidation without executable write-freeze, warmup, and capacity obligations. Missing condition(s): cache_writes_frozen, cache_capacity_at_least, cache_warm.",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "rank": 2,
+      "recommendation": "Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic.",
+      "rule": "cache-flush-needs-warmup-capacity",
+      "semantic_obligation": "cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+      "severity": "warning",
+      "type": "prose"
+    }
+  ],
+  "runbooks": [
+    {
+      "name": "Redis public runbook derived cache flush mutant",
+      "path": "case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+      "safe": false,
+      "states_explored": 4,
+      "terminal_traces": 2,
+      "violations": 7
+    }
+  ],
+  "summary": {
+    "findings": 9,
+    "findings_by_rule": {
+      "cache-flush-needs-warmup-capacity": 2,
+      "cache_flush_requires_write_freeze": 1,
+      "cache_warmup_before_traffic": 3,
+      "cache_warmup_within_capacity": 2,
+      "no_stale_reads_after_cache_flush": 1
+    },
+    "findings_by_severity": {
+      "error": 7,
+      "warning": 2
+    },
+    "runbooks": 1,
+    "safe_runbooks": 0
+  }
+}

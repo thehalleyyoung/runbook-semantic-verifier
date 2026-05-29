@@ -1,0 +1,54 @@
+{
+  "name": "Safe cache flush with warmup",
+  "description": "Freezes cache writes, flushes Redis-style keys, warms back to threshold, and resumes writes.",
+  "allow_reordering": false,
+  "max_depth": 4,
+  "system": {
+    "services": {
+      "api": {"min_available": 0, "replicas": []}
+    },
+    "caches": {
+      "api-redis": {
+        "service": "api",
+        "entries": 1000,
+        "warmup_entries": 800,
+        "capacity_entries": 1200,
+        "warm": true,
+        "write_frozen": false
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "freeze-cache-writes",
+      "action": "freeze_cache_writes",
+      "params": {"cache": "api-redis"},
+      "effects": [{"kind": "cache_writes_frozen", "cache": "api-redis"}]
+    },
+    {
+      "id": "flush-cache",
+      "action": "flush_cache",
+      "after": ["freeze-cache-writes"],
+      "params": {"cache": "api-redis"},
+      "requires": [{"kind": "cache_writes_frozen", "cache": "api-redis"}]
+    },
+    {
+      "id": "warm-cache",
+      "action": "warm_cache",
+      "after": ["flush-cache"],
+      "params": {"cache": "api-redis", "entries": 1000},
+      "requires": [{"kind": "cache_capacity_at_least", "cache": "api-redis", "entries": 1000}],
+      "effects": [
+        {"kind": "cache_warm", "cache": "api-redis"},
+        {"kind": "cache_no_stale_read_risk", "cache": "api-redis"}
+      ]
+    },
+    {
+      "id": "resume-cache-writes",
+      "action": "resume_cache_writes",
+      "after": ["warm-cache"],
+      "params": {"cache": "api-redis"},
+      "requires": [{"kind": "cache_warm", "cache": "api-redis"}]
+    }
+  ]
+}

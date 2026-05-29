@@ -46,6 +46,96 @@
         {
           "additionalProperties": false,
           "properties": {
+            "cache": {
+              "type": "string"
+            },
+            "entries": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "cache_capacity_at_least"
+            }
+          },
+          "required": [
+            "cache",
+            "entries",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cache": {
+              "type": "string"
+            },
+            "entries": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "cache_entries_at_least"
+            }
+          },
+          "required": [
+            "cache",
+            "entries",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cache": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "cache_no_stale_read_risk"
+            }
+          },
+          "required": [
+            "cache",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cache": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "cache_warm"
+            }
+          },
+          "required": [
+            "cache",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cache": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "cache_writes_frozen"
+            }
+          },
+          "required": [
+            "cache",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "kind": {
               "const": "consumer_group_stable"
             },
@@ -769,6 +859,62 @@
           "if": {
             "properties": {
               "action": {
+                "const": "flush_cache"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "cache"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "freeze_cache_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "cache"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
                 "const": "mark_dns_health_check"
               }
             },
@@ -1025,6 +1171,34 @@
                 "required": [
                   "replica",
                   "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "resume_cache_writes"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "cache"
                 ],
                 "type": "object"
               }
@@ -1323,6 +1497,39 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "warm_cache"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "cache": {
+                    "type": "string"
+                  },
+                  "entries": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "cache",
+                  "entries"
+                ],
+                "type": "object"
+              }
+            }
+          }
         }
       ],
       "properties": {
@@ -1337,6 +1544,8 @@
             "failover_traffic",
             "finalize_dns_record",
             "finish_migration",
+            "flush_cache",
+            "freeze_cache_writes",
             "mark_dns_health_check",
             "mark_region_health",
             "pause_queue",
@@ -1345,6 +1554,7 @@
             "restart_service",
             "restore_load_balancer",
             "restore_replica",
+            "resume_cache_writes",
             "resume_queue",
             "rollback_deployment",
             "run_migration",
@@ -1353,7 +1563,8 @@
             "suppress_alert",
             "toggle_flag",
             "update_dns_record",
-            "wait"
+            "wait",
+            "warm_cache"
           ],
           "type": "string"
         },
@@ -1550,6 +1761,42 @@
               "paused": {
                 "type": "boolean"
               }
+            },
+            "type": "object"
+          },
+          "caches": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "properties": {
+                "capacity_entries": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "entries": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "service": {
+                  "type": "string"
+                },
+                "stale_read_risk": {
+                  "type": "boolean"
+                },
+                "warm": {
+                  "type": "boolean"
+                },
+                "warmup_entries": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "write_frozen": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "service"
+              ],
+              "type": "object"
             },
             "type": "object"
           },

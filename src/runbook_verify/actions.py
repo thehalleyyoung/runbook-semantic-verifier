@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Any
 
 from .descriptors import ACTION_SCHEMAS, CONDITION_SCHEMAS
-from .model import Alert, Database, DNSRecord, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
+from .model import Alert, Cache, Database, DNSRecord, Deployment, FeatureFlag, Queue, Replica, Service, Step, SystemState, TrafficRoute
 
 
 class ActionError(ValueError):
@@ -17,6 +17,7 @@ def _copy_state(state: SystemState, **updates: Any) -> SystemState:
         "services": state.services,
         "databases": state.databases,
         "queues": state.queues,
+        "caches": state.caches,
         "alerts": state.alerts,
         "flags": state.flags,
         "deployments": state.deployments,
@@ -54,6 +55,13 @@ def _queue(state: SystemState, name: str) -> Queue:
         return state.queues[name]
     except KeyError as exc:
         raise ActionError(f"unknown queue {name!r}") from exc
+
+
+def _cache(state: SystemState, name: str) -> Cache:
+    try:
+        return state.caches[name]
+    except KeyError as exc:
+        raise ActionError(f"unknown cache {name!r}") from exc
 
 
 def _route(state: SystemState, name: str) -> TrafficRoute:
@@ -209,6 +217,27 @@ def apply_action(state: SystemState, step: Step) -> SystemState:
         queues = dict(state.queues)
         queues[q.name] = replace(q, consumers=int(p["consumers"]), consumer_group_stable=bool(p.get("stable", False)))
         return _copy_state(state, queues=queues)
+    if action == "freeze_cache_writes":
+        cache = _cache(state, str(p["cache"]))
+        caches = dict(state.caches)
+        caches[cache.name] = replace(cache, write_frozen=True)
+        return _copy_state(state, caches=caches)
+    if action == "resume_cache_writes":
+        cache = _cache(state, str(p["cache"]))
+        caches = dict(state.caches)
+        caches[cache.name] = replace(cache, write_frozen=False)
+        return _copy_state(state, caches=caches)
+    if action == "flush_cache":
+        cache = _cache(state, str(p["cache"]))
+        caches = dict(state.caches)
+        caches[cache.name] = replace(cache, warm=False, entries=0, stale_read_risk=not cache.write_frozen)
+        return _copy_state(state, caches=caches)
+    if action == "warm_cache":
+        cache = _cache(state, str(p["cache"]))
+        entries = int(p["entries"])
+        caches = dict(state.caches)
+        caches[cache.name] = replace(cache, entries=entries, warm=entries >= cache.warmup_entries, stale_read_risk=False)
+        return _copy_state(state, caches=caches)
     if action == "wait":
         minutes = int(p["minutes"])
         if minutes < 0:
@@ -326,6 +355,16 @@ def condition_holds(state: SystemState, condition: dict[str, Any]) -> bool:
         return _queue(state, str(condition["queue"])).dedupe_window_minutes >= int(condition["minutes"])
     if kind == "consumer_group_stable":
         return _queue(state, str(condition["queue"])).consumer_group_stable
+    if kind == "cache_warm":
+        return _cache(state, str(condition["cache"])).warm
+    if kind == "cache_entries_at_least":
+        return _cache(state, str(condition["cache"])).entries >= int(condition["entries"])
+    if kind == "cache_capacity_at_least":
+        return _cache(state, str(condition["cache"])).capacity_entries >= int(condition["entries"])
+    if kind == "cache_writes_frozen":
+        return _cache(state, str(condition["cache"])).write_frozen
+    if kind == "cache_no_stale_read_risk":
+        return not _cache(state, str(condition["cache"])).stale_read_risk
     if kind == "service_deployment_is":
         return _service(state, str(condition["service"])).deployment == str(condition["deployment"])
     if kind == "replica_not_drained":

@@ -80,6 +80,7 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
         f"- Services covered: {summary['covered_services']}/{summary['services']}",
         f"- Databases covered: {summary['covered_databases']}/{summary['databases']}",
         f"- Queues covered: {summary['covered_queues']}/{summary['queues']}",
+        f"- Caches covered: {summary['covered_caches']}/{summary['caches']}",
         f"- Alerts covered: {summary['covered_alerts']}/{summary['alerts']}",
         f"- DNS records covered: {summary['covered_dns_records']}/{summary['dns_records']}",
         f"- Credentials covered: {summary['covered_credentials']}/{summary['credentials']} (credential state is not implemented in the current DSL)",
@@ -92,16 +93,17 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
         "",
     ]
     if report["properties"]:
-        lines.extend(["| Property | Runbook | Owners | Services | Databases | Queues | Alerts | DNS records | Credentials | Regions | Steps/sections |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"])
+        lines.extend(["| Property | Runbook | Owners | Services | Databases | Queues | Caches | Alerts | DNS records | Credentials | Regions | Steps/sections |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"])
         for item in report["properties"]:
             lines.append(
-                "| `{property}` | `{path}` | {owners} | {services} | {databases} | {queues} | {alerts} | {dns_records} | {credentials} | {regions} | {steps} |".format(
+                "| `{property}` | `{path}` | {owners} | {services} | {databases} | {queues} | {caches} | {alerts} | {dns_records} | {credentials} | {regions} | {steps} |".format(
                     property=item["property"],
                     path=item["path"],
                     owners=_csv(item["owners"]),
                     services=_csv(item["services"]),
                     databases=_csv(item["databases"]),
                     queues=_csv(item["queues"]),
+                    caches=_csv(item["caches"]),
                     alerts=_csv(item["alerts"]),
                     dns_records=_csv(item["dns_records"]),
                     credentials=_csv(item["credentials"]),
@@ -123,7 +125,7 @@ def render_coverage_markdown(report: dict[str, Any]) -> str:
         for item in report["uncovered_entities"]:
             lines.append(f"- `{item['kind']}` `{item['name']}` in `{item['path']}`: {item['message']}")
     else:
-        lines.append("Every modeled service, database, queue, alert, DNS record, region, and prose obligation is linked to a current invariant template.")
+        lines.append("Every modeled service, database, queue, cache, alert, DNS record, region, and prose obligation is linked to a current invariant template.")
     return "\n".join(lines) + "\n"
 
 
@@ -187,6 +189,10 @@ def _properties_for(runbook: Runbook) -> list[str]:
         "queue_backlog_requires_consumers",
         "no_rebalance_to_zero_consumers",
         "no_unstable_consumer_group_with_backlog",
+        "cache_flush_requires_write_freeze",
+        "cache_warmup_before_traffic",
+        "cache_warmup_within_capacity",
+        "no_stale_reads_after_cache_flush",
         "traffic_weights_sum_to_100",
         "no_traffic_to_unhealthy_region",
         "no_traffic_to_drained_load_balancer",
@@ -207,6 +213,8 @@ def _properties_for(runbook: Runbook) -> list[str]:
         properties -= {"dns_target_region_healthy", "dns_health_check_converged_before_cutover", "dns_requires_regional_capacity", "dns_ttl_elapsed_before_finalize", "dns_ttl_elapsed_before_recursion", "dns_no_split_brain_during_ttl"}
     if not runbook.state.queues and not any("queue" in step.params for step in runbook.steps):
         properties -= {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog", "no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}
+    if not runbook.state.caches and not any("cache" in step.params for step in runbook.steps):
+        properties -= {"cache_flush_requires_write_freeze", "cache_warmup_before_traffic", "cache_warmup_within_capacity", "no_stale_reads_after_cache_flush"}
     if not runbook.state.alerts and not any("alert" in step.params for step in runbook.steps):
         properties -= {"bounded_alert_suppression"}
     if not runbook.state.databases and not any("database" in step.params for step in runbook.steps):
@@ -228,6 +236,7 @@ def _property_record(item: _LoadedRunbook, prop: str) -> dict[str, Any]:
         "services": sorted(_services_for_property(item.runbook, prop, steps)),
         "databases": sorted(_databases_for_property(item.runbook, prop, steps)),
         "queues": sorted(_queues_for_property(item.runbook, prop, steps)),
+        "caches": sorted(_caches_for_property(item.runbook, prop, steps)),
         "alerts": sorted(_alerts_for_property(item.runbook, prop, steps)),
         "dns_records": sorted(_dns_records_for_property(item.runbook, prop, steps)),
         "credentials": [],
@@ -248,6 +257,8 @@ def _steps_for_property(runbook: Runbook, prop: str) -> list[Step]:
         return [step for step in runbook.steps if step.action == "suppress_alert" or "alert" in step.params]
     if prop in {"no_queue_pause_without_drain_plan", "no_paused_queue_with_backlog", "no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}:
         return [step for step in runbook.steps if "queue" in step.params]
+    if prop in {"cache_flush_requires_write_freeze", "cache_warmup_before_traffic", "cache_warmup_within_capacity", "no_stale_reads_after_cache_flush"}:
+        return [step for step in runbook.steps if "cache" in step.params]
     if prop.startswith("traffic_") or prop in {"no_traffic_to_unhealthy_region", "no_traffic_to_drained_load_balancer", "no_draining_load_balancer_with_traffic"}:
         return [step for step in runbook.steps if "route" in step.params or step.action in {"shift_traffic", "failover_traffic", "drain_load_balancer", "restore_load_balancer"}]
     if prop.startswith("dns_"):
@@ -271,6 +282,8 @@ def _services_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> se
         names.update(route.service for route in runbook.state.traffic_routes.values())
     if prop.startswith("dns_"):
         names.update(record.service for record in runbook.state.dns_records.values())
+    if prop.startswith("cache_") or prop == "no_stale_reads_after_cache_flush":
+        names.update(cache.service for cache in runbook.state.caches.values())
     for step in steps:
         if "service" in step.params:
             names.add(str(step.params["service"]))
@@ -296,6 +309,16 @@ def _queues_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set[
     for step in steps:
         if "queue" in step.params:
             names.add(str(step.params["queue"]))
+    return names
+
+
+def _caches_for_property(runbook: Runbook, prop: str, steps: list[Step]) -> set[str]:
+    names: set[str] = set()
+    if prop in {"cache_flush_requires_write_freeze", "cache_warmup_before_traffic", "cache_warmup_within_capacity", "no_stale_reads_after_cache_flush"}:
+        names.update(runbook.state.caches)
+    for step in steps:
+        if "cache" in step.params:
+            names.add(str(step.params["cache"]))
     return names
 
 
@@ -354,6 +377,8 @@ def _formal_obligation(prop: str) -> str:
         return "DNS temporal safety invariant over health-check convergence, TTL propagation, and split-brain windows"
     if prop in {"no_replay_without_dedupe", "dead_letter_replay_has_messages", "dead_letter_drain_has_messages", "no_duplicate_processing_risk", "queue_backlog_requires_consumers", "no_rebalance_to_zero_consumers", "no_unstable_consumer_group_with_backlog"}:
         return "queue replay temporal safety invariant over deduplication, dead-letter bounds, and consumer-group progress"
+    if prop.startswith("cache_") or prop == "no_stale_reads_after_cache_flush":
+        return "cache flush/warmup safety invariant over write freeze, cold-start capacity, and stale-read risk"
     return "temporal safety invariant checked over bounded small-step traces"
 
 
@@ -390,6 +415,7 @@ def _runbook_record(item: _LoadedRunbook) -> dict[str, Any]:
         "services": sorted(item.runbook.state.services),
         "databases": sorted(item.runbook.state.databases),
         "queues": sorted(item.runbook.state.queues),
+        "caches": sorted(item.runbook.state.caches),
         "alerts": sorted(item.runbook.state.alerts),
         "dns_records": sorted(item.runbook.state.dns_records),
         "credentials": [],
@@ -421,6 +447,7 @@ def _uncovered_records(loaded: list[_LoadedRunbook], property_records: list[dict
         "services": {name for record in property_records for name in record["services"]},
         "databases": {name for record in property_records for name in record["databases"]},
         "queues": {name for record in property_records for name in record["queues"]},
+        "caches": {name for record in property_records for name in record["caches"]},
         "alerts": {name for record in property_records for name in record["alerts"]},
         "dns_records": {name for record in property_records for name in record["dns_records"]},
         "regions": {name for record in property_records for name in record["regions"]},
@@ -431,6 +458,7 @@ def _uncovered_records(loaded: list[_LoadedRunbook], property_records: list[dict
             ("service", item.runbook.state.services),
             ("database", item.runbook.state.databases),
             ("queue", item.runbook.state.queues),
+            ("cache", item.runbook.state.caches),
             ("alert", item.runbook.state.alerts),
             ("dns_record", item.runbook.state.dns_records),
             ("region", item.runbook.state.regions),
@@ -449,6 +477,7 @@ def _summary(root: Path, loaded: list[_LoadedRunbook], parse_errors: list[dict[s
         "services": {name for item in loaded for name in item.runbook.state.services},
         "databases": {name for item in loaded for name in item.runbook.state.databases},
         "queues": {name for item in loaded for name in item.runbook.state.queues},
+        "caches": {name for item in loaded for name in item.runbook.state.caches},
         "alerts": {name for item in loaded for name in item.runbook.state.alerts},
         "dns_records": {name for item in loaded for name in item.runbook.state.dns_records},
         "regions": {name for item in loaded for name in item.runbook.state.regions},
@@ -458,6 +487,7 @@ def _summary(root: Path, loaded: list[_LoadedRunbook], parse_errors: list[dict[s
         "services": {name for record in properties for name in record["services"]},
         "databases": {name for record in properties for name in record["databases"]},
         "queues": {name for record in properties for name in record["queues"]},
+        "caches": {name for record in properties for name in record["caches"]},
         "alerts": {name for record in properties for name in record["alerts"]},
         "dns_records": {name for record in properties for name in record["dns_records"]},
         "regions": {name for record in properties for name in record["regions"]},
@@ -474,6 +504,8 @@ def _summary(root: Path, loaded: list[_LoadedRunbook], parse_errors: list[dict[s
         "covered_databases": len(entities["databases"] & covered["databases"]),
         "queues": len(entities["queues"]),
         "covered_queues": len(entities["queues"] & covered["queues"]),
+        "caches": len(entities["caches"]),
+        "covered_caches": len(entities["caches"] & covered["caches"]),
         "alerts": len(entities["alerts"]),
         "covered_alerts": len(entities["alerts"] & covered["alerts"]),
         "dns_records": len(entities["dns_records"]),

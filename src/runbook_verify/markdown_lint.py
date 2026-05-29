@@ -105,6 +105,16 @@ RULES: tuple[PhraseRule, ...] = (
         "Add queue_depth_at_most, queue_has_consumers, and deduplicated replay preconditions, or document an explicit limitation.",
     ),
     PhraseRule(
+        "cache-flush-needs-warmup-capacity",
+        "warning",
+        re.compile(r"\b(flush|purge|clear|invalidate)\b.{0,80}\b(cache|redis|memcached|key)s?\b|\b(cache|redis|memcached)\b.{0,80}\b(flush|purge|clear|invalidate)\b", re.I),
+        "flush_cache",
+        ("cache_writes_frozen", "cache_capacity_at_least", "cache_warm"),
+        "cache_flush_requires_write_freeze; cache_warmup_before_traffic; cache_warmup_within_capacity",
+        "Prose mentions cache flush/invalidation without executable write-freeze, warmup, and capacity obligations.",
+        "Model flush_cache with cache_writes_frozen and cache_capacity_at_least preconditions plus warm_cache/cache_warm before resuming writes or traffic.",
+    ),
+    PhraseRule(
         "credential-handling-needs-rotation-model",
         "responsible-disclosure",
         re.compile(r"\b(revoke|rotate|delete|reset|share|copy)\b.{0,60}\b(token|secret|credential|key|password|cert(?:ificate)?)s?\b", re.I),
