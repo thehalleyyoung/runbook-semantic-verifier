@@ -94,9 +94,17 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
             if regions and region not in regions:
                 raise RunbookParseError(f"service {name}.replicas[{idx}] references unknown region {region!r}")
             replicas.append(Replica(id=str(rep.get("id", f"{name}-{idx}")), region=region, healthy=bool(rep.get("healthy", True)), drained=bool(rep.get("drained", False))))
-        services[name] = Service(name=name, replicas=tuple(replicas), min_available=_non_negative_int(cfg.get("min_available", 1), f"service {name}.min_available"), deployment=str(cfg.get("deployment", "current")))
-        if services[name].min_available < 0:
-            raise RunbookParseError(f"service {name}.min_available must be non-negative")
+        replica_ids = [replica.id for replica in replicas]
+        duplicate_replica_ids = sorted({rid for rid in replica_ids if replica_ids.count(rid) > 1})
+        if duplicate_replica_ids:
+            raise RunbookParseError(f"service {name}.replicas contains duplicate replica id(s): {', '.join(duplicate_replica_ids)}")
+        min_available = _non_negative_int(cfg.get("min_available", 1), f"service {name}.min_available")
+        if min_available > len(replicas) and not bool(cfg.get("allow_unachievable_min_available", False)):
+            raise RunbookParseError(
+                f"service {name}.min_available={min_available} is not achievable with {len(replicas)} declared replica(s); "
+                "add replicas or set allow_unachievable_min_available=true with a documented waiver"
+            )
+        services[name] = Service(name=name, replicas=tuple(replicas), min_available=min_available, deployment=str(cfg.get("deployment", "current")))
 
     databases = {}
     for name, cfg_any in _require_mapping(raw.get("databases", {}), "system.databases").items():
@@ -125,6 +133,12 @@ def parse_state(raw: dict[str, Any]) -> SystemState:
     for name, deployment in deployments.items():
         if deployment.service not in services:
             raise RunbookParseError(f"deployment {name} references unknown service {deployment.service!r}")
+        service = services[deployment.service]
+        if deployment.current != service.deployment:
+            raise RunbookParseError(
+                f"deployment {name}.current={deployment.current!r} does not match "
+                f"service {deployment.service}.deployment={service.deployment!r}"
+            )
     return SystemState(regions=regions, services=services, databases=databases, queues=queues, alerts=alerts, flags=flags, deployments=deployments, clock_minute=_non_negative_int(raw.get("clock_minute", 0), "system.clock_minute"))
 
 
@@ -164,6 +178,7 @@ def parse_runbook(doc: dict[str, Any], source_path: str | Path | None = None) ->
         raise RunbookParseError(f"unknown dependency step id(s): {', '.join(missing)}")
     _validate_dependency_graph(steps)
     _validate_step_references(system, steps)
+    _validate_generated_scale_replicas(system, steps)
     max_depth = _non_negative_int(doc.get("max_depth", len(steps)), "max_depth")
     safety = dict(_require_mapping(doc.get("safety", {}), "safety"))
     if "max_alert_suppression_minutes" in safety:
@@ -318,6 +333,30 @@ def _validate_condition_references(state: SystemState, step_id: str, condition: 
         svc = state.services[str(condition["service"])]
         if str(condition["replica"]) not in {replica.id for replica in svc.replicas}:
             raise RunbookParseError(f"step {step_id} condition references unknown replica {condition['replica']!r} for service {svc.name!r}")
+
+
+def _validate_generated_scale_replicas(state: SystemState, steps: list[Step]) -> None:
+    generated_by: dict[tuple[str, str], str] = {}
+    for step in steps:
+        if step.action != "scale_service":
+            continue
+        service_name = str(step.params["service"])
+        service = state.services[service_name]
+        declared_ids = {replica.id for replica in service.replicas}
+        target = int(step.params["replicas"])
+        for index in range(len(service.replicas), target):
+            replica_id = f"{service.name}-{index}"
+            if replica_id in declared_ids:
+                raise RunbookParseError(
+                    f"step {step.id} would generate duplicate replica id {replica_id!r} for service {service.name!r}"
+                )
+            key = (service.name, replica_id)
+            previous_step = generated_by.get(key)
+            if previous_step is not None:
+                raise RunbookParseError(
+                    f"steps {previous_step} and {step.id} would both generate replica id {replica_id!r} for service {service.name!r}"
+                )
+            generated_by[key] = step.id
 
 
 def _json_step_source_lines(text: str, base_line: int) -> dict[str, int]:

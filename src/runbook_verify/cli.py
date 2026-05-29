@@ -18,6 +18,8 @@ def main(argv: list[str] | None = None) -> int:
     check_p = sub.add_parser("check", help="parse and verify a runbook")
     check_p.add_argument("runbook")
     check_p.add_argument("--expect-violations", action="store_true", help="exit 0 only when at least one violation is found")
+    validate_p = sub.add_parser("validate", help="parse and validate a runbook without state-space exploration")
+    validate_p.add_argument("runbook")
     export_p = sub.add_parser("export", help="export a formal-ish model")
     export_p.add_argument("runbook")
     export_p.add_argument("--format", choices=["tla", "alloy"], default="tla")
@@ -75,6 +77,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.expect_violations:
             return 0 if result.violations else 1
         return 0 if result.safe else 1
+    if args.command == "validate":
+        print(f"Valid runbook: {runbook.name}")
+        print(f"Services: {len(runbook.state.services)}; steps: {len(runbook.steps)}; max depth: {runbook.max_depth}")
+        return 0
     if args.command == "export":
         print(export_tla(runbook) if args.format == "tla" else export_alloy(runbook), end="")
         return 0

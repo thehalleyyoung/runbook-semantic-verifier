@@ -69,3 +69,64 @@ class ParserValidationTests(unittest.TestCase):
         runbook = load_runbook(ROOT / "examples" / "safe_runbook.json")
         self.assertTrue(runbook.steps[0].source_path.endswith("safe_runbook.json"))
         self.assertIsInstance(runbook.steps[0].source_line, int)
+
+    def test_rejects_duplicate_replica_ids(self):
+        with self.assertRaisesRegex(RunbookParseError, "duplicate replica id"):
+            parse_runbook({
+                "system": {
+                    "regions": {"a": {}},
+                    "services": {
+                        "api": {
+                            "replicas": [
+                                {"id": "api-0", "region": "a"},
+                                {"id": "api-0", "region": "a"},
+                            ]
+                        }
+                    },
+                },
+                "steps": [],
+            })
+
+    def test_rejects_unachievable_min_available_unless_waived(self):
+        doc = {
+            "system": {
+                "regions": {"a": {}},
+                "services": {"api": {"min_available": 3, "replicas": [{"id": "api-a", "region": "a"}]}},
+            },
+            "steps": [],
+        }
+        with self.assertRaisesRegex(RunbookParseError, "not achievable"):
+            parse_runbook(doc)
+        doc["system"]["services"]["api"]["allow_unachievable_min_available"] = True
+        self.assertEqual(parse_runbook(doc).state.services["api"].min_available, 3)
+
+    def test_rejects_generated_scale_replica_collisions(self):
+        with self.assertRaisesRegex(RunbookParseError, "generate duplicate replica id"):
+            parse_runbook({
+                "system": {
+                    "regions": {"a": {}},
+                    "services": {"api": {"replicas": [{"id": "api-1", "region": "a"}]}},
+                },
+                "steps": [{"id": "scale", "action": "scale_service", "params": {"service": "api", "replicas": 2}}],
+            })
+        with self.assertRaisesRegex(RunbookParseError, "would both generate replica id"):
+            parse_runbook({
+                "system": {
+                    "regions": {"a": {}},
+                    "services": {"api": {"replicas": [{"id": "api-base", "region": "a"}]}},
+                },
+                "steps": [
+                    {"id": "scale-a", "action": "scale_service", "params": {"service": "api", "replicas": 2}},
+                    {"id": "scale-b", "action": "scale_service", "params": {"service": "api", "replicas": 2}},
+                ],
+            })
+
+    def test_rejects_deployment_service_mismatch(self):
+        with self.assertRaisesRegex(RunbookParseError, "does not match"):
+            parse_runbook({
+                "system": {
+                    "services": {"api": {"deployment": "v2", "min_available": 0, "replicas": []}},
+                    "deployments": {"api": {"service": "api", "current": "v1"}},
+                },
+                "steps": [],
+            })

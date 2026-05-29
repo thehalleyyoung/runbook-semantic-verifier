@@ -1,0 +1,1013 @@
+{
+  "$defs": {
+    "condition": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "active": {
+              "type": "boolean"
+            },
+            "alert": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "alert_active"
+            }
+          },
+          "required": [
+            "active",
+            "alert",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "alert": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "alert_suppressed_for_at_most"
+            },
+            "minutes": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "alert",
+            "kind",
+            "minutes"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "database": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "database_primary_region"
+            },
+            "region": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database",
+            "kind",
+            "region"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "database": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "database_quorum_confirmed"
+            }
+          },
+          "required": [
+            "database",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "flag": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "flag_enabled"
+            }
+          },
+          "required": [
+            "enabled",
+            "flag",
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "depth": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "queue_depth_at_most"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "depth",
+            "kind",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "queue_has_consumers"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "count",
+            "kind",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "queue_resumed"
+            },
+            "queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "queue"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "region_healthy"
+            },
+            "region": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "region"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "replica_not_drained"
+            },
+            "replica": {
+              "type": "string"
+            },
+            "service": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "replica",
+            "service"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "service_available_at_least"
+            },
+            "service": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "count",
+            "kind",
+            "service"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "deployment": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "service_deployment_is"
+            },
+            "service": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "deployment",
+            "kind",
+            "service"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "step": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "confirm_quorum"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_region"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "services": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "drain_replica"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "replica": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "replica",
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "failover_database"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "data_loss_risk": {
+                    "type": "boolean"
+                  },
+                  "database": {
+                    "type": "string"
+                  },
+                  "target_region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database",
+                  "target_region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "finish_migration"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "database": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "mark_region_health"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "healthy": {
+                    "type": "boolean"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "healthy",
+                  "region"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "pause_queue"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restart_service"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "restore_replica"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "replica": {
+                    "type": "string"
+                  },
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "replica",
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "resume_queue"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "queue": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "queue"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "rollback_deployment"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "run_migration"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "compatible": {
+                    "type": "boolean"
+                  },
+                  "database": {
+                    "type": "string"
+                  },
+                  "in_progress": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "database"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "scale_service"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "region": {
+                    "type": "string"
+                  },
+                  "replicas": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "replicas",
+                  "service"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "suppress_alert"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "alert": {
+                    "type": "string"
+                  },
+                  "expires_after_minutes": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "alert",
+                  "expires_after_minutes"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "toggle_flag"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "flag": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "flag"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "const": "wait"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "additionalProperties": false,
+                "properties": {
+                  "minutes": {
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "minutes"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "action": {
+          "enum": [
+            "confirm_quorum",
+            "drain_region",
+            "drain_replica",
+            "failover_database",
+            "finish_migration",
+            "mark_region_health",
+            "pause_queue",
+            "restart_service",
+            "restore_replica",
+            "resume_queue",
+            "rollback_deployment",
+            "run_migration",
+            "scale_service",
+            "suppress_alert",
+            "toggle_flag",
+            "wait"
+          ],
+          "type": "string"
+        },
+        "after": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "effects": {
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "type": "array"
+        },
+        "id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "params": {
+          "type": "object"
+        },
+        "requires": {
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "action",
+        "params"
+      ],
+      "type": "object"
+    },
+    "system": {
+      "additionalProperties": false,
+      "properties": {
+        "alerts": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "active": {
+                "type": "boolean"
+              },
+              "suppressed_until_minute": {
+                "minimum": 0,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "clock_minute": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "databases": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "healthy_regions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "migration_compatible": {
+                "type": "boolean"
+              },
+              "migration_in_progress": {
+                "type": "boolean"
+              },
+              "primary_region": {
+                "type": "string"
+              },
+              "quorum_confirmed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "primary_region"
+            ],
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "deployments": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "current": {
+                "type": "string"
+              },
+              "previous": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "service": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "feature_flags": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "queues": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "consumers": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "depth": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "paused": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "regions": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "healthy": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "services": {
+          "additionalProperties": {
+            "additionalProperties": false,
+            "properties": {
+              "allow_unachievable_min_available": {
+                "type": "boolean"
+              },
+              "deployment": {
+                "type": "string"
+              },
+              "min_available": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "replicas": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "drained": {
+                      "type": "boolean"
+                    },
+                    "healthy": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "region": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "region"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "https://formal-runbook-verification.local/schema/runbook.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allow_reordering": {
+      "type": "boolean"
+    },
+    "description": {
+      "type": "string"
+    },
+    "max_depth": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "name": {
+      "type": "string"
+    },
+    "safety": {
+      "additionalProperties": true,
+      "properties": {
+        "max_alert_suppression_minutes": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/step"
+      },
+      "type": "array"
+    },
+    "system": {
+      "$ref": "#/$defs/system"
+    }
+  },
+  "required": [
+    "system",
+    "steps"
+  ],
+  "title": "Formal Runbook Verification DSL",
+  "type": "object"
+}

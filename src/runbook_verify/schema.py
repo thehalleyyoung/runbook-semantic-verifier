@@ -67,6 +67,7 @@ def _system_schema() -> dict[str, Any]:
                     "additionalProperties": False,
                     "properties": {
                         "min_available": {"type": "integer", "minimum": 0},
+                        "allow_unachievable_min_available": {"type": "boolean"},
                         "deployment": {"type": "string"},
                         "replicas": {
                             "type": "array",

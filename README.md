@@ -11,6 +11,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli check examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli check examples/unsafe_runbook.json --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli export examples/safe_runbook.json --format tla
 PYTHONPATH=src python3 -m runbook_verify.cli schema
+PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
 PYTHONPATH=src python3 -m runbook_verify.cli audit examples/real_world --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
@@ -49,12 +50,17 @@ Top-level fields:
   `expected_violation_properties`, and `expected_prose_rules`.
 
 The parser validates supported actions, required/unknown parameters, numeric
-bounds, condition kinds, duplicate step ids, acyclic dependencies, and entity
-references before checking. `frv schema` prints a JSON Schema for editor,
-registry, and CI integration:
+bounds, condition kinds, duplicate step ids, duplicate replica ids, achievable
+`min_available` targets unless explicitly waived, acyclic dependencies, entity
+references, generated scale-replica id collisions, and deployment/service
+version consistency before checking. `frv validate` runs these parse/schema/entity
+checks without state-space exploration. `frv schema` prints the JSON Schema for
+editor, registry, and CI integration; the canonical checked-in artifact lives at
+`docs/schema/runbook.schema.json`:
 
 ```bash
 PYTHONPATH=src python3 -m runbook_verify.cli schema
+PYTHONPATH=src python3 -m runbook_verify.cli validate examples/safe_runbook.json
 ```
 Supported actions include `restart_service`, `drain_replica`, `restore_replica`,
 `drain_region`, `rollback_deployment`, `failover_database`, `confirm_quorum`,

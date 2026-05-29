@@ -5,13 +5,13 @@
 - [x] Harden parser validation for numeric DSL bounds such as `max_depth`, wait durations, replica counts, queue depths, and alert suppression durations.
 - [x] Reject cyclic step dependency graphs at parse time so impossible runbooks fail fast with actionable errors.
 - [x] Document the schema command and strengthened validation contract in the README and cover it with regression tests.
-- [ ] Publish a checked-in canonical schema artifact under `docs/schema/runbook.schema.json` and verify it is generated from the implementation.
+- [x] Publish a checked-in canonical schema artifact under `docs/schema/runbook.schema.json` and verify it is generated from the implementation.
 - [ ] Add schema examples showing every supported top-level field with comments in prose and strict JSON fixtures for automation.
 - [ ] Split action parameter validation into reusable typed field descriptors shared by parser, schema generation, docs, and exporters.
-- [ ] Add semantic validation that every service `min_available` target is achievable by the declared replica set unless explicitly waived.
-- [ ] Add validation for duplicate replica ids within each service and duplicate entities across generated scale operations.
-- [ ] Add validation that deployment entries and service deployment fields agree or report a precise consistency warning.
-- [ ] Add a `frv validate` command that performs parse/schema/entity/dependency checks without running state-space exploration.
+- [x] Add semantic validation that every service `min_available` target is achievable by the declared replica set unless explicitly waived.
+- [x] Add validation for duplicate replica ids within each service and duplicate entities across generated scale operations.
+- [x] Add validation that deployment entries and service deployment fields agree or report a precise consistency warning.
+- [x] Add a `frv validate` command that performs parse/schema/entity/dependency checks without running state-space exploration.
 - [ ] Add structured JSON diagnostics for parse errors with path, line, field, severity, and remediation text.
 - [ ] Extend Markdown source-line mapping to multiline step objects and nested precondition/effect diagnostics.
 - [ ] Add a schema compatibility policy documenting versioning, deprecations, and migration guarantees for industry users.

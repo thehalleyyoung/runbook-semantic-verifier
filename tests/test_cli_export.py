@@ -47,6 +47,17 @@ class CliAndExportTests(unittest.TestCase):
         self.assertIn("failover_database", schema["$defs"]["step"]["properties"]["action"]["enum"])
         self.assertIn("condition", schema["$defs"])
 
+    def test_checked_in_schema_matches_cli_output(self):
+        proc = self._run("schema")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(proc.stdout, (ROOT / "docs" / "schema" / "runbook.schema.json").read_text(encoding="utf-8"))
+
+    def test_cli_validate_does_not_run_checker(self):
+        proc = self._run("validate", "examples/unsafe_runbook.json")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("Valid runbook:", proc.stdout)
+        self.assertNotIn("Violations", proc.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
