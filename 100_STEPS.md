@@ -89,7 +89,7 @@ This roadmap treats runbooks as executable operational programs: Markdown/wiki p
 
 ## Phase 7 — Benchmarks, historical cases, and validity threats
 
-- [ ] Define a public benchmark schema with provenance, license, abstraction level, expected result, responsible-disclosure status, validity threats, and semantic feature coverage.
+- [x] Define a public benchmark schema with provenance, license, abstraction level, expected result, responsible-disclosure status, validity threats, and semantic feature coverage.
 - [ ] Add historical outage reproductions as bounded semantic models that clearly distinguish public facts, reconstructed assumptions, and synthetic mutants.
 - [ ] Add current operational case studies for failover, queue replay, data restore, credential rotation, DNS migration, and cache incidents using public or sanitized data.
 - [ ] Add synthetic mutation operators for missing preconditions, reordered steps, stale owners, unsafe retries, insufficient waits, underprovisioned replicas, and invalid waivers.

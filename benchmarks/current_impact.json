@@ -1,6 +1,27 @@
 {
+  "benchmark_schema_version": "1.0",
   "name": "current public runbook impact benchmark",
+  "description": "Current public-document case study with explicit provenance, license, disclosure, and validity-threat metadata.",
   "runbooks": [
-    { "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md" }
+    {
+      "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "provenance": {
+        "kind": "public-current",
+        "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md",
+        "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
+        "retrieved": "2026-05-29",
+        "notes": "Short attributed public excerpts plus independently authored defensive model."
+      },
+      "license": { "status": "public-license", "name": "AGPL-3.0", "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model." },
+      "abstraction_level": "derived-public-runbook",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": ["no_paused_queue_with_backlog", "no_queue_pause_without_drain_plan"],
+        "prose_rules": ["data-deletion-needs-restore-precondition", "destructive-delete-needs-targeting"]
+      },
+      "responsible_disclosure": { "status": "public-information", "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim." },
+      "validity_threats": ["Public runbook excerpts are incomplete", "Executable model is derived, not maintainer-authored", "Result is advisory and bounded to modeled queue fallback behavior."],
+      "semantic_features": ["public_current_case", "markdown_prose_lint", "queue_pause", "benchmark_expected_prose_rules"]
+    }
   ]
 }

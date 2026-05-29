@@ -30,7 +30,7 @@
       "failover-needs-health-and-quorum": 3
     },
     "runbooks": 5,
-    "runtime_seconds": 0.011981999996351078,
+    "runtime_seconds": 0.012777041993103921,
     "states_explored": 85,
     "traces_explored": 5,
     "violations_by_property": {
@@ -48,8 +48,40 @@
   "name": "built-in formal runbook verification benchmark",
   "runbooks": [
     {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": true,
+          "violation_properties": []
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored safe regression fixture."
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic safe fixture.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "service_capacity",
+          "database_quorum",
+          "alert_suppression",
+          "feature_flags",
+          "deployment_rollback"
+        ],
+        "validity_threats": [
+          "Small synthetic state space; not a production incident."
+        ]
+      },
       "errors": [],
       "expected_labels": {
+        "expected_prose_rules": [],
         "expected_safe": true,
         "expected_violation_properties": []
       },
@@ -77,15 +109,53 @@
         "transitions_explored": 84
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.0029340829933062196,
+      "runtime_seconds": 0.003177125006914139,
       "safe": true,
       "states_explored": 36,
       "traces_explored": 1,
       "violations_by_property": {}
     },
     {
+      "benchmark_metadata": {
+        "abstraction_level": "toy",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": false,
+          "violation_properties": [
+            "bounded_alert_suppression",
+            "no_failover_to_unhealthy_region",
+            "no_rollback_during_incompatible_migration",
+            "quorum_before_data_loss_action",
+            "service_min_available"
+          ]
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "provenance": {
+          "kind": "synthetic",
+          "notes": "Repository-authored unsafe regression fixture."
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic unsafe fixture.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "service_capacity",
+          "database_quorum",
+          "alert_suppression",
+          "feature_flags",
+          "deployment_rollback"
+        ],
+        "validity_threats": [
+          "Designed mutant fixture; expected hazards are intentionally seeded."
+        ]
+      },
       "errors": [],
       "expected_labels": {
+        "expected_prose_rules": [],
         "expected_safe": false,
         "expected_violation_properties": [
           "bounded_alert_suppression",
@@ -122,7 +192,7 @@
         "transitions_explored": 80
       },
       "prose_findings_by_rule": {},
-      "runtime_seconds": 0.003502916020806879,
+      "runtime_seconds": 0.002943458006484434,
       "safe": false,
       "states_explored": 32,
       "traces_explored": 1,
@@ -136,8 +206,43 @@
       }
     },
     {
+      "benchmark_metadata": {
+        "abstraction_level": "real-world-style",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": false,
+          "violation_properties": [
+            "bounded_alert_suppression",
+            "quorum_before_data_loss_action",
+            "service_min_available"
+          ]
+        },
+        "license": {
+          "name": "MIT",
+          "notes": "Authored for this repository.",
+          "status": "original"
+        },
+        "provenance": {
+          "kind": "real-world-style",
+          "notes": "Repository-authored Markdown fixture modeled on common Kubernetes regional failover runbook patterns."
+        },
+        "responsible_disclosure": {
+          "notes": "Synthetic real-world-style fixture, not a live service report.",
+          "status": "not-applicable"
+        },
+        "semantic_features": [
+          "markdown_embedded_dsl",
+          "service_capacity",
+          "database_quorum",
+          "alert_suppression"
+        ],
+        "validity_threats": [
+          "Represents a class of failover mistakes rather than a specific public incident."
+        ]
+      },
       "errors": [],
       "expected_labels": {
+        "expected_prose_rules": [],
         "expected_safe": false,
         "expected_violation_properties": [
           "bounded_alert_suppression",
@@ -174,7 +279,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 2
       },
-      "runtime_seconds": 0.003309749998152256,
+      "runtime_seconds": 0.004687459004344419,
       "safe": false,
       "states_explored": 8,
       "traces_explored": 1,
@@ -186,8 +291,45 @@
       }
     },
     {
+      "benchmark_metadata": {
+        "abstraction_level": "reconstructed-public-facts",
+        "expected_result": {
+          "prose_rules": [],
+          "safe": false,
+          "violation_properties": [
+            "precondition",
+            "quorum_before_data_loss_action"
+          ]
+        },
+        "license": {
+          "notes": "Uses public facts and independently authored executable model.",
+          "status": "excerpted"
+        },
+        "provenance": {
+          "incident_date": "2018-10-21",
+          "kind": "public-historical",
+          "notes": "Reconstructed executable model from public post-incident analysis; not original runbook text.",
+          "source_url": "https://github.blog/news-insights/company-news/oct21-post-incident-analysis/"
+        },
+        "responsible_disclosure": {
+          "notes": "Historical public incident analysis; no new vulnerability claim.",
+          "status": "public-information"
+        },
+        "semantic_features": [
+          "public_historical_case",
+          "database_quorum",
+          "queue_pause",
+          "preconditions"
+        ],
+        "validity_threats": [
+          "Public-data incompleteness",
+          "Reconstructed assumptions may differ from original operational procedures",
+          "Bounded model abstracts distributed database behavior."
+        ]
+      },
       "errors": [],
       "expected_labels": {
+        "expected_prose_rules": [],
         "expected_safe": false,
         "expected_violation_properties": [
           "precondition",
@@ -222,7 +364,7 @@
       "prose_findings_by_rule": {
         "failover-needs-health-and-quorum": 1
       },
-      "runtime_seconds": 0.001403625006787479,
+      "runtime_seconds": 0.0011718750174622983,
       "safe": false,
       "states_explored": 6,
       "traces_explored": 1,
@@ -232,6 +374,47 @@
       }
     },
     {
+      "benchmark_metadata": {
+        "abstraction_level": "derived-public-runbook",
+        "expected_result": {
+          "prose_rules": [
+            "data-deletion-needs-restore-precondition",
+            "destructive-delete-needs-targeting"
+          ],
+          "safe": false,
+          "violation_properties": [
+            "no_paused_queue_with_backlog",
+            "no_queue_pause_without_drain_plan"
+          ]
+        },
+        "license": {
+          "name": "AGPL-3.0",
+          "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model.",
+          "status": "public-license"
+        },
+        "provenance": {
+          "kind": "public-current",
+          "notes": "Short attributed public excerpts plus independently authored defensive model.",
+          "retrieved": "2026-05-29",
+          "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
+          "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md"
+        },
+        "responsible_disclosure": {
+          "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim.",
+          "status": "public-information"
+        },
+        "semantic_features": [
+          "public_current_case",
+          "markdown_prose_lint",
+          "queue_pause",
+          "benchmark_expected_prose_rules"
+        ],
+        "validity_threats": [
+          "Public runbook excerpts are incomplete",
+          "Executable model is derived, not maintainer-authored",
+          "Result is advisory and bounded to modeled queue fallback behavior."
+        ]
+      },
       "errors": [],
       "expected_labels": {
         "expected_prose_rules": [
@@ -274,7 +457,7 @@
         "data-deletion-needs-restore-precondition": 1,
         "destructive-delete-needs-targeting": 2
       },
-      "runtime_seconds": 0.0007554159965366125,
+      "runtime_seconds": 0.000725042016711086,
       "safe": false,
       "states_explored": 3,
       "traces_explored": 1,

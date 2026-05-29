@@ -17,6 +17,8 @@ RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
 class BenchmarkEntry:
     path: Path
     name: str | None = None
+    benchmark_metadata: dict[str, Any] | None = None
+    expected_labels: dict[str, Any] | None = None
 
 
 @dataclass
@@ -32,6 +34,7 @@ class RunbookBenchmarkResult:
     runtime_seconds: float
     performance_counters: dict[str, Any] = field(default_factory=dict)
     expected_labels: dict[str, Any] | None = None
+    benchmark_metadata: dict[str, Any] | None = None
     errors: list[str] = field(default_factory=list)
 
     def to_json_dict(self) -> dict[str, Any]:
@@ -76,14 +79,18 @@ class BenchmarkSuiteResult:
 def run_benchmark(path: str | Path | None = None) -> BenchmarkSuiteResult:
     root = Path.cwd()
     if path is None:
-        suite_name = "built-in benchmark"
-        entries = [
-            BenchmarkEntry(root / "examples" / "safe_runbook.json"),
-            BenchmarkEntry(root / "examples" / "unsafe_runbook.json"),
-            BenchmarkEntry(root / "examples" / "real_world" / "kubernetes_region_failover.md"),
-            BenchmarkEntry(root / "case_studies" / "github_oct21_2018" / "github_oct21_reconstructed_runbook.md"),
-            BenchmarkEntry(root / "case_studies" / "current" / "grafana_tempo" / "tempo_runbook_current_impact.md"),
-        ]
+        builtin_config = root / "benchmarks" / "builtin.json"
+        if builtin_config.exists():
+            suite_name, entries = _load_config(builtin_config)
+        else:
+            suite_name = "built-in benchmark"
+            entries = [
+                BenchmarkEntry(root / "examples" / "safe_runbook.json"),
+                BenchmarkEntry(root / "examples" / "unsafe_runbook.json"),
+                BenchmarkEntry(root / "examples" / "real_world" / "kubernetes_region_failover.md"),
+                BenchmarkEntry(root / "case_studies" / "github_oct21_2018" / "github_oct21_reconstructed_runbook.md"),
+                BenchmarkEntry(root / "case_studies" / "current" / "grafana_tempo" / "tempo_runbook_current_impact.md"),
+            ]
     else:
         config_path = Path(path)
         if not config_path.exists():
@@ -91,7 +98,7 @@ def run_benchmark(path: str | Path | None = None) -> BenchmarkSuiteResult:
         if config_path.is_dir():
             suite_name = str(config_path)
             entries = [BenchmarkEntry(p) for p in _runbook_files(config_path)]
-        elif config_path.suffix.lower() == ".json":
+        elif config_path.suffix.lower() == ".json" and _looks_like_benchmark_config(config_path):
             suite_name, entries = _load_config(config_path)
         elif config_path.suffix.lower() in RUNBOOK_SUFFIXES:
             suite_name = str(config_path)
@@ -126,12 +133,12 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
         f"- Violations by property: `{json.dumps(aggregate['violations_by_property'], sort_keys=True)}`",
         f"- Prose findings by rule: `{json.dumps(aggregate['prose_findings_by_rule'], sort_keys=True)}`",
         "",
-        "| Runbook | Pass | Safe | States | Transitions | Max branch | Min CEX trace | Runtime (s) | Violations | Prose findings | Expected labels |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |",
+        "| Runbook | Pass | Safe | States | Transitions | Max branch | Min CEX trace | Runtime (s) | Violations | Prose findings | Expected labels | Benchmark metadata |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- |",
     ]
     for item in data["runbooks"]:
         lines.append(
-            "| {name} | `{pass_}` | `{safe}` | {states} | {transitions} | {max_branch} | {min_trace} | {runtime:.6f} | `{violations}` | `{prose}` | `{expected}` |".format(
+            "| {name} | `{pass_}` | `{safe}` | {states} | {transitions} | {max_branch} | {min_trace} | {runtime:.6f} | `{violations}` | `{prose}` | `{expected}` | `{metadata}` |".format(
                 name=item["name"].replace("|", "\\|"),
                 pass_=item["pass"],
                 safe=item["safe"],
@@ -143,6 +150,7 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
                 violations=json.dumps(item["violations_by_property"], sort_keys=True),
                 prose=json.dumps(item["prose_findings_by_rule"], sort_keys=True),
                 expected=json.dumps(item["expected_labels"], sort_keys=True) if item["expected_labels"] else "",
+                metadata=json.dumps(item["benchmark_metadata"], sort_keys=True) if item["benchmark_metadata"] else "",
             )
         )
     return "\n".join(lines) + "\n"
@@ -207,6 +215,7 @@ def _load_config(path: Path) -> tuple[str, list[BenchmarkEntry]]:
         raise BenchmarkConfigError(f"invalid benchmark config JSON in {path}: {exc}") from exc
     if not isinstance(raw, dict):
         raise BenchmarkConfigError("benchmark config must be a JSON object")
+    _validate_public_benchmark_config(raw)
     suite_name = str(raw.get("name", path.stem))
     raw_entries = raw.get("runbooks")
     if not isinstance(raw_entries, list):
@@ -219,8 +228,118 @@ def _load_config(path: Path) -> tuple[str, list[BenchmarkEntry]]:
         if not isinstance(raw_path, str):
             raise BenchmarkConfigError(f"benchmark runbooks[{index}].path must be a string")
         entry_path = (path.parent / raw_path).resolve() if not Path(raw_path).is_absolute() else Path(raw_path)
-        entries.extend(BenchmarkEntry(p, raw_entry.get("name")) for p in _expand_entry_path(entry_path))
+        metadata = _benchmark_metadata(raw_entry)
+        expected = _expected_labels_from_benchmark_metadata(raw_entry)
+        entries.extend(BenchmarkEntry(p, raw_entry.get("name"), metadata, expected) for p in _expand_entry_path(entry_path))
     return suite_name, entries
+
+
+def _looks_like_benchmark_config(path: Path) -> bool:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    return isinstance(raw, dict) and isinstance(raw.get("runbooks"), list)
+
+
+def _validate_public_benchmark_config(raw: dict[str, Any]) -> None:
+    version = raw.get("benchmark_schema_version")
+    if version != "1.0":
+        raise BenchmarkConfigError("benchmark config field 'benchmark_schema_version' must be '1.0'")
+    if not isinstance(raw.get("name"), str) or not raw["name"].strip():
+        raise BenchmarkConfigError("benchmark config field 'name' must be a non-empty string")
+
+
+def _benchmark_metadata(raw_entry: dict[str, Any]) -> dict[str, Any]:
+    required = [
+        "provenance",
+        "license",
+        "abstraction_level",
+        "expected_result",
+        "responsible_disclosure",
+        "validity_threats",
+        "semantic_features",
+    ]
+    for field_name in required:
+        if field_name not in raw_entry:
+            raise BenchmarkConfigError(f"benchmark runbook {raw_entry.get('path', '<unknown>')} is missing required public benchmark field '{field_name}'")
+    provenance = _require_object(raw_entry["provenance"], "provenance")
+    license_info = _require_object(raw_entry["license"], "license")
+    expected_result = _require_object(raw_entry["expected_result"], "expected_result")
+    disclosure = _require_object(raw_entry["responsible_disclosure"], "responsible_disclosure")
+    abstraction_level = _require_enum(
+        raw_entry["abstraction_level"],
+        "abstraction_level",
+        {"toy", "real-world-style", "reconstructed-public-facts", "derived-public-runbook", "sanitized-production"},
+    )
+    _require_enum(
+        str(provenance.get("kind", "")),
+        "provenance.kind",
+        {"synthetic", "real-world-style", "public-historical", "public-current", "sanitized"},
+    )
+    _require_enum(
+        str(license_info.get("status", "")),
+        "license.status",
+        {"original", "public-license", "excerpted", "sanitized", "unknown"},
+    )
+    _require_enum(
+        str(disclosure.get("status", "")),
+        "responsible_disclosure.status",
+        {"not-applicable", "public-information", "sanitized", "review-required", "restricted"},
+    )
+    _require_bool(expected_result.get("safe"), "expected_result.safe")
+    metadata = {
+        "provenance": provenance,
+        "license": license_info,
+        "abstraction_level": abstraction_level,
+        "expected_result": {
+            "safe": bool(expected_result["safe"]),
+            "violation_properties": _string_list(expected_result.get("violation_properties", []), "expected_result.violation_properties"),
+            "prose_rules": _string_list(expected_result.get("prose_rules", []), "expected_result.prose_rules"),
+        },
+        "responsible_disclosure": disclosure,
+        "validity_threats": _non_empty_string_list(raw_entry["validity_threats"], "validity_threats"),
+        "semantic_features": _non_empty_string_list(raw_entry["semantic_features"], "semantic_features"),
+    }
+    return metadata
+
+
+def _expected_labels_from_benchmark_metadata(raw_entry: dict[str, Any]) -> dict[str, Any]:
+    expected = _require_object(raw_entry["expected_result"], "expected_result")
+    labels: dict[str, Any] = {"expected_safe": bool(expected["safe"])}
+    labels["expected_violation_properties"] = sorted(_string_list(expected.get("violation_properties", []), "expected_result.violation_properties"))
+    labels["expected_prose_rules"] = sorted(_string_list(expected.get("prose_rules", []), "expected_result.prose_rules"))
+    return labels
+
+
+def _require_object(value: Any, field_name: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise BenchmarkConfigError(f"benchmark field '{field_name}' must be an object")
+    return value
+
+
+def _require_bool(value: Any, field_name: str) -> None:
+    if not isinstance(value, bool):
+        raise BenchmarkConfigError(f"benchmark field '{field_name}' must be a boolean")
+
+
+def _require_enum(value: str, field_name: str, choices: set[str]) -> str:
+    if value not in choices:
+        raise BenchmarkConfigError(f"benchmark field '{field_name}' must be one of: {', '.join(sorted(choices))}")
+    return value
+
+
+def _string_list(value: Any, field_name: str) -> list[str]:
+    if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
+        raise BenchmarkConfigError(f"benchmark field '{field_name}' must be a list of non-empty strings")
+    return list(value)
+
+
+def _non_empty_string_list(value: Any, field_name: str) -> list[str]:
+    items = _string_list(value, field_name)
+    if not items:
+        raise BenchmarkConfigError(f"benchmark field '{field_name}' must contain at least one item")
+    return items
 
 
 def _expand_entry_path(path: Path) -> list[Path]:
@@ -239,11 +358,11 @@ def _runbook_files(root: Path) -> list[Path]:
 
 def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
     started = time.perf_counter()
-    expected_labels: dict[str, Any] | None = None
+    expected_labels: dict[str, Any] | None = entry.expected_labels
     name = entry.name or entry.path.name
     try:
         doc = load_document(entry.path)
-        expected_labels = _expected_labels(doc)
+        expected_labels = entry.expected_labels or _expected_labels(doc)
         runbook = load_runbook(entry.path)
         name = entry.name or runbook.name
         result = Checker(runbook).check()
@@ -262,6 +381,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             runtime_seconds=time.perf_counter() - started,
             performance_counters=result.performance_counters(),
             expected_labels=expected_labels,
+            benchmark_metadata=entry.benchmark_metadata,
             errors=errors,
         )
     except (RunbookParseError, BenchmarkConfigError, OSError, KeyError, TypeError, ValueError) as exc:
@@ -277,6 +397,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             runtime_seconds=time.perf_counter() - started,
             performance_counters={},
             expected_labels=expected_labels,
+            benchmark_metadata=entry.benchmark_metadata,
             errors=[str(exc)],
         )
 

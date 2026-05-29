@@ -201,7 +201,7 @@ emits JSON or Markdown. Metrics include number of runbooks, states explored,
 terminal traces explored, checker performance counters (transitions, branch
 factor, reductions, symbolic splits, minimized counterexample trace length, and
 proof-obligation outcomes), violations by property, prose findings by rule,
-expected labels when present, runtime, and pass/fail.
+expected labels when present, public benchmark metadata, runtime, and pass/fail.
 
 Built-in suite:
 
@@ -222,14 +222,27 @@ External corpus:
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark path/to/runbook-or-directory --format markdown
 ```
 
-Benchmark config files are JSON:
+Benchmark config files are JSON. Version `1.0` configs are validated against the
+public benchmark contract documented by `docs/schema/benchmark.schema.json` and
+`docs/schema/benchmark_config.md`; each entry records provenance, license,
+abstraction level, expected result, responsible-disclosure status, validity
+threats, and semantic feature coverage.
 
 ```json
 {
+  "benchmark_schema_version": "1.0",
   "name": "my runbook corpus",
   "runbooks": [
-    { "path": "../examples/safe_runbook.json" },
-    { "path": "../case_studies/github_oct21_2018" }
+    {
+      "path": "../case_studies/github_oct21_2018",
+      "provenance": { "kind": "public-historical", "source_url": "https://github.blog/news-insights/company-news/oct21-post-incident-analysis/" },
+      "license": { "status": "excerpted" },
+      "abstraction_level": "reconstructed-public-facts",
+      "expected_result": { "safe": false, "violation_properties": ["quorum_before_data_loss_action"], "prose_rules": [] },
+      "responsible_disclosure": { "status": "public-information" },
+      "validity_threats": ["Reconstructed assumptions may differ from original procedures."],
+      "semantic_features": ["database_quorum", "public_historical_case"]
+    }
   ]
 }
 ```

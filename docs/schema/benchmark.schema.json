@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/formal-runbook-verification/benchmark.schema.json",
+  "title": "Formal Runbook Verification public benchmark config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["benchmark_schema_version", "name", "runbooks"],
+  "properties": {
+    "benchmark_schema_version": { "const": "1.0" },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "runbooks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/runbookEntry" }
+    }
+  },
+  "$defs": {
+    "stringList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "nonEmptyStringList": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "runbookEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "provenance",
+        "license",
+        "abstraction_level",
+        "expected_result",
+        "responsible_disclosure",
+        "validity_threats",
+        "semantic_features"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "provenance": {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": { "type": ["string", "array", "object", "number", "boolean", "null"] },
+          "properties": {
+            "kind": { "enum": ["synthetic", "real-world-style", "public-historical", "public-current", "sanitized"] },
+            "source_url": { "type": "string" },
+            "source_commit": { "type": "string" },
+            "incident_date": { "type": "string" },
+            "retrieved": { "type": "string" },
+            "notes": { "type": "string" }
+          }
+        },
+        "license": {
+          "type": "object",
+          "required": ["status"],
+          "additionalProperties": { "type": ["string", "array", "object", "number", "boolean", "null"] },
+          "properties": {
+            "status": { "enum": ["original", "public-license", "excerpted", "sanitized", "unknown"] },
+            "name": { "type": "string" },
+            "url": { "type": "string" },
+            "notes": { "type": "string" }
+          }
+        },
+        "abstraction_level": {
+          "enum": ["toy", "real-world-style", "reconstructed-public-facts", "derived-public-runbook", "sanitized-production"]
+        },
+        "expected_result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["safe", "violation_properties", "prose_rules"],
+          "properties": {
+            "safe": { "type": "boolean" },
+            "violation_properties": { "$ref": "#/$defs/stringList" },
+            "prose_rules": { "$ref": "#/$defs/stringList" }
+          }
+        },
+        "responsible_disclosure": {
+          "type": "object",
+          "required": ["status"],
+          "additionalProperties": { "type": ["string", "array", "object", "number", "boolean", "null"] },
+          "properties": {
+            "status": { "enum": ["not-applicable", "public-information", "sanitized", "review-required", "restricted"] },
+            "notes": { "type": "string" }
+          }
+        },
+        "validity_threats": { "$ref": "#/$defs/nonEmptyStringList" },
+        "semantic_features": { "$ref": "#/$defs/nonEmptyStringList" }
+      }
+    }
+  }
+}

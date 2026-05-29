@@ -1,10 +1,86 @@
 {
+  "benchmark_schema_version": "1.0",
   "name": "built-in formal runbook verification benchmark",
+  "description": "Regression, real-world-style, public historical, and current public-document fixtures with explicit evidence metadata.",
   "runbooks": [
-    { "path": "../examples/safe_runbook.json" },
-    { "path": "../examples/unsafe_runbook.json" },
-    { "path": "../examples/real_world" },
-    { "path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md" },
-    { "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md" }
+    {
+      "path": "../examples/safe_runbook.json",
+      "provenance": { "kind": "synthetic", "notes": "Repository-authored safe regression fixture." },
+      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "abstraction_level": "toy",
+      "expected_result": { "safe": true, "violation_properties": [], "prose_rules": [] },
+      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic safe fixture." },
+      "validity_threats": ["Small synthetic state space; not a production incident."],
+      "semantic_features": ["service_capacity", "database_quorum", "alert_suppression", "feature_flags", "deployment_rollback"]
+    },
+    {
+      "path": "../examples/unsafe_runbook.json",
+      "provenance": { "kind": "synthetic", "notes": "Repository-authored unsafe regression fixture." },
+      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "abstraction_level": "toy",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": [
+          "bounded_alert_suppression",
+          "no_failover_to_unhealthy_region",
+          "no_rollback_during_incompatible_migration",
+          "quorum_before_data_loss_action",
+          "service_min_available"
+        ],
+        "prose_rules": []
+      },
+      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic unsafe fixture." },
+      "validity_threats": ["Designed mutant fixture; expected hazards are intentionally seeded."],
+      "semantic_features": ["service_capacity", "database_quorum", "alert_suppression", "feature_flags", "deployment_rollback"]
+    },
+    {
+      "path": "../examples/real_world/kubernetes_region_failover.md",
+      "provenance": { "kind": "real-world-style", "notes": "Repository-authored Markdown fixture modeled on common Kubernetes regional failover runbook patterns." },
+      "license": { "status": "original", "name": "MIT", "notes": "Authored for this repository." },
+      "abstraction_level": "real-world-style",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": ["bounded_alert_suppression", "quorum_before_data_loss_action", "service_min_available"],
+        "prose_rules": []
+      },
+      "responsible_disclosure": { "status": "not-applicable", "notes": "Synthetic real-world-style fixture, not a live service report." },
+      "validity_threats": ["Represents a class of failover mistakes rather than a specific public incident."],
+      "semantic_features": ["markdown_embedded_dsl", "service_capacity", "database_quorum", "alert_suppression"]
+    },
+    {
+      "path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "provenance": {
+        "kind": "public-historical",
+        "source_url": "https://github.blog/news-insights/company-news/oct21-post-incident-analysis/",
+        "incident_date": "2018-10-21",
+        "notes": "Reconstructed executable model from public post-incident analysis; not original runbook text."
+      },
+      "license": { "status": "excerpted", "notes": "Uses public facts and independently authored executable model." },
+      "abstraction_level": "reconstructed-public-facts",
+      "expected_result": { "safe": false, "violation_properties": ["precondition", "quorum_before_data_loss_action"], "prose_rules": [] },
+      "responsible_disclosure": { "status": "public-information", "notes": "Historical public incident analysis; no new vulnerability claim." },
+      "validity_threats": ["Public-data incompleteness", "Reconstructed assumptions may differ from original operational procedures", "Bounded model abstracts distributed database behavior."],
+      "semantic_features": ["public_historical_case", "database_quorum", "queue_pause", "preconditions"]
+    },
+    {
+      "path": "../case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+      "provenance": {
+        "kind": "public-current",
+        "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md",
+        "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
+        "retrieved": "2026-05-29",
+        "notes": "Short attributed public excerpts plus independently authored defensive model."
+      },
+      "license": { "status": "public-license", "name": "AGPL-3.0", "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model." },
+      "abstraction_level": "derived-public-runbook",
+      "expected_result": {
+        "safe": false,
+        "violation_properties": ["no_paused_queue_with_backlog", "no_queue_pause_without_drain_plan"],
+        "prose_rules": ["data-deletion-needs-restore-precondition", "destructive-delete-needs-targeting"]
+      },
+      "responsible_disclosure": { "status": "public-information", "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim." },
+      "validity_threats": ["Public runbook excerpts are incomplete", "Executable model is derived, not maintainer-authored", "Result is advisory and bounded to modeled queue fallback behavior."],
+      "semantic_features": ["public_current_case", "markdown_prose_lint", "queue_pause", "benchmark_expected_prose_rules"]
+    }
   ]
 }

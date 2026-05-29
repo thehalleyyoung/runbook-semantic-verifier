@@ -1,0 +1,7 @@
+{
+  "benchmark_schema_version": "1.0",
+  "name": "invalid missing metadata benchmark",
+  "runbooks": [
+    { "path": "../../examples/safe_runbook.json" }
+  ]
+}
