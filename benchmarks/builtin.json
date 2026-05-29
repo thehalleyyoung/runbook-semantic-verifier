@@ -2,6 +2,18 @@
   "benchmark_schema_version": "1.0",
   "name": "built-in formal runbook verification benchmark",
   "description": "Regression, real-world-style, public historical, and current public-document fixtures with explicit evidence metadata.",
+  "semantic_diff_baselines": [
+    {
+      "name": "github-oct21-quorum-guard-remediation",
+      "old_path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+      "new_path": "../case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md",
+      "expected": {
+        "introduced_counterexamples": 0,
+        "resolved_counterexamples": 2,
+        "assumption_weakenings": 0
+      }
+    }
+  ],
   "runbooks": [
     {
       "path": "../examples/safe_runbook.json",

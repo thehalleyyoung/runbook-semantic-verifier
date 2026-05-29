@@ -35,6 +35,10 @@ current case studies analyze short attributed excerpts from Grafana Tempo's
 public runbook, a bounded DNS failover pattern derived from public `dnsswitch`
 guidance, and a bounded Redis cache-flush mutant derived from a public Redis
 runbook template.
+Benchmark evidence now includes categorized validity threats, workflow-baseline
+comparisons, semantic-diff remediation baselines, oracle-review label metadata,
+reproducible report-generation commands, and adoption-oriented risk/action
+summaries.
 
 ## Bounded novelty claim
 
@@ -66,7 +70,17 @@ differently named system exists.
   repair is operationally correct without review.
 - The benchmark records states explored, terminal traces explored, violations by
   property, prose findings by rule, semantic rule counters, expected labels when
-  present, runtime, and pass/fail.
+  present, categorized validity threats, workflow-baseline comparisons
+  (schema-only validation, prose linting, bounded checking, type/effect checking,
+  configured semantic diffing, and combined workflow), adoption summaries,
+  runtime, and pass/fail.
+- Benchmark semantic-diff baselines execute the same `frv diff` logic used for PR
+  review and compare expected introduced/resolved counterexample counts. The
+  built-in suite currently uses this for the bounded GitHub Oct. 21
+  quorum-guard remediation pair.
+- Oracle-review metadata defines the allowed review labels (`true_hazard`,
+  `useful_warning`, `false_positive`, and `unsupported_claim`) but does not claim
+  an independent review unless a benchmark entry explicitly records one.
 - The semantic diff reports model-level changes, assumption weakenings,
   proof-obligation deltas, and introduced/resolved/persisting counterexample
   traces between two bounded executable runbook models.
@@ -163,6 +177,9 @@ differently named system exists.
   documented failover pattern, not a claim about a live deployment.
 - The Redis cache-flush case study is a defensive bounded mutant derived from a
   public runbook template, not a claim about a live deployment.
+- Adoption summaries are reviewer triage metadata. They do not prove operator
+  time saved unless a benchmark entry separately records measured user-study or
+  oracle-review evidence.
 - The prior-art search cannot prove universal nonexistence; it only documents
   the public search performed for this repository.
 
@@ -223,6 +240,11 @@ differently named system exists.
   - `reports/redis_cache_flush_coverage.md`
   - `reports/builtin_benchmark.md`
   - `reports/builtin_benchmark_profile.md`
+  - `reports/benchmark_reproduction_manifest.json`
+  - `reports/current_impact_benchmark.md`
+  - `docs/benchmark_contribution.md`
+  - `docs/benchmark_reproducibility.md`
+  - `docs/oracle_review_protocol.md`
 
 ## Prior-art search protocol for bounded novelty
 
@@ -250,6 +272,7 @@ PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format json
+make benchmark-reproduce
 PYTHONPATH=src python3 -m runbook_verify.cli check case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md --expect-violations
 PYTHONPATH=src python3 -m runbook_verify.cli lint-markdown case_studies/current/grafana_tempo --expect-findings
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --expect-blocks

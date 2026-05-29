@@ -1,4 +1,4 @@
-.PHONY: test smoke verify export benchmark
+.PHONY: test smoke verify export benchmark benchmark-reproduce
 PYTHONPATH := src
 export PYTHONPATH
 
@@ -32,3 +32,6 @@ export:
 
 benchmark:
 	python3 -m runbook_verify.cli benchmark --format markdown
+
+benchmark-reproduce:
+	python3 scripts/reproduce_benchmarks.py

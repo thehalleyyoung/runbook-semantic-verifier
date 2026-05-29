@@ -26,6 +26,10 @@ class BenchmarkTests(unittest.TestCase):
         self.assertGreater(data["aggregate"]["states_explored"], 0)
         self.assertGreater(data["aggregate"]["performance_counters"]["transitions_explored"], 0)
         self.assertIn("proof_obligations_checked", data["aggregate"]["performance_counters"])
+        self.assertIn("workflow_baselines", data["aggregate"])
+        self.assertIn("validity_threat_categories", data["aggregate"])
+        self.assertIn("adoption_summary", data["aggregate"])
+        self.assertTrue(data["semantic_diff_baselines"][0]["pass"])
         self.assertIn("quorum_before_data_loss_action", data["aggregate"]["violations_by_property"])
 
     def test_benchmark_cli_outputs_json_and_markdown(self):
@@ -47,6 +51,9 @@ class BenchmarkTests(unittest.TestCase):
         self.assertIn("runbooks", parsed)
         self.assertEqual(parsed["runbooks"][0]["benchmark_metadata"]["license"]["status"], "original")
         self.assertIn("semantic_features", parsed["runbooks"][0]["benchmark_metadata"])
+        self.assertIn("oracle_review", parsed["runbooks"][0]["benchmark_metadata"])
+        self.assertIn("workflow_baselines", parsed["runbooks"][0])
+        self.assertTrue(parsed["semantic_diff_baselines"][0]["pass"])
 
         md_proc = subprocess.run(
             [sys.executable, "-m", "runbook_verify.cli", "benchmark", "case_studies/github_oct21_2018", "--format", "markdown"],
@@ -60,6 +67,9 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(md_proc.returncode, 0, md_proc.stdout + md_proc.stderr)
         self.assertIn("# Benchmark:", md_proc.stdout)
         self.assertIn("Performance counters", md_proc.stdout)
+        self.assertIn("Workflow baselines", md_proc.stdout)
+        self.assertIn("Validity threat categories", md_proc.stdout)
+        self.assertIn("Semantic diff baselines", md_proc.stdout)
         self.assertIn("Benchmark metadata", md_proc.stdout)
         self.assertIn("quorum_before_data_loss_action", md_proc.stdout)
 
@@ -97,6 +107,8 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(item["benchmark_metadata"]["provenance"]["kind"], "public-current")
         self.assertEqual(item["benchmark_metadata"]["abstraction_level"], "derived-public-runbook")
         self.assertIn("Public runbook excerpts are incomplete", item["benchmark_metadata"]["validity_threats"])
+        self.assertIn("public_data_incompleteness", item["benchmark_metadata"]["validity_threat_categories"])
+        self.assertEqual(item["benchmark_metadata"]["oracle_review"]["status"], "not-reviewed")
         self.assertIn("no_replay_without_dedupe", item["expected_labels"]["expected_violation_properties"])
 
 

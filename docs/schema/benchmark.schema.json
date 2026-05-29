@@ -9,6 +9,10 @@
     "benchmark_schema_version": { "const": "1.0" },
     "name": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
+    "semantic_diff_baselines": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/semanticDiffBaseline" }
+    },
     "runbooks": {
       "type": "array",
       "minItems": 1,
@@ -24,6 +28,26 @@
       "type": "array",
       "minItems": 1,
       "items": { "type": "string", "minLength": 1 }
+    },
+    "semanticDiffBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "old_path", "new_path"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "old_path": { "type": "string", "minLength": 1 },
+        "new_path": { "type": "string", "minLength": 1 },
+        "expected": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "introduced_counterexamples": { "type": "integer", "minimum": 0 },
+            "resolved_counterexamples": { "type": "integer", "minimum": 0 },
+            "assumption_weakenings": { "type": "integer", "minimum": 0 },
+            "safety_relevant_changes": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
     },
     "runbookEntry": {
       "type": "object",
@@ -88,6 +112,51 @@
           }
         },
         "validity_threats": { "$ref": "#/$defs/nonEmptyStringList" },
+        "validity_threat_categories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "label_uncertainty",
+              "abstraction_bias",
+              "public_data_incompleteness",
+              "bounded_search_limits",
+              "survivor_bias",
+              "synthetic_mutant_bias"
+            ]
+          }
+        },
+        "oracle_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": { "type": "string" },
+            "reviewer_role": { "type": "string" },
+            "allowed_labels": {
+              "type": "array",
+              "items": { "enum": ["true_hazard", "useful_warning", "false_positive", "unsupported_claim"] }
+            },
+            "notes": { "type": "string" }
+          }
+        },
+        "adoption_summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "risk_classes_detected": { "$ref": "#/$defs/stringList" },
+            "remediation_actions": { "$ref": "#/$defs/stringList" },
+            "operator_time_saved": { "type": "string" }
+          }
+        },
+        "reproduction": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "commands": { "$ref": "#/$defs/nonEmptyStringList" },
+            "expected_outputs": { "$ref": "#/$defs/nonEmptyStringList" },
+            "budget": { "type": "string" }
+          }
+        },
         "semantic_features": { "$ref": "#/$defs/nonEmptyStringList" }
       }
     }

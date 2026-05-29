@@ -2,7 +2,7 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **44/100** items in the local roadmap are complete. The
+Current roadmap status: **50/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
 finding obligations, weakest-precondition templates, JSON explanation traces,
@@ -16,6 +16,10 @@ replica-count assumptions,
 queue replay/DLQ/consumer-group semantics, DNS cutover semantics,
 cache flush/warmup/cold-start/capacity semantics, and checked-in
 historical/current public case-study evidence.
+Benchmark reports now also carry validity-threat categories, workflow-baseline
+comparisons, semantic-diff remediation pairs, oracle-review labels, reproducible
+report-generation commands, contribution rules, and adoption-oriented risk/action
+summaries.
 
 ## Quickstart
 
@@ -178,6 +182,7 @@ src/runbook_verify/
   formal_objects.py  object-to-CLI map for syntax, stores, traces, hazards, diagnostics, waivers, and benchmark labels
   profiles.py   named CLI exit-policy profiles for production/advisory/docs/benchmark use
   cli.py        command-line interface
+scripts/        reproducible benchmark-report regeneration helpers
 examples/       safe, unsafe, and real-world-style benchmark runbooks
 case_studies/   public historical reconstructed executable fixtures
 benchmarks/     reusable benchmark suite config files
@@ -543,7 +548,8 @@ emits JSON or Markdown. Metrics include number of runbooks, states explored,
 terminal traces explored, checker performance counters (transitions, branch
 factor, reductions, symbolic splits, minimized counterexample trace length, and
 proof-obligation outcomes), violations by property, prose findings by rule,
-expected labels when present, public benchmark metadata, runtime, and pass/fail.
+expected labels when present, public benchmark metadata, categorized validity
+threats, workflow-baseline comparisons, adoption summaries, runtime, and pass/fail.
 
 Built-in suite:
 
@@ -558,11 +564,14 @@ Reusable config:
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown --profile benchmark-reproduction
+make benchmark-reproduce
 ```
 
 The checked-in `reports/builtin_benchmark.md` records the Markdown output for
 the reusable public benchmark config; `reports/builtin_benchmark_profile.md`
 records the same suite with the benchmark-reproduction profile metadata.
+`scripts/reproduce_benchmarks.py` regenerates these reports plus a reproduction
+manifest under `reports/`.
 
 External corpus:
 
@@ -574,7 +583,11 @@ Benchmark config files are JSON. Version `1.0` configs are validated against the
 public benchmark contract documented by `docs/schema/benchmark.schema.json` and
 `docs/schema/benchmark_config.md`; each entry records provenance, license,
 abstraction level, expected result, responsible-disclosure status, validity
-threats, and semantic feature coverage.
+threats, validity-threat categories, oracle-review metadata, adoption-summary
+metadata, reproduction hints, and semantic feature coverage. Configs may also
+declare semantic-diff baselines; the built-in suite checks that the bounded
+GitHub Oct. 21 quorum-guard remediation introduces no counterexamples and
+resolves the expected database/quorum hazards.
 
 The built-in benchmark currently contains eleven runbooks: safe/unsafe
 synthetic regressions, safe/unsafe queue replay mutants, safe/unsafe cache-flush
@@ -596,6 +609,8 @@ public Redis runbook-template-derived cache-flush mutant.
       "expected_result": { "safe": false, "violation_properties": ["quorum_before_data_loss_action"], "prose_rules": [] },
       "responsible_disclosure": { "status": "public-information" },
       "validity_threats": ["Reconstructed assumptions may differ from original procedures."],
+      "validity_threat_categories": ["public_data_incompleteness", "abstraction_bias", "bounded_search_limits"],
+      "oracle_review": { "status": "not-reviewed", "allowed_labels": ["true_hazard", "useful_warning", "false_positive", "unsupported_claim"] },
       "semantic_features": ["database_quorum", "public_historical_case"]
     }
   ]
@@ -619,7 +634,8 @@ This repository is intentionally a non-AI artifact. LLMs may help draft prose, g
 - The benchmark corpus is small: it includes synthetic examples plus bounded
   public historical/current fixtures for database failover, queue replay/fallback,
   DNS failover patterns, and cache-flush warmup/capacity hazards, and should be
-  expanded before empirical claims.
+  expanded before empirical claims. Validity-threat categories and oracle-review
+  labels make this limitation explicit in benchmark outputs.
 - The historical GitHub fixture is reconstructed from public facts, not exact
   internal runbook text.
 - The Markdown workflow requires an embedded executable model; fully automatic extraction from prose is intentionally out of scope for the trusted verifier.

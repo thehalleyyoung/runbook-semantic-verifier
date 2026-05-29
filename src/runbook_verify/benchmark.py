@@ -10,6 +10,7 @@ from .checker import Checker
 from .markdown_lint import lint_markdown_file
 from .parser import RunbookParseError, load_document, load_runbook
 from .profiles import get_profile
+from .semantic_diff import diff_runbooks
 
 RUNBOOK_SUFFIXES = {".json", ".yaml", ".yml", ".md"}
 
@@ -20,6 +21,14 @@ class BenchmarkEntry:
     name: str | None = None
     benchmark_metadata: dict[str, Any] | None = None
     expected_labels: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class DiffBenchmarkEntry:
+    old_path: Path
+    new_path: Path
+    name: str
+    expected: dict[str, Any] | None = None
 
 
 @dataclass
@@ -34,8 +43,25 @@ class RunbookBenchmarkResult:
     prose_findings_by_rule: dict[str, int]
     runtime_seconds: float
     performance_counters: dict[str, Any] = field(default_factory=dict)
+    workflow_baselines: dict[str, Any] = field(default_factory=dict)
     expected_labels: dict[str, Any] | None = None
     benchmark_metadata: dict[str, Any] | None = None
+    errors: list[str] = field(default_factory=list)
+
+    def to_json_dict(self) -> dict[str, Any]:
+        data = asdict(self)
+        data["pass"] = data.pop("pass_")
+        return data
+
+
+@dataclass
+class DiffBenchmarkResult:
+    name: str
+    old_path: str
+    new_path: str
+    pass_: bool
+    summary: dict[str, Any]
+    expected: dict[str, Any] | None = None
     errors: list[str] = field(default_factory=list)
 
     def to_json_dict(self) -> dict[str, Any]:
@@ -49,11 +75,12 @@ class BenchmarkSuiteResult:
     name: str
     runbooks: list[RunbookBenchmarkResult]
     runtime_seconds: float
+    diff_baselines: list[DiffBenchmarkResult] = field(default_factory=list)
     profile: dict[str, str] | None = None
 
     @property
     def pass_(self) -> bool:
-        return all(item.pass_ for item in self.runbooks)
+        return all(item.pass_ for item in self.runbooks) and all(item.pass_ for item in self.diff_baselines)
 
     def to_json_dict(self) -> dict[str, Any]:
         aggregate: dict[str, Any] = {
@@ -64,6 +91,9 @@ class BenchmarkSuiteResult:
             "prose_findings_by_rule": {},
             "runtime_seconds": self.runtime_seconds,
             "performance_counters": _aggregate_performance_counters(self.runbooks),
+            "validity_threat_categories": _aggregate_validity_threats(self.runbooks),
+            "workflow_baselines": _aggregate_workflow_baselines(self.runbooks, self.diff_baselines),
+            "adoption_summary": _aggregate_adoption_summary(self.runbooks),
             "pass": self.pass_,
         }
         for item in self.runbooks:
@@ -76,6 +106,7 @@ class BenchmarkSuiteResult:
             "profile": self.profile,
             "aggregate": aggregate,
             "runbooks": [item.to_json_dict() for item in self.runbooks],
+            "semantic_diff_baselines": [item.to_json_dict() for item in self.diff_baselines],
         }
 
 
@@ -84,9 +115,10 @@ def run_benchmark(path: str | Path | None = None, profile_name: str | None = Non
     if path is None:
         builtin_config = root / "benchmarks" / "builtin.json"
         if builtin_config.exists():
-            suite_name, entries = _load_config(builtin_config)
+            suite_name, entries, diff_entries = _load_config(builtin_config)
         else:
             suite_name = "built-in benchmark"
+            diff_entries = []
             entries = [
                 BenchmarkEntry(root / "examples" / "safe_runbook.json"),
                 BenchmarkEntry(root / "examples" / "unsafe_runbook.json"),
@@ -100,11 +132,13 @@ def run_benchmark(path: str | Path | None = None, profile_name: str | None = Non
             raise BenchmarkConfigError(f"benchmark path does not exist: {config_path}")
         if config_path.is_dir():
             suite_name = str(config_path)
+            diff_entries = []
             entries = [BenchmarkEntry(p) for p in _runbook_files(config_path)]
         elif config_path.suffix.lower() == ".json" and _looks_like_benchmark_config(config_path):
-            suite_name, entries = _load_config(config_path)
+            suite_name, entries, diff_entries = _load_config(config_path)
         elif config_path.suffix.lower() in RUNBOOK_SUFFIXES:
             suite_name = str(config_path)
+            diff_entries = []
             entries = [BenchmarkEntry(config_path)]
         else:
             raise BenchmarkConfigError(f"unsupported benchmark input {config_path}; use a directory, config .json, or runbook file")
@@ -114,8 +148,9 @@ def run_benchmark(path: str | Path | None = None, profile_name: str | None = Non
 
     started = time.perf_counter()
     runbooks = [_run_one(entry) for entry in entries]
+    diff_results = [_run_diff_baseline(entry) for entry in diff_entries]
     profile = get_profile(profile_name)
-    return BenchmarkSuiteResult(suite_name, runbooks, time.perf_counter() - started, profile.to_json_dict() if profile else None)
+    return BenchmarkSuiteResult(suite_name, runbooks, time.perf_counter() - started, diff_results, profile.to_json_dict() if profile else None)
 
 
 def render_json(result: BenchmarkSuiteResult) -> str:
@@ -135,6 +170,9 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
         f"- Traces explored: {aggregate['traces_explored']}",
         f"- Runtime seconds: {aggregate['runtime_seconds']:.6f}",
         f"- Performance counters: `{json.dumps(aggregate['performance_counters'], sort_keys=True)}`",
+        f"- Validity threat categories: `{json.dumps(aggregate['validity_threat_categories'], sort_keys=True)}`",
+        f"- Workflow baselines: `{json.dumps(aggregate['workflow_baselines'], sort_keys=True)}`",
+        f"- Adoption summary: `{json.dumps(aggregate['adoption_summary'], sort_keys=True)}`",
         f"- Violations by property: `{json.dumps(aggregate['violations_by_property'], sort_keys=True)}`",
         f"- Prose findings by rule: `{json.dumps(aggregate['prose_findings_by_rule'], sort_keys=True)}`",
         "",
@@ -158,6 +196,23 @@ def render_markdown(result: BenchmarkSuiteResult) -> str:
                 metadata=json.dumps(item["benchmark_metadata"], sort_keys=True) if item["benchmark_metadata"] else "",
             )
         )
+    lines.extend(["", "## Semantic diff baselines", ""])
+    if data["semantic_diff_baselines"]:
+        lines.extend(["| Name | Pass | Old | New | Expected | Summary | Errors |", "| --- | --- | --- | --- | --- | --- | --- |"])
+        for item in data["semantic_diff_baselines"]:
+            lines.append(
+                "| {name} | `{pass_}` | `{old}` | `{new}` | `{expected}` | `{summary}` | `{errors}` |".format(
+                    name=item["name"].replace("|", "\\|"),
+                    pass_=item["pass"],
+                    old=item["old_path"],
+                    new=item["new_path"],
+                    expected=json.dumps(item["expected"], sort_keys=True) if item["expected"] else "",
+                    summary=json.dumps(item["summary"], sort_keys=True),
+                    errors=json.dumps(item["errors"], sort_keys=True),
+                )
+            )
+    else:
+        lines.append("No semantic-diff baseline pairs configured for this suite.")
     return "\n".join(lines) + "\n"
 
 
@@ -209,6 +264,58 @@ def _aggregate_performance_counters(items: list[RunbookBenchmarkResult]) -> dict
     return counters
 
 
+def _aggregate_validity_threats(items: list[RunbookBenchmarkResult]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        metadata = item.benchmark_metadata or {}
+        for category in metadata.get("validity_threat_categories", []):
+            counts[str(category)] = counts.get(str(category), 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _aggregate_workflow_baselines(items: list[RunbookBenchmarkResult], diffs: list[DiffBenchmarkResult]) -> dict[str, Any]:
+    workflow_names = [
+        "schema_only_validation",
+        "prose_linting",
+        "bounded_checking",
+        "type_effect_checking",
+        "combined_workflow",
+    ]
+    aggregate: dict[str, Any] = {name: {"pass": 0, "fail": 0} for name in workflow_names}
+    for item in items:
+        for name in workflow_names:
+            record = item.workflow_baselines.get(name, {})
+            passed = bool(record.get("pass", False))
+            aggregate[name]["pass" if passed else "fail"] += 1
+    aggregate["semantic_diffing"] = {
+        "pass": sum(1 for item in diffs if item.pass_),
+        "fail": sum(1 for item in diffs if not item.pass_),
+        "configured_pairs": len(diffs),
+    }
+    return aggregate
+
+
+def _aggregate_adoption_summary(items: list[RunbookBenchmarkResult]) -> dict[str, Any]:
+    risk_classes: set[str] = set()
+    actions: set[str] = set()
+    review_labels: dict[str, int] = {}
+    for item in items:
+        metadata = item.benchmark_metadata or {}
+        adoption = metadata.get("adoption_summary", {})
+        if isinstance(adoption, dict):
+            risk_classes.update(str(value) for value in adoption.get("risk_classes_detected", []) if value)
+            actions.update(str(value) for value in adoption.get("remediation_actions", []) if value)
+        oracle = metadata.get("oracle_review", {})
+        if isinstance(oracle, dict):
+            for label in oracle.get("allowed_labels", []):
+                review_labels[str(label)] = review_labels.get(str(label), 0) + 1
+    return {
+        "risk_classes_detected": sorted(risk_classes),
+        "remediation_actions": sorted(actions),
+        "oracle_review_labels": dict(sorted(review_labels.items())),
+    }
+
+
 def _merge_counter_map(target: dict[str, int], source: object) -> None:
     if not isinstance(source, dict):
         return
@@ -216,7 +323,7 @@ def _merge_counter_map(target: dict[str, int], source: object) -> None:
         target[str(key)] = target.get(str(key), 0) + int(value)
 
 
-def _load_config(path: Path) -> tuple[str, list[BenchmarkEntry]]:
+def _load_config(path: Path) -> tuple[str, list[BenchmarkEntry], list[DiffBenchmarkEntry]]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -239,7 +346,8 @@ def _load_config(path: Path) -> tuple[str, list[BenchmarkEntry]]:
         metadata = _benchmark_metadata(raw_entry)
         expected = _expected_labels_from_benchmark_metadata(raw_entry)
         entries.extend(BenchmarkEntry(p, raw_entry.get("name"), metadata, expected) for p in _expand_entry_path(entry_path))
-    return suite_name, entries
+    diff_entries = _diff_benchmark_entries(path, raw.get("semantic_diff_baselines", []))
+    return suite_name, entries, diff_entries
 
 
 def _looks_like_benchmark_config(path: Path) -> bool:
@@ -307,9 +415,127 @@ def _benchmark_metadata(raw_entry: dict[str, Any]) -> dict[str, Any]:
         },
         "responsible_disclosure": disclosure,
         "validity_threats": _non_empty_string_list(raw_entry["validity_threats"], "validity_threats"),
+        "validity_threat_categories": _validity_threat_categories(raw_entry),
         "semantic_features": _non_empty_string_list(raw_entry["semantic_features"], "semantic_features"),
+        "oracle_review": _oracle_review(raw_entry),
+        "adoption_summary": _adoption_summary(raw_entry),
+        "reproduction": _reproduction(raw_entry),
     }
     return metadata
+
+
+def _diff_benchmark_entries(config_path: Path, raw: Any) -> list[DiffBenchmarkEntry]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise BenchmarkConfigError("benchmark config field 'semantic_diff_baselines' must be a list")
+    entries = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, dict):
+            raise BenchmarkConfigError(f"benchmark semantic_diff_baselines[{index}] must be an object")
+        name = item.get("name")
+        old_path = item.get("old_path")
+        new_path = item.get("new_path")
+        if not isinstance(name, str) or not name.strip():
+            raise BenchmarkConfigError(f"benchmark semantic_diff_baselines[{index}].name must be a non-empty string")
+        if not isinstance(old_path, str) or not isinstance(new_path, str):
+            raise BenchmarkConfigError(f"benchmark semantic_diff_baselines[{index}] old_path and new_path must be strings")
+        expected = item.get("expected", {})
+        if not isinstance(expected, dict):
+            raise BenchmarkConfigError(f"benchmark semantic_diff_baselines[{index}].expected must be an object")
+        old_resolved = (config_path.parent / old_path).resolve() if not Path(old_path).is_absolute() else Path(old_path)
+        new_resolved = (config_path.parent / new_path).resolve() if not Path(new_path).is_absolute() else Path(new_path)
+        if not old_resolved.exists() or not new_resolved.exists():
+            raise BenchmarkConfigError(f"benchmark semantic_diff_baselines[{index}] paths must exist")
+        entries.append(DiffBenchmarkEntry(old_resolved, new_resolved, name, expected or None))
+    return entries
+
+
+VALIDITY_THREAT_CATEGORIES = {
+    "label_uncertainty",
+    "abstraction_bias",
+    "public_data_incompleteness",
+    "bounded_search_limits",
+    "survivor_bias",
+    "synthetic_mutant_bias",
+}
+
+
+def _validity_threat_categories(raw_entry: dict[str, Any]) -> list[str]:
+    raw_categories = raw_entry.get("validity_threat_categories")
+    if raw_categories is not None:
+        categories = _non_empty_string_list(raw_categories, "validity_threat_categories")
+        unknown = sorted(set(categories) - VALIDITY_THREAT_CATEGORIES)
+        if unknown:
+            raise BenchmarkConfigError(f"benchmark field 'validity_threat_categories' has unknown categories: {', '.join(unknown)}")
+        return sorted(set(categories))
+    threats = " ".join(_non_empty_string_list(raw_entry["validity_threats"], "validity_threats")).lower()
+    categories = set()
+    if "synthetic" in threats or "mutant" in threats:
+        categories.add("synthetic_mutant_bias")
+    if "public" in threats or "incomplete" in threats or "reconstructed" in threats:
+        categories.add("public_data_incompleteness")
+    if "abstract" in threats or "derived" in threats or "model" in threats:
+        categories.add("abstraction_bias")
+    if "bounded" in threats or "small" in threats:
+        categories.add("bounded_search_limits")
+    return sorted(categories or {"label_uncertainty"})
+
+
+def _oracle_review(raw_entry: dict[str, Any]) -> dict[str, Any]:
+    default = {
+        "status": "not-reviewed",
+        "allowed_labels": ["true_hazard", "useful_warning", "false_positive", "unsupported_claim"],
+        "notes": "No independent SRE oracle review is claimed for this fixture.",
+    }
+    raw = raw_entry.get("oracle_review")
+    if raw is None:
+        return default
+    review = _require_object(raw, "oracle_review")
+    labels = _non_empty_string_list(review.get("allowed_labels", default["allowed_labels"]), "oracle_review.allowed_labels")
+    allowed = set(default["allowed_labels"])
+    unknown = sorted(set(labels) - allowed)
+    if unknown:
+        raise BenchmarkConfigError(f"benchmark field 'oracle_review.allowed_labels' has unknown labels: {', '.join(unknown)}")
+    return {
+        "status": str(review.get("status", default["status"])),
+        "allowed_labels": labels,
+        "reviewer_role": str(review.get("reviewer_role", "")),
+        "notes": str(review.get("notes", default["notes"])),
+    }
+
+
+def _adoption_summary(raw_entry: dict[str, Any]) -> dict[str, Any]:
+    raw = raw_entry.get("adoption_summary")
+    if raw is None:
+        expected = _require_object(raw_entry["expected_result"], "expected_result")
+        return {
+            "risk_classes_detected": sorted(set(_string_list(expected.get("violation_properties", []), "expected_result.violation_properties") + _string_list(expected.get("prose_rules", []), "expected_result.prose_rules"))),
+            "remediation_actions": ["review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"],
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+        }
+    summary = _require_object(raw, "adoption_summary")
+    return {
+        "risk_classes_detected": _string_list(summary.get("risk_classes_detected", []), "adoption_summary.risk_classes_detected"),
+        "remediation_actions": _string_list(summary.get("remediation_actions", []), "adoption_summary.remediation_actions"),
+        "operator_time_saved": str(summary.get("operator_time_saved", "not-measured")),
+    }
+
+
+def _reproduction(raw_entry: dict[str, Any]) -> dict[str, Any]:
+    raw = raw_entry.get("reproduction")
+    if raw is None:
+        return {
+            "commands": ["PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"],
+            "expected_outputs": ["benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"],
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+        }
+    repro = _require_object(raw, "reproduction")
+    return {
+        "commands": _non_empty_string_list(repro.get("commands", []), "reproduction.commands"),
+        "expected_outputs": _non_empty_string_list(repro.get("expected_outputs", []), "reproduction.expected_outputs"),
+        "budget": str(repro.get("budget", "")),
+    }
 
 
 def _expected_labels_from_benchmark_metadata(raw_entry: dict[str, Any]) -> dict[str, Any]:
@@ -377,6 +603,7 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
         violations = _violations_by_property(result)
         prose_findings = _prose_findings_by_rule(entry.path)
         passed, errors = _matches_expected(result.safe, violations, prose_findings, expected_labels)
+        performance = result.performance_counters()
         return RunbookBenchmarkResult(
             path=str(entry.path),
             name=name,
@@ -387,12 +614,14 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             violations_by_property=violations,
             prose_findings_by_rule=prose_findings,
             runtime_seconds=time.perf_counter() - started,
-            performance_counters=result.performance_counters(),
+            performance_counters=performance,
+            workflow_baselines=_workflow_baselines(True, result.safe, violations, prose_findings, performance, passed, []),
             expected_labels=expected_labels,
             benchmark_metadata=entry.benchmark_metadata,
             errors=errors,
         )
     except (RunbookParseError, BenchmarkConfigError, OSError, KeyError, TypeError, ValueError) as exc:
+        errors = [str(exc)]
         return RunbookBenchmarkResult(
             path=str(entry.path),
             name=name,
@@ -404,10 +633,58 @@ def _run_one(entry: BenchmarkEntry) -> RunbookBenchmarkResult:
             prose_findings_by_rule={},
             runtime_seconds=time.perf_counter() - started,
             performance_counters={},
+            workflow_baselines=_workflow_baselines(False, False, {}, {}, {}, False, errors),
             expected_labels=expected_labels,
             benchmark_metadata=entry.benchmark_metadata,
+            errors=errors,
+        )
+
+
+def _run_diff_baseline(entry: DiffBenchmarkEntry) -> DiffBenchmarkResult:
+    try:
+        result = diff_runbooks(entry.old_path, entry.new_path)
+        summary = dict(result.summary)
+        expected_errors = _diff_expected_errors(summary, entry.expected)
+        return DiffBenchmarkResult(
+            name=entry.name,
+            old_path=str(entry.old_path),
+            new_path=str(entry.new_path),
+            pass_=result.pass_ and not expected_errors,
+            summary=summary,
+            expected=entry.expected,
+            errors=expected_errors,
+        )
+    except (RunbookParseError, OSError, KeyError, TypeError, ValueError) as exc:
+        return DiffBenchmarkResult(
+            name=entry.name,
+            old_path=str(entry.old_path),
+            new_path=str(entry.new_path),
+            pass_=False,
+            summary={},
+            expected=entry.expected,
             errors=[str(exc)],
         )
+
+
+def _diff_expected_errors(summary: dict[str, Any], expected: dict[str, Any] | None) -> list[str]:
+    if not expected:
+        return []
+    errors = []
+    for key in ("introduced_counterexamples", "resolved_counterexamples", "assumption_weakenings", "safety_relevant_changes"):
+        if key in expected and summary.get(key) != expected[key]:
+            errors.append(f"expected {key}={expected[key]} but observed {summary.get(key)}")
+    return errors
+
+
+def _workflow_baselines(schema_pass: bool, safe: bool, violations: dict[str, int], prose_findings: dict[str, int], performance: dict[str, Any], combined_pass: bool, errors: list[str]) -> dict[str, Any]:
+    proof_failures = performance.get("proof_obligation_failures", {}) if isinstance(performance, dict) else {}
+    return {
+        "schema_only_validation": {"pass": schema_pass, "errors": list(errors)},
+        "prose_linting": {"pass": not prose_findings, "finding_count": sum(prose_findings.values()), "findings_by_rule": prose_findings},
+        "bounded_checking": {"pass": safe, "counterexamples": sum(violations.values()), "violations_by_property": violations},
+        "type_effect_checking": {"pass": not proof_failures, "proof_obligation_failures": proof_failures},
+        "combined_workflow": {"pass": combined_pass, "uses": ["schema_only_validation", "prose_linting", "bounded_checking", "type_effect_checking", "semantic_diffing_when_configured"]},
+    }
 
 
 def _violations_by_property(result: Any) -> dict[str, int]:

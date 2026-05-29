@@ -1,0 +1,62 @@
+{
+  "commands": [
+    {
+      "bytes": 68542,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-m",
+        "runbook_verify.cli",
+        "benchmark",
+        "benchmarks/builtin.json",
+        "--format",
+        "json"
+      ],
+      "name": "builtin-json",
+      "output": "reports/builtin_benchmark.json"
+    },
+    {
+      "bytes": 31691,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-m",
+        "runbook_verify.cli",
+        "benchmark",
+        "benchmarks/builtin.json",
+        "--format",
+        "markdown"
+      ],
+      "name": "builtin-markdown",
+      "output": "reports/builtin_benchmark.md"
+    },
+    {
+      "bytes": 31741,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-m",
+        "runbook_verify.cli",
+        "benchmark",
+        "benchmarks/builtin.json",
+        "--format",
+        "markdown",
+        "--profile",
+        "benchmark-reproduction"
+      ],
+      "name": "builtin-profile-markdown",
+      "output": "reports/builtin_benchmark_profile.md"
+    },
+    {
+      "bytes": 6362,
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-m",
+        "runbook_verify.cli",
+        "benchmark",
+        "benchmarks/current_impact.json",
+        "--format",
+        "markdown"
+      ],
+      "name": "current-impact-markdown",
+      "output": "reports/current_impact_benchmark.md"
+    }
+  ]
+}
