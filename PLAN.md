@@ -1,62 +1,96 @@
-# Research plan: formal runbook verification
+# Research and product plan: semantics-grounded runbook verification
 
 ## Thesis
 
-Operational runbooks can be treated as small programs over infrastructure state. A practical checker can combine executable Markdown models, bounded verification, semantic linting, and reproducible benchmarks to find real classes of incident-response hazards while making only bounded, explicit claims.
+Operational runbooks are programs over infrastructure state, even when they are written as Markdown or wiki prose. A useful verifier should therefore provide explicit program semantics, bounded and honest verification claims, and practical SRE workflows that catch unsafe operations documentation before incidents. The project thesis is that small-step semantics, state-transformer meanings, program logics, and model-checking techniques can be packaged as CI gates, audit reports, counterexample traces, and service-owner scorecards rather than as academic artifacts alone.
 
-## Formal objects
+## Immediate product and research value
 
-- **Syntax:** embedded Markdown `runbook-json`, JSON/YAML DSL, action descriptors, preconditions, effects, invariants, waivers, and datasets.
-- **State:** services, replicas, regions, routes, queues, databases, object stores, caches, credentials, alerts, timers, and provenance labels.
-- **Semantics:** small-step transition relation for schedules and actions; denotational state transformers for descriptor documentation; traces with observations, causality, and source locations.
-- **Properties:** Hoare triples for local actions, temporal logic invariants for traces, refinement obligations from prose to DSL, and explicit proof obligations for exporters and optimizations.
+- **For SRE teams:** fast validation, Markdown/wiki audits, CI gates for dangerous docs, stale-precondition detection, incident-readiness reports, and remediation-oriented counterexamples.
+- **For reviewers:** semantic diffs that identify changed effects, weakened assumptions, expired waivers, and newly reachable hazards in pull requests.
+- **For researchers:** a concrete runbook language, executable semantics, benchmark suite, historical/current case studies, and documented validity threats for studying incident-response verification.
+- **For adoption:** every formal feature must produce a user-visible artifact: a clearer diagnostic, minimized trace, generated precondition, benchmark row, code-scanning annotation, or explicit limitation.
 
-## Core algorithms
+## Formal objects and semantics
 
-1. Parse, type-check, and effect-check runbooks with source-preserving diagnostics.
-2. Explore bounded transition systems with budgets, partial-order reduction, dominance pruning, abstract interpretation, and symbolic execution where useful.
-3. Minimize counterexamples and synthesize candidate missing preconditions from weakest-precondition failures.
-4. Compare runbook versions with semantic diffing and trace equivalence.
-5. Export selected models to TLA+, Alloy, and mechanized-semantics notes while documenting trusted assumptions.
-6. Run Markdown audit, runtime-verification checks, benchmark suites, and CI reports from one result model.
+- **Syntax:** Markdown prose, fenced `runbook-json` DSL blocks, action descriptors, dependencies, preconditions, effects, invariants, waivers, owners, inventories, and benchmark metadata.
+- **State:** services, replicas, regions, routes, traffic weights, queues, databases, caches, object stores, credentials, alerts, timers, ownership, provenance, and environment assumptions.
+- **Small-step semantics:** a transition relation over configurations `(runbook, store, schedule, trace, budget)` for enabled steps, dependency ordering, waits, nondeterministic operator choices, failures, and external interference.
+- **Denotational semantics:** each action has a state-transformer meaning used by parser metadata, schema documentation, checker transitions, formal exports, and explanation traces.
+- **Program logics:** local action obligations are expressed as Hoare triples; missing guards are explained as weakest-precondition failures; run-level properties use temporal invariants over traces.
+- **Types and effects:** entity and unit types prevent malformed models; action effect types record idempotency, reversibility, blast radius, retry safety, data loss risk, and customer-visible impact.
+- **Contracts:** assume-guarantee and rely/guarantee rules model service dependencies, concurrent operators, automation, and cloud/environment assumptions.
+- **Refinement:** prose-to-DSL checks classify claims as modeled, unmodeled, contradicted, waived, or out-of-scope, avoiding false claims that all Markdown text was verified.
+- **Mechanization boundary:** TLA+/Alloy exports and Coq/Lean notes should identify trusted code, boundedness, fairness assumptions, abstraction gaps, and proof obligations.
+
+## Algorithms
+
+1. Parse Markdown and DSL while preserving source locations and provenance for every semantic object.
+2. Type-check entities and effect-check actions before exploration, emitting fast CI diagnostics.
+3. Run bounded model checking with explicit depth, schedule, fairness, timeout, and inconclusive-result semantics.
+4. Apply partial-order reduction, dominance pruning, abstract interpretation, and symbolic execution where they preserve reported violations.
+5. Minimize counterexamples by removing independent steps, folding stuttering waits, and retaining the temporal witness.
+6. Synthesize candidate missing preconditions from weakest-precondition failures and present reviewable Markdown/JSON patches.
+7. Compute semantic diffs between runbook revisions and classify changes by behavioral and proof-obligation impact.
+8. Compare observed execution logs with modeled traces for runtime verification without claiming live-system proof.
+9. Export selected models to TLA+, Alloy, and mechanization notes with synchronized property names and limitations.
+
+## CLI and user workflows
+
+- `frv validate`: fast schema, parser, entity, dependency, and type checks for pre-commit use.
+- `frv check`: bounded verification with minimized counterexample traces and remediation hints.
+- `frv audit`: Markdown/wiki scan for dangerous operations prose, stale assumptions, missing executable blocks, and unsafe suppressions.
+- `frv diff old new`: semantic pull-request review for changed effects, assumptions, invariants, waivers, and reachable hazards.
+- `frv explain FINDING`: show the rule, state delta, source lines, weakest-precondition hint, and suggested fix for one diagnostic.
+- `frv readiness`: service or repository incident-readiness report covering verification status, audit severity, stale preconditions, and uncovered critical paths.
+- `frv owner-scorecard`: team-facing scorecard for verified runbooks, open hazards, waiver debt, benchmark regressions, and freshness.
+- CI outputs should include JSON, Markdown, SARIF, and JUnit so the same semantic result powers terminals, GitHub annotations, dashboards, and reports.
+
+## Benchmark and dataset plan
+
+Use three strata of evidence:
+
+1. **Regression examples:** small checked-in DSL/Markdown models for every semantic rule, diagnostic, exporter, and CLI workflow.
+2. **Historical/current case studies:** public or sanitized reproductions of failover, queue replay, data restore, credential rotation, DNS migration, cache, and alerting incidents.
+3. **Synthetic mutants:** controlled variants that remove guards, reorder steps, weaken waits, stale owners, underprovision replicas, misuse waivers, or introduce unsafe retries.
+
+Every benchmark entry should record provenance, license/redaction status, abstraction level, expected outcome, semantic features covered, responsible-disclosure review, and validity threats. Reports should include runtime, state counts, reduction impact, minimized trace length, finding severity, false-positive review notes, and remediation category.
+
+## Historical and current knowledge claims
+
+The repository can responsibly claim evidence about bounded models of runbooks, public/sanitized case reconstructions, and synthetic mutants. It should not claim proof of live infrastructure safety. Historical outage reproductions must distinguish public facts from reconstructed assumptions. Current case studies must identify inventory freshness, redaction effects, and whether results are advisory, CI-blocking, or benchmark-only.
 
 ## Evaluation questions
 
-- Which safety, liveness, and operational-readiness defects are found in historical/current public runbooks and reconstructed case studies?
-- How often do typed effects, temporal invariants, and prose-to-DSL refinement checks expose hazards missed by schema validation alone?
-- What reduction and minimization techniques improve runtime and trace usability without losing benchmark violations?
-- How stable are results across benchmark versions, synthetic mutants, and anonymized industry-style datasets?
-- What claims are justified, and which remain limited by abstraction, labels, public data availability, and bounded exploration?
-
-## Datasets and evidence
-
-Use three strata: checked-in examples for regression tests, public or reconstructed historical/current case studies with citations, and synthetic mutants with known labels. Every dataset entry should record provenance, license/redaction status, abstraction level, expected outcome, validity threats, and responsible-disclosure review.
-
-## Novelty claims, bounded responsibly
-
-Potential contributions are: a runbook-specific operational semantics, a practical Markdown-to-model refinement workflow, benchmark methodology for incident-response verification, and evidence about which formal checks help operators. Claims must not imply proof of live infrastructure safety; the tool verifies bounded models under stated assumptions.
-
-## Practical integration path
-
-Expose the research through `frv validate`, `frv check`, `frv audit`, `frv benchmark`, formal exporters, SARIF/JUnit output, pre-commit checks, and GitHub Actions. Each formal concept should produce an operator-facing artifact: a clearer diagnostic, a minimized trace, a generated precondition, a benchmark row, or a documented limitation.
+- Which hazards are found by schema validation, prose audit, type/effect checks, bounded verification, semantic diffing, and combined workflows?
+- Do weakest-precondition hints and minimized traces help operators remediate faster than raw counterexamples?
+- Which partial-order, abstract-interpretation, symbolic, and minimization techniques reduce cost without hiding benchmark violations?
+- How often do Markdown refinement checks expose unmodeled or contradicted operational claims?
+- Are incident-readiness reports and owner scorecards stable enough to guide SRE prioritization?
+- What false positives, false negatives, validity threats, and abstraction gaps limit the claims?
 
 ## Milestones
 
-1. Formalize syntax, state, small-step semantics, and proof obligations in docs and tests.
-2. Add types/effects, temporal invariants, semantic diffing, and source-preserving diagnostics.
-3. Improve bounded checking with reduction, abstraction, symbolic cases, and minimization.
-4. Build datasets, benchmark validity notes, reproducible reports, and empirical scripts.
-5. Harden CI, exports, packaging, governance, disclosure, and adoption docs.
-6. Assemble paper outline, tables, artifact bundle, and replication instructions.
+1. Document formal objects, small-step rules, state transformers, Hoare obligations, and responsible claim boundaries.
+2. Extend types/effects, temporal invariants, source-preserving diagnostics, and semantic diffing.
+3. Improve bounded checking with reduction, abstraction, symbolic execution, counterexample minimization, and precondition synthesis.
+4. Ship Markdown/wiki audit, CI gate templates, incident-readiness reports, owner scorecards, and SARIF/JUnit outputs.
+5. Build benchmark strata, historical/current case studies, synthetic mutants, validity-threat documentation, and reproducible reports.
+6. Harden formal exports, mechanization notes, proof-obligation tracking, artifact packaging, governance, and release criteria.
 
 ## Paper outline
 
-1. Motivation: runbooks as operational programs.
-2. Language and semantics.
-3. Verification, audit, and counterexample algorithms.
-4. Dataset and benchmark methodology.
-5. Empirical results over examples, historical/current cases, and synthetic mutants.
-6. Practical integration and responsible disclosure.
-7. Threats to validity and limits of bounded formalization.
-8. Related work in PL, model checking, runtime verification, and SRE tooling.
-9. Conclusion and artifact availability.
+1. Motivation: runbooks as operational programs and why prose-only review fails.
+2. Language and semantic objects: syntax, state, traces, effects, waivers, and provenance.
+3. Semantics and logics: small-step rules, state transformers, Hoare/weakest-precondition obligations, temporal invariants, and contracts.
+4. Algorithms: bounded checking, reductions, abstract interpretation, symbolic execution, counterexample minimization, semantic diffing, and runtime verification.
+5. User workflows: validation, audit, CI gates, explanations, readiness reports, and scorecards.
+6. Benchmarks and datasets: regression examples, historical/current cases, synthetic mutants, metadata, and validity threats.
+7. Evaluation: hazards found, cost, trace usefulness, remediation impact, ablations, and adoption signals.
+8. Responsible claims and limitations: boundedness, abstraction gaps, public-data limits, disclosure, and live-system non-claims.
+9. Related work: operational semantics, model checking, abstract interpretation, program logics, runtime verification, configuration verification, and SRE tooling.
+10. Conclusion and artifact availability.
+
+## Responsible novelty claims
+
+Strong claims should be phrased as: this project provides an executable semantics and practical workflow for finding bounded classes of runbook documentation hazards, plus a benchmark methodology for evaluating those checks. Novelty should focus on connecting PL/formal-methods semantics to Markdown operations docs, semantic refinement of prose to executable models, and SRE-facing counterexample/remediation workflows. Avoid claiming complete incident prevention, infrastructure correctness, or verification of undocumented environment behavior.
