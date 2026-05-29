@@ -2,10 +2,11 @@
 
 A standalone, engineering prototype that turns incident runbooks into executable, bounded-model-checkable specifications. The thesis is that production runbooks should be treated like critical programs: parsed, simulated, checked against safety properties, and exportable to a formal model before an incident happens.
 
-Current roadmap status: **79/100** items in the local roadmap are complete. The
+Current roadmap status: **85/100** items in the local roadmap are complete. The
 implemented artifact includes parser/schema validation, bounded checking,
 small-step semantic rule traces, denotational action contracts, Hoare-style
-finding obligations, weakest-precondition templates, JSON explanation traces,
+finding obligations, weakest-precondition templates, JSON explanation traces with greedy dependency-preserving counterexample minimization,
+runtime log conformance checks, synthetic mutation calibration, paper-ready tables,
 editor-friendly diagnostic examples, formal object maps, Markdown audits,
 semantic diffs, explanations, readiness reports, owner
 scorecards, property-coverage reports, repository/wiki runbook-priority scans,
@@ -25,7 +26,7 @@ report-generation commands, contribution rules, and adoption-oriented risk/actio
 summaries. The public docs now include an adoption/governance pack with CI and
 pre-commit templates, remediation playbooks, onboarding and migration guides,
 release criteria, an evidence ledger, responsible-claims guidance, and
-security/privacy handling notes.
+security/privacy handling notes, related-work notes, and explicit negative results/limitations.
 
 ## Quickstart
 
@@ -69,6 +70,9 @@ PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafan
 PYTHONPATH=src python3 -m runbook_verify.cli profiles --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli ci-gate case_studies/current/grafana_tempo --format markdown --profile advisory-research
 PYTHONPATH=src python3 -m runbook_verify.cli annotate case_studies/current/grafana_tempo --format markdown --fail-on none
+PYTHONPATH=src python3 -m runbook_verify.cli runtime-verify case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md examples/runtime_logs/github_oct21_observed_unsafe.json --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli mutate case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md --format markdown
+PYTHONPATH=src python3 -m runbook_verify.cli paper-tables benchmarks/builtin.json --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli formal-objects case_studies/current/grafana_tempo --format markdown
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark --format json
 PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/current_impact.json --format markdown
@@ -191,13 +195,16 @@ src/runbook_verify/
   parser.py     JSON loader plus optional YAML support
   actions.py    operational semantics for runbook actions
   contracts.py  denotational action contracts, Hoare triples, weakest preconditions
-  checker.py    bounded state-space explorer and safety checker
+  checker.py    bounded state-space explorer, safety checker, and witness minimizer
   type_system.py typed entity inventory for models, owners, waits, routes, and stores
   temporal_invariants.py catalog of LTL-style invariant templates exposed by CLI
   explanation.py finding ids plus rule/source/state-delta explanations
   markdown_lint.py static/prose linter for dangerous unmodeled Markdown
   exporter.py   TLA+/Alloy starter exporters and proof-obligation reports
   benchmark.py  benchmark harness and JSON/Markdown result renderers
+  runtime_verification.py observed event/chatops conformance checking
+  mutations.py  synthetic benchmark mutation operators
+  paper_tables.py paper-ready feature/result/ablation/adoption tables
   semantic_diff.py PR-oriented semantic diff and counterexample delta
   readiness.py  incident-readiness aggregation over checks, audits, freshness
   owner_scorecard.py  owner/team scorecards for hazards, waivers, and remediation history
@@ -221,7 +228,9 @@ enumerates dependency-respecting traces up to `max_depth` using explicit FIFO or
 dependency fairness, breadth-first, depth-first, shortest-counterexample, or
 seeded randomized bounded strategies, applies action semantics to immutable
 system states, deduplicates canonical states, and records safety violations with
-traces and remediation hints. State and timeout budgets produce an
+source-linked traces and remediation hints, then greedily replays subsequences to
+remove irrelevant independent steps while preserving the same property/step
+witness where the modeled dependency order permits. State and timeout budgets produce an
 `inconclusive` result instead of silently pretending the transition system was
 exhausted.
 
@@ -235,6 +244,30 @@ PYTHONPATH=src python3 -m runbook_verify.cli check \
   case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md \
   --expect-violations --format json
 ```
+
+
+## Runtime conformance, mutation calibration, and paper tables
+
+`frv runtime-verify` checks observed JSON event logs or chatops-style records
+against a modeled runbook prefix. It reports unknown steps, dependency violations,
+precondition failures, action errors, and postcondition deviations without
+claiming full infrastructure proof. The checked-in GitHub Oct. 21 observed-prefix
+fixture intentionally shows the modeled unsafe database failover before quorum:
+
+```bash
+PYTHONPATH=src python3 -m runbook_verify.cli runtime-verify \
+  case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md \
+  examples/runtime_logs/github_oct21_observed_unsafe.json --format markdown
+```
+
+`frv mutate` applies synthetic benchmark operators for missing preconditions,
+reordered dependencies, stale owners, unsafe retries, insufficient waits,
+underprovisioned replicas, and invalid waivers, then checks whether the mutated
+model remains safe or exposes expected findings. `frv paper-tables` renders
+feature-coverage, benchmark, ablation-proxy, counterexample-usefulness, and
+adoption-workflow tables from the same benchmark contract used by CI. Checked-in
+examples live at `reports/github_oct21_runtime_verification.md`,
+`reports/github_oct21_mutations.md`, and `reports/paper_tables_builtin.md`.
 
 ## Real-world finding workflow
 

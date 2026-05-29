@@ -16,11 +16,14 @@ from .exporter import export_alloy, export_tla, render_proof_obligations_json, r
 from .formal_objects import FormalObjectsError, build_formal_objects_report, render_formal_objects_json, render_formal_objects_markdown
 from .markdown_lint import SEVERITY_RANK, has_findings_at_or_above, lint_markdown_tree, render_lint_json, render_lint_markdown
 from .owner_scorecard import OwnerScorecardError, OwnerScorecardOptions, build_owner_scorecard, render_owner_scorecard_json, render_owner_scorecard_markdown
+from .mutations import render_mutations_json, render_mutations_markdown, run_mutations
+from .paper_tables import build_paper_tables, render_paper_tables_json, render_paper_tables_markdown
 from .parser import RunbookParseError, is_runbook_document, load_document, load_runbook, parse_runbook
 from .pr_annotations import build_annotation_report, render_annotations_github, render_annotations_json, render_annotations_markdown
 from .profiles import get_profile, profile_names, render_profiles_json, render_profiles_markdown
 from .readiness import ReadinessError, ReadinessOptions, build_readiness_report, render_readiness_json, render_readiness_markdown
 from .repository_scan import RepositoryScanError, ScanOptions, build_repository_scan, render_scan_json, render_scan_markdown
+from .runtime_verification import RuntimeVerificationError, render_runtime_json, render_runtime_markdown, verify_runtime_log
 from .schema import render_json_schema
 from .semantic_diff import diff_runbooks, render_diff_json, render_diff_markdown
 from .temporal_invariants import render_temporal_invariants_json, render_temporal_invariants_markdown
@@ -121,6 +124,17 @@ def main(argv: list[str] | None = None) -> int:
     annotate_p.add_argument("path", help="runbook file or directory used to produce audit/check findings")
     annotate_p.add_argument("--format", choices=["json", "markdown", "github"], default="github", help="annotation output format")
     annotate_p.add_argument("--fail-on", choices=["info", "audit-only", "warning", "error", "responsible-disclosure", "none"], default="warning", help="minimum severity that fails the command")
+    runtime_p = sub.add_parser("runtime-verify", help="check observed step logs or chatops events against a modeled runbook trace")
+    runtime_p.add_argument("runbook")
+    runtime_p.add_argument("log")
+    runtime_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    mutate_p = sub.add_parser("mutate", help="evaluate synthetic runbook mutation operators for benchmark calibration")
+    mutate_p.add_argument("runbook")
+    mutate_p.add_argument("--operator", action="append", dest="operators", help="limit to one mutation operator; repeatable")
+    mutate_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
+    paper_p = sub.add_parser("paper-tables", help="render paper-ready benchmark, feature, ablation, usefulness, and adoption tables")
+    paper_p.add_argument("path", nargs="?", help="optional benchmark config, runbook file, or directory")
+    paper_p.add_argument("--format", choices=["json", "markdown"], default="markdown")
     args = parser.parse_args(raw_argv)
 
     if args.command == "audit":
@@ -192,6 +206,30 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(render_annotations_github(report), end="")
         return 0 if report.pass_ else 1
+    if args.command == "runtime-verify":
+        try:
+            report = verify_runtime_log(args.runbook, args.log)
+        except (RunbookParseError, RuntimeVerificationError) as exc:
+            print(f"runtime-verify error: {exc}", file=sys.stderr)
+            return 2
+        print(render_runtime_json(report) if args.format == "json" else render_runtime_markdown(report), end="")
+        return 0 if report.conformant else 1
+    if args.command == "mutate":
+        try:
+            report = run_mutations(args.runbook, args.operators)
+        except (RunbookParseError, ValueError) as exc:
+            print(f"mutate error: {exc}", file=sys.stderr)
+            return 2
+        print(render_mutations_json(report) if args.format == "json" else render_mutations_markdown(report), end="")
+        return 0
+    if args.command == "paper-tables":
+        try:
+            report = build_paper_tables(args.path)
+        except BenchmarkConfigError as exc:
+            print(f"paper-tables error: {exc}", file=sys.stderr)
+            return 2
+        print(render_paper_tables_json(report) if args.format == "json" else render_paper_tables_markdown(report), end="")
+        return 0 if report["benchmark"]["aggregate"]["pass"] else 1
     if args.command == "explain":
         try:
             explanation = explain_finding(args.path, args.finding_id)

@@ -6,7 +6,7 @@ This repository contains a small, executable verifier for operational runbooks,
 a Markdown prose linter, a benchmark harness, a public historical case-study
 fixture with a semantic remediation diff, and a current public-documentation
 case study. The CLI also includes TLA+/Alloy starter exports, explicit proof-obligation reports, repository/wiki runbook-priority scanning,
-small-step semantic rule traces, formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
+small-step semantic rule traces, dependency-preserving counterexample minimization, runtime log conformance checks, synthetic mutation calibration, paper-ready benchmark tables, formal object maps, incident-readiness, owner-scorecard, property-coverage reports, and auditable
 prose suppressions with owner/expiry/reason/limitation metadata. Markdown
 findings also include manual autofix suggestions for missing executable models,
 missing preconditions/effects, stale owner placeholders, ambiguous operator
@@ -44,7 +44,7 @@ seeded exploration metadata, reproducible report-generation commands, and adopti
 summaries. Public adoption documentation now adds reusable CI/pre-commit
 templates, remediation playbooks, onboarding and migration guides, governance and
 release criteria, an evidence ledger, responsible-claims language, and
-security/privacy guidance for sanitized runbook artifacts.
+security/privacy guidance for sanitized runbook artifacts, related-work positioning, and negative-results/limitations notes.
 
 ## Bounded novelty claim
 
@@ -139,7 +139,21 @@ differently named system exists.
 - `frv check --format json` emits explanation records with `semantic_trace`,
   `state_delta`, `causal_dependencies`, `source`, `hoare_triple`, and
   `weakest_precondition_hint` for editor/review integration. The data is derived
-  from the same bounded checker result.
+  from the same bounded checker result. Counterexample traces include a
+  minimization record when greedy dependency-preserving replay can remove
+  irrelevant steps while preserving the same property/step witness.
+- `frv runtime-verify` checks observed JSON/chatops event prefixes against
+  declared step ids, dependencies, preconditions, action semantics, and
+  postconditions. It proves only conformance of the observed prefix to the
+  modeled trace semantics, not live infrastructure safety.
+- `frv mutate` evaluates synthetic operators for missing preconditions, reordered
+  steps, stale owners, unsafe retries, insufficient waits, underprovisioned
+  replicas, and invalid waivers. Mutants are calibration artifacts, not claims
+  that the source fixture or live service contains those defects.
+- `frv paper-tables` renders feature coverage, benchmark results, ablation-proxy
+  counters, counterexample-usefulness summaries, and adoption workflow rows from
+  the same benchmark contract and therefore inherits its boundedness and validity
+  threats.
 - Configuration profiles set CLI default exit policies for audit, lint, CI gate,
   readiness, owner-scorecard, and benchmark reproduction workflows. Explicit
   `--fail-on` values override profile defaults, and profiles do not suppress or
@@ -221,6 +235,11 @@ differently named system exists.
 - The adoption and governance documents are process aids. They make bounded
   evidence easier to reproduce and review, but do not prove that an adopting
   organization's live systems are safe or compliant.
+- Runtime-verification results depend on the fidelity of the observed event log
+  and the model. Missing or out-of-band actions are deviations or unknowns, not
+  proof of what happened inside a provider control plane.
+- Paper-ready tables are generated evidence summaries, not independent empirical
+  user-study results unless benchmark metadata records such a study.
 
 ## Historical source
 

@@ -34,6 +34,8 @@ class Violation:
     hoare_triple: str | None = None
     source_path: str | None = None
     source_line: int | None = None
+    original_trace: tuple[str, ...] = ()
+    minimization: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -90,6 +92,7 @@ class CheckResult:
             "inconclusive": self.inconclusive,
             "inconclusive_reason": self.inconclusive_reason,
             "minimized_counterexample_trace_length": self.minimized_counterexample_trace_length,
+            "counterexamples_minimized": sum(1 for violation in self.violations if violation.minimization.get("reduced")),
             "proof_obligations_checked": dict(sorted(self.proof_obligations_checked.items())),
             "proof_obligation_failures": dict(sorted(self.proof_obligation_failures.items())),
             "semantic_rule_counts": dict(sorted(self.semantic_rule_counts.items())),
@@ -204,6 +207,7 @@ class Checker:
                     result.safe = False
                 self._push_frontier(queue, (next_state, done | {step.id}, trace + (step.id,), next_semantic_trace))
         result.violations = _dedupe_violations(result.violations)
+        result.violations = [self._minimized_violation(violation) for violation in result.violations]
         result.annotation_warnings = _dedupe_violations(result.annotation_warnings)
         return result
 
@@ -412,6 +416,72 @@ class Checker:
             return violation
         return replace(violation, source_path=step.source_path, source_line=step.source_line)
 
+    def _minimized_violation(self, violation: Violation) -> Violation:
+        original = tuple(violation.trace)
+        if not original or not violation.step:
+            return replace(violation, original_trace=original, minimization={"reduced": False, "reason": "no step-scoped witness"})
+        minimized = list(original)
+        changed = True
+        while changed and len(minimized) > 1:
+            changed = False
+            for idx in range(len(minimized) - 1):
+                candidate = tuple(minimized[:idx] + minimized[idx + 1:])
+                witness = self._replay_violation(candidate, violation.property, violation.step)
+                if witness is not None:
+                    minimized = list(candidate)
+                    changed = True
+                    break
+        reduced = tuple(minimized) != original
+        witness = self._replay_violation(tuple(minimized), violation.property, violation.step) if reduced else None
+        chosen = self._with_step_context(witness) if witness is not None else violation
+        return replace(
+            chosen,
+            original_trace=original,
+            minimization={
+                "reduced": reduced,
+                "original_length": len(original),
+                "minimized_length": len(tuple(minimized)),
+                "removed_steps": [step for step in original if step not in tuple(minimized)],
+                "method": "greedy_dependency_preserving_subsequence_replay",
+            },
+        )
+
+    def _replay_violation(self, trace: tuple[str, ...], property_name: str, step_id: str | None) -> Violation | None:
+        if not self.runbook.allow_reordering:
+            ordered = tuple(step.id for step in self.runbook.steps[:len(trace)])
+            if trace != ordered:
+                return None
+        state = self.runbook.state
+        done: set[str] = set()
+        semantic_trace: tuple[str, ...] = ()
+        prefix: tuple[str, ...] = ()
+        for item in trace:
+            step = self.steps_by_id.get(item)
+            if step is None or any(dep not in done for dep in step.after):
+                return None
+            schedule_trace = semantic_trace + scheduling_rules(step, 1, self.runbook.allow_reordering)
+            pre = self._pre_action_violations(state, step, prefix, schedule_trace)
+            for violation in pre:
+                if violation.property == property_name and (step_id is None or violation.step == step_id):
+                    return self._with_step_context(violation)
+            if pre:
+                return None
+            try:
+                state = apply_action(state, step)
+            except ActionError as exc:
+                violation = _violation("action_defined", str(exc), prefix + (step.id,), step.id, schedule_trace + (label_rule(small_step_rule("action_defined"), step.id),))
+                if violation.property == property_name and (step_id is None or violation.step == step_id):
+                    return self._with_step_context(violation)
+                return None
+            semantic_trace = schedule_trace + (label_rule(action_rule(step), step.id),)
+            prefix = prefix + (step.id,)
+            post = self._post_action_violations(state, step, prefix, semantic_trace)
+            for violation in post:
+                if violation.property == property_name and (step_id is None or violation.step == step_id):
+                    return self._with_step_context(violation)
+            done.add(step.id)
+        return None
+
 
 def _record_obligations(result: CheckResult, group: str, checked: int, failures: list[Violation]) -> None:
     observed = max(checked, len(failures))
@@ -555,7 +625,7 @@ def _violation(property: str, message: str, trace: tuple[str, ...], step: str | 
     rule = small_step_rule(property)
     if semantic_trace is None:
         semantic_trace = (label_rule(rule, step),)
-    return Violation(property, message, _minimize_trace(trace, step), step, REMEDIATIONS.get(property), rule, semantic_trace, hoare_triple_for(property))
+    return Violation(property, message, _normalize_trace(trace, step), step, REMEDIATIONS.get(property), rule, semantic_trace, hoare_triple_for(property))
 
 
 def _append_property_rule(semantic_trace: tuple[str, ...], property: str, step: str | None) -> tuple[str, ...]:
@@ -575,7 +645,7 @@ def _service_has_capacity_in_region(state: SystemState, service: str, region: st
     return any(replica.region == region and replica.healthy and not replica.drained for replica in svc.replicas)
 
 
-def _minimize_trace(trace: tuple[str, ...], step: str | None) -> tuple[str, ...]:
+def _normalize_trace(trace: tuple[str, ...], step: str | None) -> tuple[str, ...]:
     if not step:
         return trace
     # The checker explores breadth-first, so the first emitted trace is already

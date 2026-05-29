@@ -1,0 +1,42 @@
+{
+  "completed_steps": [
+    "lock-deployments"
+  ],
+  "conformant": false,
+  "deviations": [
+    {
+      "expected": [
+        "orchestrator-failover-to-west"
+      ],
+      "index": 1,
+      "message": "step orchestrator-failover-to-west requires {'kind': 'database_quorum_confirmed', 'database': 'mysql-metadata'}",
+      "modeled_property": "precondition",
+      "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+      "rule": "runtime_precondition_violation",
+      "step": "orchestrator-failover-to-west",
+      "trace": []
+    },
+    {
+      "expected": [
+        "orchestrator-failover-to-west"
+      ],
+      "index": 1,
+      "message": "database mysql-metadata failover has data-loss risk before quorum confirmation",
+      "modeled_property": "quorum_before_data_loss_action",
+      "remediation": "Confirm quorum or explicit data-loss approval before failover.",
+      "rule": "runtime_precondition_violation",
+      "step": "orchestrator-failover-to-west",
+      "trace": []
+    }
+  ],
+  "events_checked": 2,
+  "log_path": "examples/runtime_logs/github_oct21_observed_unsafe.json",
+  "missing_steps": [
+    "orchestrator-failover-to-west",
+    "pause-webhooks",
+    "pause-pages-builds",
+    "confirm-reconciled-topology"
+  ],
+  "note": "Runtime verification checks observed event conformance against the bounded DSL model; it is not live-infrastructure proof.",
+  "runbook": "GitHub Oct21 2018 MySQL failover reconstruction"
+}

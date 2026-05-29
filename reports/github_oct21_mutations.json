@@ -1,0 +1,94 @@
+{
+  "mutations": [
+    {
+      "annotation_warnings_by_property": {
+        "effect_annotation_required": 1
+      },
+      "applied": true,
+      "description": "Removed declared preconditions from one guarded step.",
+      "operator": "missing_preconditions",
+      "parse_error": null,
+      "safe": false,
+      "violations_by_property": {
+        "quorum_before_data_loss_action": 1
+      }
+    },
+    {
+      "annotation_warnings_by_property": {},
+      "applied": false,
+      "description": "No step with an ordering dependency was available.",
+      "operator": "reordered_steps",
+      "parse_error": null,
+      "safe": null,
+      "violations_by_property": {}
+    },
+    {
+      "annotation_warnings_by_property": {
+        "effect_annotation_required": 1
+      },
+      "applied": true,
+      "description": "Replaced owner metadata with a stale placeholder for audit/readiness calibration.",
+      "operator": "stale_owners",
+      "parse_error": null,
+      "safe": false,
+      "violations_by_property": {
+        "precondition": 1,
+        "quorum_before_data_loss_action": 1
+      }
+    },
+    {
+      "annotation_warnings_by_property": {
+        "unsafe_retry_annotation": 1
+      },
+      "applied": true,
+      "description": "Marked a destructive/high-risk action retry-safe despite non-idempotent irreversible effects.",
+      "operator": "unsafe_retries",
+      "parse_error": null,
+      "safe": false,
+      "violations_by_property": {
+        "precondition": 1,
+        "quorum_before_data_loss_action": 1
+      }
+    },
+    {
+      "annotation_warnings_by_property": {},
+      "applied": false,
+      "description": "No wait step was available.",
+      "operator": "insufficient_waits",
+      "parse_error": null,
+      "safe": null,
+      "violations_by_property": {}
+    },
+    {
+      "annotation_warnings_by_property": {
+        "effect_annotation_required": 1
+      },
+      "applied": true,
+      "description": "Raised min_available above declared replica count while explicitly modeling the weak assumption.",
+      "operator": "underprovisioned_replicas",
+      "parse_error": null,
+      "safe": false,
+      "violations_by_property": {
+        "precondition": 1,
+        "quorum_before_data_loss_action": 1,
+        "service_min_available": 5
+      }
+    },
+    {
+      "annotation_warnings_by_property": {
+        "effect_annotation_required": 1
+      },
+      "applied": true,
+      "description": "Added an expired owner-placeholder waiver that must remain visible rather than silently suppressing findings.",
+      "operator": "invalid_waivers",
+      "parse_error": null,
+      "safe": false,
+      "violations_by_property": {
+        "precondition": 1,
+        "quorum_before_data_loss_action": 1
+      }
+    }
+  ],
+  "note": "Synthetic mutants are benchmark seeds for reviewer calibration; they are not claims about the source runbook's live infrastructure.",
+  "path": "case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md"
+}

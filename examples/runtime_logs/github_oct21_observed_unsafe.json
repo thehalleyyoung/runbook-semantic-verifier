@@ -1,0 +1,7 @@
+{
+  "source": "synthetic observed event prefix for the reconstructed public GitHub Oct. 21 fixture",
+  "events": [
+    {"step": "orchestrator-failover-to-west", "actor": "chatops", "timestamp": "2018-10-21T22:52:00Z"},
+    {"step": "lock-deployments", "actor": "chatops", "timestamp": "2018-10-21T22:53:00Z"}
+  ]
+}

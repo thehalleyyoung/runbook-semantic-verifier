@@ -1,0 +1,2691 @@
+{
+  "adoption_workflows": {
+    "bounded_checking": {
+      "fail": 9,
+      "pass": 5
+    },
+    "combined_workflow": {
+      "fail": 0,
+      "pass": 14
+    },
+    "prose_linting": {
+      "fail": 4,
+      "pass": 10
+    },
+    "schema_only_validation": {
+      "fail": 0,
+      "pass": 14
+    },
+    "semantic_diffing": {
+      "configured_pairs": 1,
+      "fail": 0,
+      "pass": 1
+    },
+    "type_effect_checking": {
+      "fail": 9,
+      "pass": 5
+    }
+  },
+  "algorithm_ablation_proxy": [
+    {
+      "counter": "states_explored",
+      "interpretation": "bounded transition states visited",
+      "value": 119
+    },
+    {
+      "counter": "transitions_explored",
+      "interpretation": "candidate operator actions evaluated",
+      "value": 209
+    },
+    {
+      "counter": "max_branch_factor",
+      "interpretation": "largest enabled-step set",
+      "value": 5
+    },
+    {
+      "counter": "reductions_applied",
+      "interpretation": "implemented reduction/pruning counter",
+      "value": 0
+    },
+    {
+      "counter": "minimized_counterexample_trace_length",
+      "interpretation": "shortest minimized witness length",
+      "value": 1
+    },
+    {
+      "counter": "symbolic_splits",
+      "interpretation": "symbolic case split counter",
+      "value": 0
+    }
+  ],
+  "benchmark": {
+    "aggregate": {
+      "adoption_summary": {
+        "oracle_review_labels": {
+          "false_positive": 14,
+          "true_hazard": 14,
+          "unsupported_claim": 14,
+          "useful_warning": 14
+        },
+        "remediation_actions": [
+          "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+        ],
+        "risk_classes_detected": [
+          "bounded_alert_suppression",
+          "cache-flush-needs-warmup-capacity",
+          "cache_flush_requires_write_freeze",
+          "cache_warmup_before_traffic",
+          "cache_warmup_within_capacity",
+          "data-deletion-needs-restore-precondition",
+          "destructive-delete-needs-targeting",
+          "dns_health_check_converged_before_cutover",
+          "dns_no_split_brain_during_ttl",
+          "dns_requires_regional_capacity",
+          "dns_ttl_elapsed_before_finalize",
+          "no_duplicate_processing_risk",
+          "no_failover_to_unhealthy_region",
+          "no_rebalance_to_zero_consumers",
+          "no_replay_without_dedupe",
+          "no_rollback_during_incompatible_migration",
+          "no_stale_reads_after_cache_flush",
+          "no_unstable_consumer_group_with_backlog",
+          "object_bucket_replication_min_regions",
+          "object_replication_target_region_healthy",
+          "object_restore_requires_snapshot",
+          "object_restore_requires_write_freeze",
+          "object_restore_within_rpo",
+          "object_restore_within_rto",
+          "precondition",
+          "prose-suppression-applied",
+          "queue_backlog_requires_consumers",
+          "quorum_before_data_loss_action",
+          "service_min_available"
+        ]
+      },
+      "pass": true,
+      "performance_counters": {
+        "avg_branch_factor": 2.029126213592233,
+        "branch_factor_total": 209,
+        "branch_points": 103,
+        "max_branch_factor": 5,
+        "max_depth_reached": true,
+        "minimized_counterexample_trace_length": 1,
+        "proof_obligation_failures": {
+          "precondition": 117,
+          "safety_postcondition": 95
+        },
+        "proof_obligations_checked": {
+          "action_defined": 209,
+          "precondition": 137,
+          "promised_effect": 23,
+          "safety_postcondition": 1344
+        },
+        "reductions_applied": 0,
+        "semantic_rule_counts": {
+          "Action.Execute": 209,
+          "ActionGuard.AlertSuppressionBound": 20,
+          "ActionGuard.CacheFlushWriteFreeze": 2,
+          "ActionGuard.CacheWarmupBeforeTraffic": 6,
+          "ActionGuard.CacheWarmupCapacity": 4,
+          "ActionGuard.ConsumerRebalanceProgress": 2,
+          "ActionGuard.DNSHealthCheckConverged": 1,
+          "ActionGuard.DNSRegionalCapacity": 3,
+          "ActionGuard.DNSTTLBeforeFinalize": 1,
+          "ActionGuard.DatabaseFailoverQuorum": 21,
+          "ActionGuard.DatabaseTargetHealth": 16,
+          "ActionGuard.MessageReplayDeduplication": 2,
+          "ActionGuard.RollbackMigrationCompatibility": 16,
+          "ActionPreserves.ServiceAvailability": 56,
+          "Explore.BudgetReached": 4,
+          "Explore.Terminal": 12,
+          "PostInvariant.ConsumerGroupStableForBacklog": 2,
+          "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
+          "PostInvariant.NoDuplicateReplayProcessing": 4,
+          "PostInvariant.NoStaleReadsAfterCacheFlush": 2,
+          "PostInvariant.QueueBacklogHasConsumers": 2,
+          "PostInvariant.ServiceHasReplica": 36,
+          "SafetyInvariant.object_bucket_replication_min_regions": 1,
+          "SafetyInvariant.object_bucket_replication_regions_healthy": 3,
+          "SafetyInvariant.object_replication_target_region_healthy": 2,
+          "SafetyInvariant.object_restore_requires_snapshot": 2,
+          "SafetyInvariant.object_restore_requires_write_freeze": 2,
+          "SafetyInvariant.object_restore_within_rpo": 2,
+          "SafetyInvariant.object_restore_within_rto": 2,
+          "Schedule.DependencyReady": 188,
+          "Schedule.OperatorChoice": 168,
+          "Schedule.SequenceNext": 21,
+          "StepEnabled.Requires": 1
+        },
+        "states_explored": 119,
+        "symbolic_splits": 0,
+        "terminal_traces": 16,
+        "transitions_explored": 209
+      },
+      "prose_findings_by_rule": {
+        "backfill-needs-queue-capacity": 1,
+        "cache-flush-needs-warmup-capacity": 2,
+        "data-deletion-needs-restore-precondition": 1,
+        "destructive-delete-needs-targeting": 1,
+        "failover-needs-health-and-quorum": 3,
+        "prose-suppression-applied": 1
+      },
+      "runbooks": 14,
+      "runtime_seconds": 0.040397250006208196,
+      "states_explored": 119,
+      "traces_explored": 16,
+      "validity_threat_categories": {
+        "abstraction_bias": 4,
+        "bounded_search_limits": 8,
+        "public_data_incompleteness": 5,
+        "synthetic_mutant_bias": 9
+      },
+      "violations_by_property": {
+        "bounded_alert_suppression": 20,
+        "cache_flush_requires_write_freeze": 2,
+        "cache_warmup_before_traffic": 6,
+        "cache_warmup_within_capacity": 4,
+        "dns_health_check_converged_before_cutover": 1,
+        "dns_no_split_brain_during_ttl": 1,
+        "dns_requires_regional_capacity": 3,
+        "dns_ttl_elapsed_before_finalize": 1,
+        "no_draining_all_replicas": 36,
+        "no_duplicate_processing_risk": 4,
+        "no_failover_to_unhealthy_region": 16,
+        "no_rebalance_to_zero_consumers": 2,
+        "no_replay_without_dedupe": 2,
+        "no_rollback_during_incompatible_migration": 16,
+        "no_stale_reads_after_cache_flush": 2,
+        "no_unstable_consumer_group_with_backlog": 2,
+        "object_bucket_replication_min_regions": 1,
+        "object_bucket_replication_regions_healthy": 3,
+        "object_replication_target_region_healthy": 2,
+        "object_restore_requires_snapshot": 2,
+        "object_restore_requires_write_freeze": 2,
+        "object_restore_within_rpo": 2,
+        "object_restore_within_rto": 2,
+        "precondition": 1,
+        "queue_backlog_requires_consumers": 2,
+        "quorum_before_data_loss_action": 21,
+        "service_min_available": 56
+      },
+      "workflow_baselines": {
+        "bounded_checking": {
+          "fail": 9,
+          "pass": 5
+        },
+        "combined_workflow": {
+          "fail": 0,
+          "pass": 14
+        },
+        "prose_linting": {
+          "fail": 4,
+          "pass": 10
+        },
+        "schema_only_validation": {
+          "fail": 0,
+          "pass": 14
+        },
+        "semantic_diffing": {
+          "configured_pairs": 1,
+          "fail": 0,
+          "pass": 1
+        },
+        "type_effect_checking": {
+          "fail": 9,
+          "pass": 5
+        }
+      }
+    },
+    "name": "built-in formal runbook verification benchmark",
+    "profile": null,
+    "runbooks": [
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": []
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": true,
+            "violation_properties": []
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored safe regression fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic safe fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "service_capacity",
+            "database_quorum",
+            "alert_suppression",
+            "feature_flags",
+            "deployment_rollback"
+          ],
+          "validity_threat_categories": [
+            "bounded_search_limits",
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Small synthetic state space; not a production incident."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": true,
+          "expected_violation_properties": []
+        },
+        "name": "Safe regional database failover",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/safe_runbook.json",
+        "performance_counters": {
+          "annotation_warnings": 24,
+          "avg_branch_factor": 2.4,
+          "branch_factor_total": 84,
+          "branch_points": 35,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 4,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": null,
+          "proof_obligation_failures": {},
+          "proof_obligations_checked": {
+            "action_defined": 84,
+            "precondition": 12,
+            "promised_effect": 12,
+            "safety_postcondition": 588
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 84,
+            "Explore.Terminal": 1,
+            "Schedule.DependencyReady": 84,
+            "Schedule.OperatorChoice": 78
+          },
+          "states_explored": 36,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 84,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0031487090163864195,
+        "safe": true,
+        "states_explored": 36,
+        "traces_explored": 1,
+        "violations_by_property": {},
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 0,
+            "pass": true,
+            "violations_by_property": {}
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": true,
+            "proof_obligation_failures": {}
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "bounded_alert_suppression",
+              "no_failover_to_unhealthy_region",
+              "no_rollback_during_incompatible_migration",
+              "quorum_before_data_loss_action",
+              "service_min_available"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "bounded_alert_suppression",
+              "no_failover_to_unhealthy_region",
+              "no_rollback_during_incompatible_migration",
+              "quorum_before_data_loss_action",
+              "service_min_available"
+            ]
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored unsafe regression fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic unsafe fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "service_capacity",
+            "database_quorum",
+            "alert_suppression",
+            "feature_flags",
+            "deployment_rollback"
+          ],
+          "validity_threat_categories": [
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Designed mutant fixture; expected hazards are intentionally seeded."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "bounded_alert_suppression",
+            "no_failover_to_unhealthy_region",
+            "no_rollback_during_incompatible_migration",
+            "quorum_before_data_loss_action",
+            "service_min_available"
+          ]
+        },
+        "name": "Unsafe emergency rollback and evacuation",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/unsafe_runbook.json",
+        "performance_counters": {
+          "annotation_warnings": 64,
+          "avg_branch_factor": 2.5806451612903225,
+          "branch_factor_total": 80,
+          "branch_points": 31,
+          "counterexamples_minimized": 48,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 5,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 80,
+            "safety_postcondition": 56
+          },
+          "proof_obligations_checked": {
+            "action_defined": 80,
+            "precondition": 80,
+            "promised_effect": 0,
+            "safety_postcondition": 560
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 80,
+            "ActionGuard.AlertSuppressionBound": 16,
+            "ActionGuard.DatabaseFailoverQuorum": 16,
+            "ActionGuard.DatabaseTargetHealth": 16,
+            "ActionGuard.RollbackMigrationCompatibility": 16,
+            "ActionPreserves.ServiceAvailability": 44,
+            "Explore.Terminal": 1,
+            "PostInvariant.ServiceHasReplica": 28,
+            "Schedule.DependencyReady": 80,
+            "Schedule.OperatorChoice": 75
+          },
+          "states_explored": 32,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 80,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.012089124997146428,
+        "safe": false,
+        "states_explored": 32,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "bounded_alert_suppression": 16,
+          "no_draining_all_replicas": 28,
+          "no_failover_to_unhealthy_region": 16,
+          "no_rollback_during_incompatible_migration": 16,
+          "quorum_before_data_loss_action": 16,
+          "service_min_available": 44
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 136,
+            "pass": false,
+            "violations_by_property": {
+              "bounded_alert_suppression": 16,
+              "no_draining_all_replicas": 28,
+              "no_failover_to_unhealthy_region": 16,
+              "no_rollback_during_incompatible_migration": 16,
+              "quorum_before_data_loss_action": 16,
+              "service_min_available": 44
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 80,
+              "safety_postcondition": 56
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": []
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": true,
+            "violation_properties": []
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored safe queue replay regression fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic safe queue replay fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "message_replay",
+            "dead_letter_queue",
+            "dedupe_key",
+            "consumer_group_rebalance"
+          ],
+          "validity_threat_categories": [
+            "bounded_search_limits",
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Small synthetic state space; not a production incident."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": true,
+          "expected_violation_properties": []
+        },
+        "name": "Safe deduplicated dead-letter replay",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_safe.json",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 2,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": null,
+          "proof_obligation_failures": {},
+          "proof_obligations_checked": {
+            "action_defined": 2,
+            "precondition": 2,
+            "promised_effect": 3,
+            "safety_postcondition": 10
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 2,
+            "Explore.Terminal": 1,
+            "Schedule.SequenceNext": 2
+          },
+          "states_explored": 3,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 2,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0013986669946461916,
+        "safe": true,
+        "states_explored": 3,
+        "traces_explored": 1,
+        "violations_by_property": {},
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 0,
+            "pass": true,
+            "violations_by_property": {}
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": true,
+            "proof_obligation_failures": {}
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "no_duplicate_processing_risk",
+              "no_rebalance_to_zero_consumers",
+              "no_replay_without_dedupe",
+              "no_unstable_consumer_group_with_backlog",
+              "queue_backlog_requires_consumers"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "no_duplicate_processing_risk",
+              "no_rebalance_to_zero_consumers",
+              "no_replay_without_dedupe",
+              "no_unstable_consumer_group_with_backlog",
+              "queue_backlog_requires_consumers"
+            ]
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored unsafe queue replay mutant fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic unsafe replay fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "message_replay",
+            "dead_letter_queue",
+            "dedupe_key",
+            "consumer_group_rebalance"
+          ],
+          "validity_threat_categories": [
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Designed mutant fixture; expected hazards are intentionally seeded."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "no_duplicate_processing_risk",
+            "no_rebalance_to_zero_consumers",
+            "no_replay_without_dedupe",
+            "no_unstable_consumer_group_with_backlog",
+            "queue_backlog_requires_consumers"
+          ]
+        },
+        "name": "Unsafe duplicate-prone queue replay",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/queue_replay_unsafe.json",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 2,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 2,
+            "safety_postcondition": 4
+          },
+          "proof_obligations_checked": {
+            "action_defined": 2,
+            "precondition": 2,
+            "promised_effect": 0,
+            "safety_postcondition": 10
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 2,
+            "ActionGuard.ConsumerRebalanceProgress": 1,
+            "ActionGuard.MessageReplayDeduplication": 1,
+            "Explore.Terminal": 1,
+            "PostInvariant.ConsumerGroupStableForBacklog": 1,
+            "PostInvariant.NoDuplicateReplayProcessing": 2,
+            "PostInvariant.QueueBacklogHasConsumers": 1,
+            "Schedule.SequenceNext": 2
+          },
+          "states_explored": 3,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 2,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0009426249889656901,
+        "safe": false,
+        "states_explored": 3,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "no_duplicate_processing_risk": 2,
+          "no_rebalance_to_zero_consumers": 1,
+          "no_replay_without_dedupe": 1,
+          "no_unstable_consumer_group_with_backlog": 1,
+          "queue_backlog_requires_consumers": 1
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 6,
+            "pass": false,
+            "violations_by_property": {
+              "no_duplicate_processing_risk": 2,
+              "no_rebalance_to_zero_consumers": 1,
+              "no_replay_without_dedupe": 1,
+              "no_unstable_consumer_group_with_backlog": 1,
+              "queue_backlog_requires_consumers": 1
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 2,
+              "safety_postcondition": 4
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": []
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": true,
+            "violation_properties": []
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored safe cache flush regression fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic safe cache flush fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "cache_flush",
+            "cache_warmup",
+            "write_freeze",
+            "cold_start_capacity"
+          ],
+          "validity_threat_categories": [
+            "bounded_search_limits",
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Small synthetic state space; not a production incident."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": true,
+          "expected_violation_properties": []
+        },
+        "name": "Safe cache flush with warmup",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/cache_flush_safe.json",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 4,
+          "branch_points": 4,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": null,
+          "proof_obligation_failures": {},
+          "proof_obligations_checked": {
+            "action_defined": 4,
+            "precondition": 3,
+            "promised_effect": 3,
+            "safety_postcondition": 20
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 4,
+            "Explore.Terminal": 1,
+            "Schedule.SequenceNext": 4
+          },
+          "states_explored": 5,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 4,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0008195829868782312,
+        "safe": true,
+        "states_explored": 5,
+        "traces_explored": 1,
+        "violations_by_property": {},
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 0,
+            "pass": true,
+            "violations_by_property": {}
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": true,
+            "proof_obligation_failures": {}
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "cache_flush_requires_write_freeze",
+              "cache_warmup_before_traffic",
+              "cache_warmup_within_capacity",
+              "no_stale_reads_after_cache_flush"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "cache_flush_requires_write_freeze",
+              "cache_warmup_before_traffic",
+              "cache_warmup_within_capacity",
+              "no_stale_reads_after_cache_flush"
+            ]
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored unsafe cache flush mutant fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic unsafe cache flush fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "cache_flush",
+            "cache_warmup",
+            "write_freeze",
+            "cold_start_capacity",
+            "stale_read_risk"
+          ],
+          "validity_threat_categories": [
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Designed mutant fixture; expected hazards are intentionally seeded."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "cache_flush_requires_write_freeze",
+            "cache_warmup_before_traffic",
+            "cache_warmup_within_capacity",
+            "no_stale_reads_after_cache_flush"
+          ]
+        },
+        "name": "Unsafe cache flush without warmup capacity",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/cache_flush_unsafe.json",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.5,
+          "branch_factor_total": 3,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 2,
+          "max_depth_reached": true,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 3,
+            "safety_postcondition": 4
+          },
+          "proof_obligations_checked": {
+            "action_defined": 3,
+            "precondition": 3,
+            "promised_effect": 0,
+            "safety_postcondition": 15
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 3,
+            "ActionGuard.CacheFlushWriteFreeze": 1,
+            "ActionGuard.CacheWarmupBeforeTraffic": 3,
+            "ActionGuard.CacheWarmupCapacity": 2,
+            "Explore.BudgetReached": 2,
+            "PostInvariant.NoStaleReadsAfterCacheFlush": 1,
+            "Schedule.DependencyReady": 3,
+            "Schedule.OperatorChoice": 2
+          },
+          "states_explored": 4,
+          "symbolic_splits": 0,
+          "terminal_traces": 2,
+          "timeout_seconds": null,
+          "transitions_explored": 3,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0009604159859009087,
+        "safe": false,
+        "states_explored": 4,
+        "traces_explored": 2,
+        "violations_by_property": {
+          "cache_flush_requires_write_freeze": 1,
+          "cache_warmup_before_traffic": 3,
+          "cache_warmup_within_capacity": 2,
+          "no_stale_reads_after_cache_flush": 1
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 7,
+            "pass": false,
+            "violations_by_property": {
+              "cache_flush_requires_write_freeze": 1,
+              "cache_warmup_before_traffic": 3,
+              "cache_warmup_within_capacity": 2,
+              "no_stale_reads_after_cache_flush": 1
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 3,
+              "safety_postcondition": 4
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": []
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": true,
+            "violation_properties": []
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored safe credential rotation regression fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic credential rotation fixture; contains no real secrets.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "credential_rotation",
+            "credential_revocation",
+            "effect_annotations"
+          ],
+          "validity_threat_categories": [
+            "bounded_search_limits",
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Small synthetic state space; exercises credential semantics rather than a production incident."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": true,
+          "expected_violation_properties": []
+        },
+        "name": "Credential rotation with reviewed revocation effect",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/credential_rotation_runbook.json",
+        "performance_counters": {
+          "annotation_warnings": 0,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 2,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": null,
+          "proof_obligation_failures": {},
+          "proof_obligations_checked": {
+            "action_defined": 2,
+            "precondition": 0,
+            "promised_effect": 2,
+            "safety_postcondition": 2
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 2,
+            "Explore.Terminal": 1,
+            "Schedule.SequenceNext": 2
+          },
+          "states_explored": 3,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 2,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.000821624998934567,
+        "safe": true,
+        "states_explored": 3,
+        "traces_explored": 1,
+        "violations_by_property": {},
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 0,
+            "pass": true,
+            "violations_by_property": {}
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": true,
+            "proof_obligation_failures": {}
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "real-world-style",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "bounded_alert_suppression",
+              "quorum_before_data_loss_action",
+              "service_min_available"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "bounded_alert_suppression",
+              "quorum_before_data_loss_action",
+              "service_min_available"
+            ]
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "real-world-style",
+            "notes": "Repository-authored Markdown fixture modeled on common Kubernetes regional failover runbook patterns."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic real-world-style fixture, not a live service report.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "markdown_embedded_dsl",
+            "service_capacity",
+            "database_quorum",
+            "alert_suppression"
+          ],
+          "validity_threat_categories": [
+            "public_data_incompleteness"
+          ],
+          "validity_threats": [
+            "Represents a class of failover mistakes rather than a specific public incident."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "bounded_alert_suppression",
+            "quorum_before_data_loss_action",
+            "service_min_available"
+          ]
+        },
+        "name": "kubernetes region failover - missing quorum and capacity checks",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/real_world/kubernetes_region_failover.md",
+        "performance_counters": {
+          "annotation_warnings": 8,
+          "avg_branch_factor": 1.7142857142857142,
+          "branch_factor_total": 12,
+          "branch_points": 7,
+          "counterexamples_minimized": 8,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 3,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 12,
+            "safety_postcondition": 16
+          },
+          "proof_obligations_checked": {
+            "action_defined": 12,
+            "precondition": 12,
+            "promised_effect": 0,
+            "safety_postcondition": 24
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 12,
+            "ActionGuard.AlertSuppressionBound": 4,
+            "ActionGuard.DatabaseFailoverQuorum": 4,
+            "ActionPreserves.ServiceAvailability": 12,
+            "Explore.Terminal": 1,
+            "PostInvariant.ServiceHasReplica": 8,
+            "Schedule.DependencyReady": 12,
+            "Schedule.OperatorChoice": 9
+          },
+          "states_explored": 8,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 12,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {
+          "failover-needs-health-and-quorum": 2
+        },
+        "runtime_seconds": 0.00390474998857826,
+        "safe": false,
+        "states_explored": 8,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "bounded_alert_suppression": 4,
+          "no_draining_all_replicas": 8,
+          "quorum_before_data_loss_action": 4,
+          "service_min_available": 12
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 28,
+            "pass": false,
+            "violations_by_property": {
+              "bounded_alert_suppression": 4,
+              "no_draining_all_replicas": 8,
+              "quorum_before_data_loss_action": 4,
+              "service_min_available": 12
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 2,
+            "findings_by_rule": {
+              "failover-needs-health-and-quorum": 2
+            },
+            "pass": false
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 12,
+              "safety_postcondition": 16
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "reconstructed-public-facts",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "precondition",
+              "quorum_before_data_loss_action"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "precondition",
+              "quorum_before_data_loss_action"
+            ]
+          },
+          "license": {
+            "notes": "Uses public facts and independently authored executable model.",
+            "status": "excerpted"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "incident_date": "2018-10-21",
+            "kind": "public-historical",
+            "notes": "Reconstructed executable model from public post-incident analysis; not original runbook text.",
+            "source_url": "https://github.blog/news-insights/company-news/oct21-post-incident-analysis/"
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Historical public incident analysis; no new vulnerability claim.",
+            "status": "public-information"
+          },
+          "semantic_features": [
+            "public_historical_case",
+            "database_quorum",
+            "queue_pause",
+            "preconditions"
+          ],
+          "validity_threat_categories": [
+            "abstraction_bias",
+            "bounded_search_limits",
+            "public_data_incompleteness"
+          ],
+          "validity_threats": [
+            "Public-data incompleteness",
+            "Reconstructed assumptions may differ from original operational procedures",
+            "Bounded model abstracts distributed database behavior."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "precondition",
+            "quorum_before_data_loss_action"
+          ]
+        },
+        "name": "GitHub Oct21 2018 MySQL failover reconstruction",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 5,
+          "branch_points": 5,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 2
+          },
+          "proof_obligations_checked": {
+            "action_defined": 5,
+            "precondition": 2,
+            "promised_effect": 0,
+            "safety_postcondition": 60
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 5,
+            "ActionGuard.DatabaseFailoverQuorum": 1,
+            "Explore.Terminal": 1,
+            "Schedule.SequenceNext": 5,
+            "StepEnabled.Requires": 1
+          },
+          "states_explored": 6,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 5,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {
+          "failover-needs-health-and-quorum": 1
+        },
+        "runtime_seconds": 0.00255145801929757,
+        "safe": false,
+        "states_explored": 6,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "precondition": 1,
+          "quorum_before_data_loss_action": 1
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 2,
+            "pass": false,
+            "violations_by_property": {
+              "precondition": 1,
+              "quorum_before_data_loss_action": 1
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 1,
+            "findings_by_rule": {
+              "failover-needs-health-and-quorum": 1
+            },
+            "pass": false
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 2
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "derived-public-runbook",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "data-deletion-needs-restore-precondition",
+              "destructive-delete-needs-targeting",
+              "no_duplicate_processing_risk",
+              "no_rebalance_to_zero_consumers",
+              "no_replay_without_dedupe",
+              "no_unstable_consumer_group_with_backlog",
+              "prose-suppression-applied",
+              "queue_backlog_requires_consumers"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [
+              "data-deletion-needs-restore-precondition",
+              "destructive-delete-needs-targeting",
+              "prose-suppression-applied"
+            ],
+            "safe": false,
+            "violation_properties": [
+              "no_duplicate_processing_risk",
+              "no_rebalance_to_zero_consumers",
+              "no_replay_without_dedupe",
+              "no_unstable_consumer_group_with_backlog",
+              "queue_backlog_requires_consumers"
+            ]
+          },
+          "license": {
+            "name": "AGPL-3.0",
+            "notes": "Source repository publishes AGPL-3.0; benchmark stores short attributed excerpts and an independent model.",
+            "status": "public-license"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "public-current",
+            "notes": "Short attributed public excerpts plus independently authored defensive model.",
+            "retrieved": "2026-05-29",
+            "source_commit": "ef18cc176e44dea795543f50cb2341f5ea9e7827",
+            "source_url": "https://raw.githubusercontent.com/grafana/tempo/main/operations/tempo-mixin/runbook.md"
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim.",
+            "status": "public-information"
+          },
+          "semantic_features": [
+            "public_current_case",
+            "markdown_prose_lint",
+            "message_replay",
+            "effect_annotations",
+            "dead_letter_queue",
+            "dedupe_key",
+            "consumer_group_rebalance",
+            "benchmark_expected_prose_rules",
+            "auditable_prose_suppressions"
+          ],
+          "validity_threat_categories": [
+            "abstraction_bias",
+            "bounded_search_limits",
+            "public_data_incompleteness"
+          ],
+          "validity_threats": [
+            "Public runbook excerpts are incomplete",
+            "Executable model is derived, not maintainer-authored",
+            "Result is advisory and bounded to modeled queue fallback replay and consumer-group behavior."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [
+            "data-deletion-needs-restore-precondition",
+            "destructive-delete-needs-targeting",
+            "prose-suppression-applied"
+          ],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "no_duplicate_processing_risk",
+            "no_rebalance_to_zero_consumers",
+            "no_replay_without_dedupe",
+            "no_unstable_consumer_group_with_backlog",
+            "queue_backlog_requires_consumers"
+          ]
+        },
+        "name": "Grafana Tempo current public runbook derived safety model",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/grafana_tempo/tempo_runbook_current_impact.md",
+        "performance_counters": {
+          "annotation_warnings": 0,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 2,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 2,
+            "safety_postcondition": 4
+          },
+          "proof_obligations_checked": {
+            "action_defined": 2,
+            "precondition": 2,
+            "promised_effect": 0,
+            "safety_postcondition": 14
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 2,
+            "ActionGuard.ConsumerRebalanceProgress": 1,
+            "ActionGuard.MessageReplayDeduplication": 1,
+            "Explore.Terminal": 1,
+            "PostInvariant.ConsumerGroupStableForBacklog": 1,
+            "PostInvariant.NoDuplicateReplayProcessing": 2,
+            "PostInvariant.QueueBacklogHasConsumers": 1,
+            "Schedule.SequenceNext": 2
+          },
+          "states_explored": 3,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 2,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {
+          "backfill-needs-queue-capacity": 1,
+          "data-deletion-needs-restore-precondition": 1,
+          "destructive-delete-needs-targeting": 1,
+          "prose-suppression-applied": 1
+        },
+        "runtime_seconds": 0.00322866698843427,
+        "safe": false,
+        "states_explored": 3,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "no_duplicate_processing_risk": 2,
+          "no_rebalance_to_zero_consumers": 1,
+          "no_replay_without_dedupe": 1,
+          "no_unstable_consumer_group_with_backlog": 1,
+          "queue_backlog_requires_consumers": 1
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 6,
+            "pass": false,
+            "violations_by_property": {
+              "no_duplicate_processing_risk": 2,
+              "no_rebalance_to_zero_consumers": 1,
+              "no_replay_without_dedupe": 1,
+              "no_unstable_consumer_group_with_backlog": 1,
+              "queue_backlog_requires_consumers": 1
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 4,
+            "findings_by_rule": {
+              "backfill-needs-queue-capacity": 1,
+              "data-deletion-needs-restore-precondition": 1,
+              "destructive-delete-needs-targeting": 1,
+              "prose-suppression-applied": 1
+            },
+            "pass": false
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 2,
+              "safety_postcondition": 4
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "derived-public-runbook",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "dns_health_check_converged_before_cutover",
+              "dns_no_split_brain_during_ttl",
+              "dns_requires_regional_capacity",
+              "dns_ttl_elapsed_before_finalize"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "dns_health_check_converged_before_cutover",
+              "dns_no_split_brain_during_ttl",
+              "dns_requires_regional_capacity",
+              "dns_ttl_elapsed_before_finalize"
+            ]
+          },
+          "license": {
+            "notes": "Benchmark stores original model/prose with link to public source; no project code copied.",
+            "status": "public-license"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "public-current",
+            "notes": "Independently authored bounded model from public DNS failover guidance discussing health checks and TTL behavior.",
+            "retrieved": "2026-05-29",
+            "source_url": "https://github.com/Hotpirsch/dnsswitch"
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Defensive model of a documented DNS failover pattern; not an undisclosed vulnerability claim.",
+            "status": "public-information"
+          },
+          "semantic_features": [
+            "public_current_case",
+            "dns_failover",
+            "ttl_window",
+            "health_check_convergence",
+            "split_brain"
+          ],
+          "validity_threat_categories": [
+            "abstraction_bias",
+            "bounded_search_limits",
+            "public_data_incompleteness"
+          ],
+          "validity_threats": [
+            "Derived from public documentation rather than an operator's private runbook",
+            "DNS client caching behavior is abstracted to a bounded TTL window",
+            "Service state is intentionally small."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "dns_health_check_converged_before_cutover",
+            "dns_no_split_brain_during_ttl",
+            "dns_requires_regional_capacity",
+            "dns_ttl_elapsed_before_finalize"
+          ]
+        },
+        "name": "Reconstructed public DNS failover with missing TTL guards",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/dnsswitch_dns_failover/dnsswitch_dns_failover_reconstructed.md",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 2,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 3,
+            "safety_postcondition": 3
+          },
+          "proof_obligations_checked": {
+            "action_defined": 2,
+            "precondition": 3,
+            "promised_effect": 0,
+            "safety_postcondition": 10
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 2,
+            "ActionGuard.DNSHealthCheckConverged": 1,
+            "ActionGuard.DNSRegionalCapacity": 3,
+            "ActionGuard.DNSTTLBeforeFinalize": 1,
+            "Explore.Terminal": 1,
+            "PostInvariant.DNSNoSplitBrainDuringTTL": 1,
+            "Schedule.DependencyReady": 2
+          },
+          "states_explored": 3,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 2,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.002456208021612838,
+        "safe": false,
+        "states_explored": 3,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "dns_health_check_converged_before_cutover": 1,
+          "dns_no_split_brain_during_ttl": 1,
+          "dns_requires_regional_capacity": 3,
+          "dns_ttl_elapsed_before_finalize": 1
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 6,
+            "pass": false,
+            "violations_by_property": {
+              "dns_health_check_converged_before_cutover": 1,
+              "dns_no_split_brain_during_ttl": 1,
+              "dns_requires_regional_capacity": 3,
+              "dns_ttl_elapsed_before_finalize": 1
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 3,
+              "safety_postcondition": 3
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "derived-public-runbook",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "cache-flush-needs-warmup-capacity",
+              "cache_flush_requires_write_freeze",
+              "cache_warmup_before_traffic",
+              "cache_warmup_within_capacity",
+              "no_stale_reads_after_cache_flush"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [
+              "cache-flush-needs-warmup-capacity"
+            ],
+            "safe": false,
+            "violation_properties": [
+              "cache_flush_requires_write_freeze",
+              "cache_warmup_before_traffic",
+              "cache_warmup_within_capacity",
+              "no_stale_reads_after_cache_flush"
+            ]
+          },
+          "license": {
+            "notes": "Benchmark stores short attributed excerpts and original model; source is a public GitHub blog/runbook template.",
+            "status": "public-license"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "public-current",
+            "notes": "Short attributed public Redis runbook-template excerpts plus independently authored defensive cache-flush mutant model.",
+            "retrieved": "2026-05-29",
+            "source_url": "https://raw.githubusercontent.com/OneUptime/blog/master/posts/2026-03-31-redis-operations-runbook/README.md"
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Defensive public-document analysis; findings are bounded model gaps, not an undisclosed vulnerability claim.",
+            "status": "public-information"
+          },
+          "semantic_features": [
+            "public_current_case",
+            "cache_flush",
+            "cache_warmup",
+            "write_freeze",
+            "cold_start_capacity",
+            "stale_read_risk"
+          ],
+          "validity_threat_categories": [
+            "abstraction_bias",
+            "public_data_incompleteness"
+          ],
+          "validity_threats": [
+            "Public runbook template is generic rather than a live incident procedure",
+            "Executable model is derived, not maintainer-authored",
+            "Cache behavior is abstracted to warm/cold entry counts and write-freeze flags."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [
+            "cache-flush-needs-warmup-capacity"
+          ],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "cache_flush_requires_write_freeze",
+            "cache_warmup_before_traffic",
+            "cache_warmup_within_capacity",
+            "no_stale_reads_after_cache_flush"
+          ]
+        },
+        "name": "Redis public runbook derived cache flush mutant",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/current/redis_cache_flush/redis_cache_flush_public_runbook_derived.md",
+        "performance_counters": {
+          "annotation_warnings": 1,
+          "avg_branch_factor": 1.5,
+          "branch_factor_total": 3,
+          "branch_points": 2,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 2,
+          "max_depth_reached": true,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 3,
+            "safety_postcondition": 4
+          },
+          "proof_obligations_checked": {
+            "action_defined": 3,
+            "precondition": 3,
+            "promised_effect": 0,
+            "safety_postcondition": 15
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 3,
+            "ActionGuard.CacheFlushWriteFreeze": 1,
+            "ActionGuard.CacheWarmupBeforeTraffic": 3,
+            "ActionGuard.CacheWarmupCapacity": 2,
+            "Explore.BudgetReached": 2,
+            "PostInvariant.NoStaleReadsAfterCacheFlush": 1,
+            "Schedule.DependencyReady": 3,
+            "Schedule.OperatorChoice": 2
+          },
+          "states_explored": 4,
+          "symbolic_splits": 0,
+          "terminal_traces": 2,
+          "timeout_seconds": null,
+          "transitions_explored": 3,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {
+          "cache-flush-needs-warmup-capacity": 2
+        },
+        "runtime_seconds": 0.0025819170114118606,
+        "safe": false,
+        "states_explored": 4,
+        "traces_explored": 2,
+        "violations_by_property": {
+          "cache_flush_requires_write_freeze": 1,
+          "cache_warmup_before_traffic": 3,
+          "cache_warmup_within_capacity": 2,
+          "no_stale_reads_after_cache_flush": 1
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 7,
+            "pass": false,
+            "violations_by_property": {
+              "cache_flush_requires_write_freeze": 1,
+              "cache_warmup_before_traffic": 3,
+              "cache_warmup_within_capacity": 2,
+              "no_stale_reads_after_cache_flush": 1
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 2,
+            "findings_by_rule": {
+              "cache-flush-needs-warmup-capacity": 2
+            },
+            "pass": false
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 3,
+              "safety_postcondition": 4
+            }
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": []
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": true,
+            "violation_properties": []
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored safe object-storage restore regression fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic object-storage fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "object_storage_restore",
+            "rpo",
+            "rto",
+            "write_freeze",
+            "replication_durability"
+          ],
+          "validity_threat_categories": [
+            "bounded_search_limits",
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Small synthetic state space; not a production object store incident."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": true,
+          "expected_violation_properties": []
+        },
+        "name": "Safe object storage restore",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/object_storage_restore_safe.json",
+        "performance_counters": {
+          "annotation_warnings": 0,
+          "avg_branch_factor": 1.0,
+          "branch_factor_total": 4,
+          "branch_points": 4,
+          "counterexamples_minimized": 0,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "fifo",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 1,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": null,
+          "proof_obligation_failures": {},
+          "proof_obligations_checked": {
+            "action_defined": 4,
+            "precondition": 3,
+            "promised_effect": 3,
+            "safety_postcondition": 8
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 4,
+            "Explore.Terminal": 1,
+            "Schedule.SequenceNext": 4
+          },
+          "states_explored": 5,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 4,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0010990830196533352,
+        "safe": true,
+        "states_explored": 5,
+        "traces_explored": 1,
+        "violations_by_property": {},
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 0,
+            "pass": true,
+            "violations_by_property": {}
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": true,
+            "proof_obligation_failures": {}
+          }
+        }
+      },
+      {
+        "benchmark_metadata": {
+          "abstraction_level": "toy",
+          "adoption_summary": {
+            "operator_time_saved": "not-measured; reported as review-prioritization evidence only",
+            "remediation_actions": [
+              "review modeled counterexamples and add missing preconditions, rollback, dedupe, capacity, or limitation evidence"
+            ],
+            "risk_classes_detected": [
+              "object_bucket_replication_min_regions",
+              "object_replication_target_region_healthy",
+              "object_restore_requires_snapshot",
+              "object_restore_requires_write_freeze",
+              "object_restore_within_rpo",
+              "object_restore_within_rto"
+            ]
+          },
+          "expected_result": {
+            "prose_rules": [],
+            "safe": false,
+            "violation_properties": [
+              "object_bucket_replication_min_regions",
+              "object_replication_target_region_healthy",
+              "object_restore_requires_snapshot",
+              "object_restore_requires_write_freeze",
+              "object_restore_within_rpo",
+              "object_restore_within_rto"
+            ]
+          },
+          "license": {
+            "name": "MIT",
+            "notes": "Authored for this repository.",
+            "status": "original"
+          },
+          "oracle_review": {
+            "allowed_labels": [
+              "true_hazard",
+              "useful_warning",
+              "false_positive",
+              "unsupported_claim"
+            ],
+            "notes": "No independent SRE oracle review is claimed for this fixture.",
+            "status": "not-reviewed"
+          },
+          "provenance": {
+            "kind": "synthetic",
+            "notes": "Repository-authored unsafe object-storage restore mutant fixture."
+          },
+          "reproduction": {
+            "budget": "standard-library Python; intended to run in seconds on a laptop",
+            "commands": [
+              "PYTHONPATH=src python3 -m runbook_verify.cli benchmark benchmarks/builtin.json --format markdown"
+            ],
+            "expected_outputs": [
+              "benchmark pass=true with bounded states, counterexamples, prose findings, validity threats, and workflow baselines"
+            ]
+          },
+          "responsible_disclosure": {
+            "notes": "Synthetic unsafe object-storage fixture.",
+            "status": "not-applicable"
+          },
+          "semantic_features": [
+            "object_storage_restore",
+            "rpo",
+            "rto",
+            "write_freeze",
+            "replication_durability"
+          ],
+          "validity_threat_categories": [
+            "synthetic_mutant_bias"
+          ],
+          "validity_threats": [
+            "Designed mutant fixture; expected hazards are intentionally seeded."
+          ]
+        },
+        "errors": [],
+        "expected_labels": {
+          "expected_prose_rules": [],
+          "expected_safe": false,
+          "expected_violation_properties": [
+            "object_bucket_replication_min_regions",
+            "object_replication_target_region_healthy",
+            "object_restore_requires_snapshot",
+            "object_restore_requires_write_freeze",
+            "object_restore_within_rpo",
+            "object_restore_within_rto"
+          ]
+        },
+        "name": "Unsafe object storage restore",
+        "pass": true,
+        "path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/examples/object_storage_restore_unsafe.json",
+        "performance_counters": {
+          "annotation_warnings": 2,
+          "avg_branch_factor": 1.3333333333333333,
+          "branch_factor_total": 4,
+          "branch_points": 3,
+          "counterexamples_minimized": 5,
+          "exploration_seed": null,
+          "exploration_strategy": "breadth_first",
+          "fairness_model": "dependency",
+          "inconclusive": false,
+          "inconclusive_reason": null,
+          "max_branch_factor": 2,
+          "max_depth_reached": false,
+          "minimized_counterexample_trace_length": 1,
+          "proof_obligation_failures": {
+            "precondition": 10,
+            "safety_postcondition": 4
+          },
+          "proof_obligations_checked": {
+            "action_defined": 4,
+            "precondition": 10,
+            "promised_effect": 0,
+            "safety_postcondition": 8
+          },
+          "reductions_applied": 0,
+          "semantic_rule_counts": {
+            "Action.Execute": 4,
+            "Explore.Terminal": 1,
+            "SafetyInvariant.object_bucket_replication_min_regions": 1,
+            "SafetyInvariant.object_bucket_replication_regions_healthy": 3,
+            "SafetyInvariant.object_replication_target_region_healthy": 2,
+            "SafetyInvariant.object_restore_requires_snapshot": 2,
+            "SafetyInvariant.object_restore_requires_write_freeze": 2,
+            "SafetyInvariant.object_restore_within_rpo": 2,
+            "SafetyInvariant.object_restore_within_rto": 2,
+            "Schedule.DependencyReady": 4,
+            "Schedule.OperatorChoice": 2
+          },
+          "states_explored": 4,
+          "symbolic_splits": 0,
+          "terminal_traces": 1,
+          "timeout_seconds": null,
+          "transitions_explored": 4,
+          "waivers_applied": 0
+        },
+        "prose_findings_by_rule": {},
+        "runtime_seconds": 0.0025472499837633222,
+        "safe": false,
+        "states_explored": 4,
+        "traces_explored": 1,
+        "violations_by_property": {
+          "object_bucket_replication_min_regions": 1,
+          "object_bucket_replication_regions_healthy": 3,
+          "object_replication_target_region_healthy": 2,
+          "object_restore_requires_snapshot": 2,
+          "object_restore_requires_write_freeze": 2,
+          "object_restore_within_rpo": 2,
+          "object_restore_within_rto": 2
+        },
+        "workflow_baselines": {
+          "bounded_checking": {
+            "counterexamples": 14,
+            "pass": false,
+            "violations_by_property": {
+              "object_bucket_replication_min_regions": 1,
+              "object_bucket_replication_regions_healthy": 3,
+              "object_replication_target_region_healthy": 2,
+              "object_restore_requires_snapshot": 2,
+              "object_restore_requires_write_freeze": 2,
+              "object_restore_within_rpo": 2,
+              "object_restore_within_rto": 2
+            }
+          },
+          "combined_workflow": {
+            "pass": true,
+            "uses": [
+              "schema_only_validation",
+              "prose_linting",
+              "bounded_checking",
+              "type_effect_checking",
+              "semantic_diffing_when_configured"
+            ]
+          },
+          "prose_linting": {
+            "finding_count": 0,
+            "findings_by_rule": {},
+            "pass": true
+          },
+          "schema_only_validation": {
+            "errors": [],
+            "pass": true
+          },
+          "type_effect_checking": {
+            "pass": false,
+            "proof_obligation_failures": {
+              "precondition": 10,
+              "safety_postcondition": 4
+            }
+          }
+        }
+      }
+    ],
+    "semantic_diff_baselines": [
+      {
+        "errors": [],
+        "expected": {
+          "assumption_weakenings": 0,
+          "introduced_counterexamples": 0,
+          "resolved_counterexamples": 2
+        },
+        "name": "github-oct21-quorum-guard-remediation",
+        "new_path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_with_quorum_guard.md",
+        "old_path": "/Users/halleyyoung/Documents/repo/formal-runbook-verification-repo/case_studies/github_oct21_2018/github_oct21_reconstructed_runbook.md",
+        "pass": true,
+        "summary": {
+          "assumption_changes": 0,
+          "assumption_weakenings": 0,
+          "changes": 1,
+          "effect_changes": 0,
+          "introduced_counterexamples": 0,
+          "invariant_changes": 0,
+          "new_states_explored": 6,
+          "old_states_explored": 6,
+          "persisting_counterexamples": 0,
+          "resolved_counterexamples": 2,
+          "safety_relevant_changes": 1,
+          "waiver_changes": 0
+        }
+      }
+    ]
+  },
+  "counterexample_usefulness": {
+    "effect_annotation_warnings": 105,
+    "oracle_review_labels": {
+      "false_positive": 14,
+      "true_hazard": 14,
+      "unsupported_claim": 14,
+      "useful_warning": 14
+    },
+    "runbooks_with_minimized_counterexamples": 9,
+    "shortest_minimized_trace": 1
+  },
+  "feature_coverage": [
+    {
+      "evidence": "schema, parser, typed descriptors",
+      "feature": "Executable DSL",
+      "surface": "frv validate/schema"
+    },
+    {
+      "evidence": "dependency-aware transition exploration",
+      "feature": "Bounded checking",
+      "surface": "frv check"
+    },
+    {
+      "evidence": "small-step trace, Hoare triple, weakest-precondition hint, source line",
+      "feature": "Counterexample explanation",
+      "surface": "frv check --format json / frv explain"
+    },
+    {
+      "evidence": "observed step logs checked against model dependencies and preconditions",
+      "feature": "Runtime conformance",
+      "surface": "frv runtime-verify"
+    },
+    {
+      "evidence": "synthetic missing-guard/reorder/stale-owner/retry/wait/capacity/waiver mutants",
+      "feature": "Mutation calibration",
+      "surface": "frv mutate"
+    },
+    {
+      "evidence": "provenance, licensing, validity threats, oracle labels",
+      "feature": "Benchmark governance",
+      "surface": "frv benchmark"
+    }
+  ]
+}
