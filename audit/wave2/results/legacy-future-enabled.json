@@ -1,0 +1,1229 @@
+{
+  "checker_sha256": "5b82db9e7ccb1cc3412709562708293b3b6bbae3ee91299b4582eac11668d3b2",
+  "rows": [
+    {
+      "strategy": "breadth_first",
+      "por": false,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": false,
+          "exploration_strategy": "breadth_first",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "breadth_first",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "breadth_first",
+      "por": true,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": true,
+          "exploration_strategy": "breadth_first",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "breadth_first",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "depth_first",
+      "por": false,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": false,
+          "exploration_strategy": "depth_first",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "depth_first",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "depth_first",
+      "por": true,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": true,
+          "exploration_strategy": "depth_first",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "depth_first",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "randomized_bounded",
+      "por": false,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": false,
+          "exploration_strategy": "randomized_bounded",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "randomized_bounded",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "randomized_bounded",
+      "por": true,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": true,
+          "exploration_strategy": "randomized_bounded",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "randomized_bounded",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "seeded_chaos_style",
+      "por": false,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": false,
+          "exploration_strategy": "seeded_chaos_style",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "seeded_chaos_style",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    },
+    {
+      "strategy": "seeded_chaos_style",
+      "por": true,
+      "document": {
+        "name": "future enabled",
+        "allow_reordering": true,
+        "max_depth": 5,
+        "system": {
+          "regions": {
+            "a": {
+              "healthy": true
+            }
+          },
+          "services": {
+            "api": {
+              "min_available": 1,
+              "replicas": [
+                {
+                  "id": "r0",
+                  "region": "a"
+                }
+              ]
+            }
+          },
+          "feature_flags": {
+            "f": {
+              "enabled": false
+            },
+            "g": {
+              "enabled": false
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "a",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "f",
+              "enabled": true
+            }
+          },
+          {
+            "id": "b",
+            "action": "toggle_flag",
+            "params": {
+              "flag": "g",
+              "enabled": true
+            }
+          },
+          {
+            "id": "c",
+            "action": "restart_service",
+            "params": {
+              "service": "api"
+            },
+            "after": [
+              "b"
+            ],
+            "requires": [
+              {
+                "kind": "flag_enabled",
+                "flag": "f",
+                "enabled": true
+              }
+            ]
+          }
+        ],
+        "safety": {
+          "partial_order_reduction": true,
+          "exploration_strategy": "seeded_chaos_style",
+          "exploration_seed": 17
+        }
+      },
+      "result": {
+        "safe": false,
+        "violations": [
+          {
+            "property": "precondition",
+            "message": "step c requires {'kind': 'flag_enabled', 'flag': 'f', 'enabled': True}",
+            "trace": [
+              "b",
+              "c"
+            ],
+            "step": "c",
+            "remediation": "Add an ordering dependency or earlier step establishing this precondition.",
+            "small_step_rule": "StepEnabled.Requires",
+            "semantic_trace": [
+              "Schedule.DependencyReady(b)",
+              "Schedule.OperatorChoice(b)",
+              "Action.Execute(b)",
+              "Schedule.DependencyReady(c)",
+              "Schedule.OperatorChoice(c)",
+              "StepEnabled.Requires(c)"
+            ],
+            "hoare_triple": "{ all declared step.requires conditions hold } action_effect: enabled action consumes the pre-state { declared requires obligations are true before action }",
+            "source_path": null,
+            "source_line": null,
+            "source_field": "requires[0]",
+            "suggested_preconditions": [],
+            "json_patches": [],
+            "original_trace": [
+              "b",
+              "c"
+            ],
+            "minimization": {
+              "reduced": false,
+              "original_length": 2,
+              "minimized_length": 2,
+              "removed_steps": [],
+              "method": "greedy_dependency_preserving_subsequence_replay"
+            }
+          }
+        ],
+        "states_explored": 6,
+        "traces_explored": 1,
+        "max_depth_reached": false,
+        "transitions_explored": 7,
+        "branch_points": 5,
+        "branch_factor_total": 7,
+        "max_branch_factor": 2,
+        "reductions_applied": 0,
+        "symbolic_splits": 0,
+        "exploration_strategy": "seeded_chaos_style",
+        "exploration_seed": 17,
+        "fairness_model": "dependency",
+        "timeout_seconds": null,
+        "inconclusive": false,
+        "inconclusive_reason": null,
+        "proof_obligations_checked": {
+          "assume_guarantee_contract": 0,
+          "rely_guarantee": 0,
+          "precondition": 2,
+          "action_defined": 7,
+          "safety_postcondition": 14,
+          "promised_effect": 0
+        },
+        "proof_obligation_failures": {
+          "precondition": 1
+        },
+        "semantic_rule_counts": {
+          "Schedule.DependencyReady": 7,
+          "Schedule.OperatorChoice": 4,
+          "Action.Execute": 7,
+          "StepEnabled.Requires": 1,
+          "Explore.Terminal": 1
+        },
+        "annotation_warnings": [],
+        "waivers_applied": [],
+        "abstract_states": 0,
+        "dominance_pruned_states": 0
+      }
+    }
+  ]
+}

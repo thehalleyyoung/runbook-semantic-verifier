@@ -1,0 +1,2 @@
+# PDF verification
+The seven-page source manuscript compiled with pdflatex/BibTeX in an external temporary directory. All seven pages were visually inspected; table width was repaired with narrower column padding, and the final table page was re-rendered and inspected. The successful last build has no unresolved-reference or overfull-box warnings. The canonical PDF is the root tool_paper.pdf. Superseded source PDF is externally hash-archived; data/vendor PDFs were not removed. The build script emits only that root publication PDF.

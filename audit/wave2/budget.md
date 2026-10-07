@@ -1,0 +1,1 @@
+No new Modal or OpenRouter calls, reservations or pending exposure. This round costs $0. Historical Modal estimate $0.6352 and historical API total $1.697835 are retained from supplied receipts, subject to the parent canonical campaign ledger. Per-provider cap $5; no allowance reset.
